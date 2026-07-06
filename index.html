@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lit-Based Proposal Builder Upload Version</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260614-v453-progress-print-context" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Proposal builder progress">
+        <div class="brand">
+          <div>
+            <h1>Lit-Based Proposal Builder</h1>
+            <p>From literature to proposal</p>
+            <p class="app-version" id="appVersion">Version loading...</p>
+            <p class="app-credit" id="appCredit">Developed by J. Arawiran with assistance from OpenAI Codex.</p>
+          </div>
+        </div>
+
+        <section class="dashboard" aria-label="Dashboard">
+          <div class="dashboard-row">
+            <span>Completion</span>
+            <strong id="completionText">0%</strong>
+          </div>
+          <div class="meter" aria-hidden="true"><span id="completionBar"></span></div>
+          <div class="dashboard-grid">
+            <div>
+              <span>Alignment</span>
+              <strong id="alignmentScore">0</strong>
+            </div>
+            <div>
+              <span>Stage</span>
+              <strong id="currentStage">A1</strong>
+            </div>
+          </div>
+        </section>
+
+        <nav class="stage-nav" id="stageNav" aria-label="Stages"></nav>
+
+        <section class="side-panel">
+          <h2>Outstanding Issues</h2>
+          <ul id="issueList">
+            <li>Start with A1 to begin checking alignment.</li>
+          </ul>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Guided academic thinking tool</p>
+            <h2 id="stageTitle">Info - Student Details</h2>
+          </div>
+          <div class="top-actions">
+            <button class="ghost" id="studentDetailsBtn" type="button">Student Details</button>
+            <button class="ghost" id="uploadFormsBtn" type="button">Upload A1 Form</button>
+            <button class="ghost" id="importBtn" type="button">Restore Backup</button>
+            <button class="ghost" id="exportBtn" type="button">Download Backup</button>
+            <button class="danger" id="resetBtn" type="button">Reset</button>
+          </div>
+        </header>
+
+        <section class="support-note" aria-live="polite">
+          <strong>This is a working draft.</strong>
+          Research ideas become clearer through refinement. It is okay if this changes later.
+        </section>
+
+        <form id="stageForm" class="stage-form"></form>
+
+        <section class="checker-panel" aria-label="Feedback">
+          <div class="checker-head">
+            <h3>Check My Work</h3>
+            <button id="checkBtn" type="button">Run Check</button>
+          </div>
+          <div id="feedback" class="feedback">
+            Add your working ideas, then run a check for alignment suggestions.
+          </div>
+        </section>
+
+        <footer class="footer-actions">
+          <button class="ghost" id="backBtn" type="button">Back</button>
+          <button id="saveBtn" type="button">Save Draft</button>
+          <button id="summaryBtn" type="button">Generate Proposal Summary</button>
+          <button id="previewBtn" type="button">Preview Submission</button>
+          <button class="ghost" id="aboutBtn" type="button">About & Sources</button>
+          <button class="primary" id="nextBtn" type="button">Next</button>
+        </footer>
+      </main>
+    </div>
+
+    <dialog id="previewDialog">
+      <div class="dialog-header">
+        <h2>PDF Submission Preview</h2>
+        <button class="ghost" id="closePreviewBtn" type="button">Close</button>
+      </div>
+      <article id="submissionPreview" class="submission"></article>
+      <div class="dialog-actions">
+        <button id="printBtn" type="button">Print</button>
+        <button class="primary" id="pdfBtn" type="button">Generate PDF</button>
+      </div>
+    </dialog>
+
+    <article id="printSubmission" class="submission print-submission" aria-hidden="true"></article>
+
+    <dialog id="welcomeDialog" class="welcome-dialog">
+      <section class="about-content">
+        <h2>Before You Begin</h2>
+        <p><strong>Your work is saved locally in your own browser.</strong> The app does not send your answers to the developer, instructor, or a cloud server.</p>
+        <p>Use <strong>Download Backup</strong> before changing devices, clearing browser data, or updating the app. Use <strong>Restore Backup</strong> if you need to recover a saved draft.</p>
+        <p><strong>Lit-Based Proposal Builder</strong> was developed by J. Arawiran with assistance from OpenAI Codex, a GPT-5-based coding assistant (June 2026).</p>
+        <p>This is a guided academic thinking tool. It supports proposal drafting, but it does not replace adviser feedback, instructor requirements, department policies, institutional guidelines, or official ethics review processes.</p>
+        <div class="dialog-actions inline-actions">
+          <button class="ghost" id="welcomeAboutBtn" type="button">About & Sources</button>
+          <button class="primary" id="proceedBtn" type="button">Proceed to Builder</button>
+        </div>
+      </section>
+    </dialog>
+
+    <dialog id="aboutDialog">
+      <div class="dialog-header">
+        <h2>About & Sources</h2>
+        <button class="ghost" id="closeAboutBtn" type="button">Close</button>
+      </div>
+      <section class="about-content">
+        <h3>App Attribution</h3>
+        <p><strong>Lit-Based Proposal Builder</strong> was developed by J. Arawiran with assistance from OpenAI Codex, a GPT-5-based coding assistant (June 2026).</p>
+        <p>This app is a guided academic thinking tool designed to support the development of research proposals. It assists users in organizing ideas, identifying research problems, aligning research questions with methods, and drafting proposal components. It does not replace adviser feedback, instructor requirements, department policies, institutional guidelines, or official ethics review processes.</p>
+
+        <h3>Data Privacy and Local Storage</h3>
+        <p>The app saves draft work locally in the user's own browser storage. The developer, instructor, and app do not receive, collect, or store the student's answers through this tool. Draft data is not transmitted to a cloud server by the app. Students should still use the Download Backup feature before changing devices, clearing browser data, or updating the app.</p>
+
+        <h3>Conceptual and Educational Foundations</h3>
+        <p>The design of this proposal builder draws upon established literature in research methodology, educational research, research ethics, and reflective inquiry. These sources informed the structure and guidance provided by the app. They are not automatically part of a student's proposal references unless they are directly consulted and cited by the student.</p>
+
+        <h3>Research Methodology Foundations</h3>
+        <p>The proposal-development workflow is informed by widely used approaches to research design and proposal writing, particularly the work of:</p>
+        <ul>
+          <li>Creswell, J. W., & Creswell, J. D. on qualitative, quantitative, and mixed methods research design.</li>
+          <li>Cohen, L., Manion, L., & Morrison, K. on educational research methods and research ethics.</li>
+        </ul>
+        <p>These works informed the app's guidance on problem formulation, purpose statements, research questions, methodological alignment, and proposal structure.</p>
+
+        <h3>Research Ethics Foundations</h3>
+        <p>The ethical guidance embedded in the app is informed by:</p>
+        <ul>
+          <li>Philippine Health Research Ethics Board (PHREB) National Ethical Guidelines for Health and Health-Related Research (2022).</li>
+          <li>American Educational Research Association (AERA) Code of Ethics.</li>
+          <li>British Educational Research Association (BERA) Ethical Guidelines.</li>
+          <li>Ethical principles discussed in Creswell and Creswell and in Cohen, Manion, and Morrison.</li>
+        </ul>
+        <p>These sources informed prompts related to informed consent, confidentiality, anonymity, voluntary participation, potential risks and benefits, vulnerable participants, and conflicts of interest.</p>
+
+        <h3>Degree-Level Readiness and PQF Reference</h3>
+        <p>The app can be used for SHS/basic education research, bachelor's work, master's work, and doctoral work. For SHS/basic education, the app uses PQF Level 3 as a formative reference, looking for structured research tasks, emerging independence, accountability for outputs, and feasible application of foundational research knowledge. For bachelor's, master's, and doctoral work, the app uses the revised Philippine Qualifications Framework domains as a formative guide for degree-level readiness: Responsibility and Autonomy, Knowledge and Understanding, and Skills and Application.</p>
+        <p>PQF reference used: PQF-NCC Resolution 2026-02. This app provides formative guidance only and does not certify PQF compliance. Verify the latest PQF issuances through official PQF-NCC, DepEd, CHED, TESDA, PRC, or institutional sources.</p>
+
+        <h3>Research Thinking Philosophy</h3>
+        <p>The app reflects the view that research is a process of refining explanations through evidence, discussion, and revision rather than defending fixed ideas. This perspective is reflected in the Research Thinking Guidelines used in the course and in the design of the A1-A4 proposal-writing scaffolds developed by J. Arawiran.</p>
+        <p>The app also reflects the perspective articulated by Schwartz, M. A. (2008), <em>The Importance of Stupidity in Scientific Research</em>. This work influenced the treatment of uncertainty, revision, intellectual risk-taking, and the understanding that confusion and incomplete knowledge are normal parts of the research process.</p>
+
+        <h3>Selected Reference Anchors</h3>
+        <ul>
+          <li>Braun, V., & Clarke, V. (2022). <em>Thematic Analysis: A Practical Guide.</em></li>
+          <li>Cohen, L., Manion, L., & Morrison, K. (2018). <em>Research Methods in Education.</em></li>
+          <li>Creswell, J. W., & Creswell, J. D. (2023). <em>Research Design: Qualitative, Quantitative, and Mixed Methods Approaches.</em></li>
+          <li>PHREB. (2022). <em>National Ethical Guidelines for Health and Health-Related Research.</em></li>
+          <li>Schwartz, M. A. (2008). The Importance of Stupidity in Scientific Research. <em>Journal of Cell Science, 121</em>, 1771.</li>
+        </ul>
+
+        <h3>Use Reminder</h3>
+        <p>Students should treat all generated content as a working draft. Final research decisions, methodological choices, ethical considerations, proposal requirements, and formatting requirements should be reviewed and approved by the adviser, instructor, program head, dean, or other authorized academic personnel.</p>
+      </section>
+    </dialog>
+
+    <dialog id="studentDetailsDialog">
+      <div class="dialog-header">
+        <h2>Student Details</h2>
+        <button class="ghost" id="closeStudentDetailsBtn" type="button">Close</button>
+      </div>
+      <section class="details-panel">
+        <div class="field-grid">
+          <div class="field full">
+            <label for="details-degreeLevel">Research Level / Use Context</label>
+            <select id="details-degreeLevel" data-section="submission" data-key="degreeLevel">
+              <option value="shs">SHS / Basic Education Research (PQF Level 3)</option>
+              <option value="bachelor">Bachelor's degree (PQF Level 6)</option>
+              <option value="master">Master's degree (PQF Level 7)</option>
+              <option value="doctoral">Doctoral degree (PQF Level 8)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="details-studentName">Student Name</label>
+            <input id="details-studentName" data-section="submission" data-key="studentName" />
+          </div>
+          <div class="field">
+            <label for="details-course">Course</label>
+            <input id="details-course" data-section="submission" data-key="course" />
+          </div>
+          <div class="field">
+            <label for="details-section">Section</label>
+            <input id="details-section" data-section="submission" data-key="section" />
+          </div>
+          <div class="field">
+            <label for="details-submissionDate">Date</label>
+            <input id="details-submissionDate" data-section="submission" data-key="submissionDate" />
+          </div>
+          <div class="field full">
+            <div class="field-label">
+              <label for="details-initialReadiness">Initial Readiness Reflection</label>
+              <span class="help-icon" role="button" tabindex="0" aria-label="Guidance for Initial Readiness Reflection" aria-describedby="details-initialReadiness-help">?</span>
+              <span class="help-tooltip" id="details-initialReadiness-help" role="tooltip">Before starting A1, briefly state how ready you think your proposal idea is.</span>
+            </div>
+            <textarea id="details-initialReadiness" data-section="submission" data-key="initialReadiness" aria-describedby="details-initialReadiness-help"></textarea>
+          </div>
+        </div>
+      </section>
+    </dialog>
+
+    <dialog id="uploadDialog">
+      <div class="dialog-header">
+        <h2 id="uploadDialogTitle">Upload Accomplished Form</h2>
+        <button class="ghost" id="closeUploadBtn" type="button">Close</button>
+      </div>
+      <section class="upload-panel">
+        <p class="hint" id="uploadDialogHint">Upload the accomplished form for the current A-stage as DOCX or text. The app will extract text and prepare suggested entries. Please review before applying.</p>
+        <input id="formUploadFile" type="file" accept=".docx,.txt" multiple />
+        <div id="uploadFeedback" class="feedback">No files selected yet.</div>
+      </section>
+      <div class="dialog-actions">
+        <button class="ghost" id="clearUploadBtn" type="button">Clear</button>
+        <button class="primary" id="applyUploadBtn" type="button">Apply Extracted Entries</button>
+      </div>
+    </dialog>
+
+    <input id="importFile" type="file" accept="application/json" hidden />
+    <script src="jszip.min.js"></script>
+    <script src="app-upload.js?v=20260614-v453-progress-print-context"></script>
+  </body>
+</html>
