@@ -440,6 +440,14 @@ textarea {
   line-height: 1.55;
 }
 
+.framework-pathway {
+  background: #f7fbfa;
+}
+
+.framework-write-intro {
+  border-left: 4px solid var(--accent);
+}
+
 .editable-list {
   display: grid;
   gap: 10px;

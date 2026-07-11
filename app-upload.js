@@ -1,5 +1,5 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const APP_VERSION = "v4.5.3 - Progress Print Context Fix";
+const APP_VERSION = "v4.5.4 - Framework Finder";
 const APP_CREDIT = "Developed by J. Arawiran with assistance from OpenAI Codex, GPT-5-based coding assistant, June 2026.";
 const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.0`;
 const SRQ_LIMITS = {
@@ -100,6 +100,14 @@ const fieldSets = {
     ["questionConnection", "How does the framework connect to the central and specific questions?", "Show how the framework guides what the study asks, not just what the background section mentions."],
     ["instrumentConnection", "How will the framework guide variables, indicators, instruments, or analysis?", "Connect the framework to what will be measured, observed, coded, compared, or interpreted."],
     ["scopeBoundaries", "What boundaries keep this study feasible?", "Name what is included and excluded: participants, locale, variables, constructs, time, instruments, data sources, or claims."]
+  ],
+  frameworkFinder: [
+    ["literatureSignals", "Find: Which theories, models, concepts, or explanations appeared in your A2 literature?", "Look back at the Theory Pattern and supporting studies in A2. List what the authors used to explain the construct, problem, behavior, experience, relationship, system, or practice."],
+    ["candidateFrameworks", "Choose: Which one to three candidate frameworks could help explain this study?", "List only candidates supported by the literature. For each one, briefly state what part of the study it may explain."],
+    ["frameworkSource", "Source Check: What scholarly source supports the framework you are considering?", "Give the author, year, and publication or complete reference. Use a source you actually consulted; do not rely only on a website summary or an uncited name."],
+    ["selectionReason", "Test: Why is this candidate more useful than the alternatives?", "Compare the candidates. Explain why the selected framework best fits the gap, problem, constructs, and questions."],
+    ["withoutFramework", "Test: What would be harder to explain or interpret without this framework?", "Name the reasoning work the framework performs. If removing it changes nothing, it may be decorative."],
+    ["methodFit", "Test: How does the framework fit the planned research design?", "Explain the pairing. A framework and method do not need a one-to-one match, but they should work coherently in the questions, evidence, analysis, or interpretation."]
   ],
   researchLevel: [
     ["guidedApplication", "How do your literature gap, research questions, methodology, instruments, and analysis work together as one research plan?", "Explain the chain from literature gap to questions to method to evidence. Show that the parts are not separate answers to a template."],
@@ -221,6 +229,9 @@ const defaultData = {
     analysis: ""
   },
   framework: {},
+  frameworkFinder: {
+    pathway: "problem-led"
+  },
   researchLevel: {},
   mixedMethods: {},
   ethics: {
@@ -306,6 +317,7 @@ function normalizeState(nextState) {
   normalized.a3 = { ...clone(defaultData.a3), ...(nextState.a3 || {}) };
   normalized.a4 = { ...clone(defaultData.a4), ...(nextState.a4 || {}) };
   normalized.framework = { ...clone(defaultData.framework), ...(nextState.framework || {}) };
+  normalized.frameworkFinder = { ...clone(defaultData.frameworkFinder), ...(nextState.frameworkFinder || {}) };
   normalized.researchLevel = { ...clone(defaultData.researchLevel), ...(nextState.researchLevel || {}) };
   normalized.methodology = { ...clone(defaultData.methodology), ...(nextState.methodology || {}) };
   normalized.mixedMethods = { ...clone(defaultData.mixedMethods), ...(nextState.mixedMethods || {}) };
@@ -710,15 +722,32 @@ function renderMethodology() {
 }
 
 function renderFramework() {
+  const pathway = value("frameworkFinder.pathway") || "problem-led";
   els.stageForm.innerHTML = `
     <section class="output-box">
-      <h3>Framework and Scope Alignment</h3>
-      <div class="generated-text">Use this section to prevent a decorative framework and an overgrown study. The framework should explain the problem and guide questions, instruments, or analysis. The scope should keep the study feasible.</div>
+      <h3>Framework Finder: Find &rarr; Choose &rarr; Test &rarr; Write</h3>
+      <div class="generated-text">For most beginning researchers, formally select a framework after the literature gap, problem, and questions have become clear enough to test its fit. Theories noticed during A2 are candidates, not automatic choices. Research is iterative, so the selected framework may lead you back to refine A2-A4.</div>
+    </section>
+    <section class="field full framework-pathway">
+      <div class="field-label">
+        <label for="frameworkFinder-pathway">Which pathway describes this study?</label>
+        ${helpControl("frameworkFinder-pathway-help", "Research pathway", "Choose problem-led for a study that begins from a literature gap or problem. Choose theory-led only when the study explicitly tests, extends, refines, or challenges a theory.")}
+      </div>
+      <select id="frameworkFinder-pathway" data-section="frameworkFinder" data-key="pathway" aria-describedby="frameworkFinder-pathway-help">
+        <option value="problem-led" ${pathway === "problem-led" ? "selected" : ""}>Problem-led: the framework is selected after A2-A4 become clear</option>
+        <option value="theory-led" ${pathway === "theory-led" ? "selected" : ""}>Theory-led: the study explicitly tests, extends, refines, or challenges a theory</option>
+      </select>
+      <p class="hint">${pathway === "theory-led" ? "Name what the study will test, extend, refine, or challenge. The theory must still fit the literature gap, questions, method, and interpretation." : "Look back at A2 for possible explanations, then test their fit against the A3 gap and A4 problem and questions."}</p>
+    </section>
+    ${renderFields("frameworkFinder", fieldSets.frameworkFinder)}
+    <section class="output-box framework-write-intro">
+      <h3>Write the Framework and Scope</h3>
+      <div class="generated-text">Now state the selected framework and show the work it will do in this proposal. The framework may guide constructs, questions, interpretation, or relevant instrument dimensions; it does not have to control every part of the study.</div>
     </section>
     ${renderFields("framework", fieldSets.framework)}
     <section class="checker-panel">
-      <h3>Scope Watch</h3>
-      <div class="feedback">${scopeControlItems().map(feedbackHtml).join("")}</div>
+      <h3>Framework and Scope Readiness</h3>
+      <div class="feedback">${checkFramework().map(feedbackHtml).join("")}</div>
     </section>
   `;
 }
@@ -1541,11 +1570,19 @@ function checkMethodology() {
 }
 
 function checkFramework() {
+  const hasSource = Boolean(state.frameworkFinder.frameworkSource);
+  const hasFitEvidence = Boolean(state.framework.problemConnection && state.framework.questionConnection);
+  const doesAnalyticalWork = Boolean(state.frameworkFinder.withoutFramework && state.framework.instrumentConnection);
   return [
+    flag(Boolean(state.frameworkFinder.pathway), "Research pathway is identified.", "Choose whether the study is problem-led or explicitly theory-led."),
+    flag(Boolean(state.frameworkFinder.literatureSignals), "Possible explanations were traced to A2 literature.", "Look back at A2 and record theories, models, concepts, or explanations found in the literature."),
+    flag(Boolean(state.frameworkFinder.candidateFrameworks), "Candidate frameworks are considered.", "List one to three literature-supported candidates and what each may explain."),
+    flag(hasSource, "A scholarly source for the framework is provided.", "Add the author, year, and publication or complete reference for a source you consulted."),
     flag(Boolean(state.framework.theoryModel), "Framework or explanatory concept is named.", "Name the theory, model, concept, or framework that helps explain the problem."),
-    flag(Boolean(state.framework.problemConnection), "Framework explains the literature-based problem.", "Explain how the framework helps make sense of the gap or problem."),
-    flag(Boolean(state.framework.questionConnection), "Framework connects to the research questions.", "Connect the framework to the central and specific research questions."),
-    flag(Boolean(state.framework.instrumentConnection), "Framework connects to instruments or analysis.", "Show how the framework guides variables, indicators, instruments, observations, coding, or analysis."),
+    flag(hasFitEvidence, "Framework explains the problem and connects to the questions.", "Explain how the framework makes sense of the gap or problem and guides the central and specific questions."),
+    flag(Boolean(state.frameworkFinder.selectionReason), "Selection is justified against alternatives.", "Explain why this candidate fits better than the alternatives considered."),
+    flag(doesAnalyticalWork, "Framework performs a clear role in evidence or interpretation.", "Explain what would be harder to explain without the framework and how it guides constructs, evidence, instrument dimensions, analysis, or interpretation."),
+    flag(Boolean(state.frameworkFinder.methodFit), "Framework-method fit is explained.", "Explain why the framework and planned research design work coherently; a mismatch is not automatically wrong, but it requires justification."),
     ...scopeControlItems()
   ];
 }
@@ -1853,8 +1890,10 @@ function stageCompletion(stageId) {
     return (fields.filter((field) => state.a4[field]).length / fields.length + Math.min(state.a4.questions.filter(Boolean).length / 3, 1)) / 2;
   }
   if (stageId === "framework") {
-    const fields = ["theoryModel", "problemConnection", "questionConnection", "instrumentConnection", "scopeBoundaries"];
-    return fields.filter((field) => state.framework[field]).length / fields.length;
+    const finderFields = ["pathway", ...fieldSets.frameworkFinder.map((field) => field[0])];
+    const writeFields = ["theoryModel", "problemConnection", "questionConnection", "instrumentConnection", "scopeBoundaries"];
+    const filled = finderFields.filter((field) => state.frameworkFinder[field]).length + writeFields.filter((field) => state.framework[field]).length;
+    return filled / (finderFields.length + writeFields.length);
   }
   if (stageId === "researchLevel") {
     const fields = fieldSets.researchLevel.map((field) => field[0]);
@@ -1941,7 +1980,19 @@ function termsOutputHtml(rows) {
 function readinessPrintSummaryHtml(report) {
   const warnings = report.items.filter((item) => item.level !== "green");
   const degreeReadiness = degreeLevelReadiness();
-  const frameworkReady = Boolean(state.framework.theoryModel && state.framework.problemConnection && state.framework.questionConnection && state.framework.instrumentConnection && state.framework.scopeBoundaries);
+  const frameworkReady = Boolean(
+    state.frameworkFinder.literatureSignals &&
+    state.frameworkFinder.candidateFrameworks &&
+    state.frameworkFinder.frameworkSource &&
+    state.frameworkFinder.selectionReason &&
+    state.frameworkFinder.withoutFramework &&
+    state.frameworkFinder.methodFit &&
+    state.framework.theoryModel &&
+    state.framework.problemConnection &&
+    state.framework.questionConnection &&
+    state.framework.instrumentConnection &&
+    state.framework.scopeBoundaries
+  );
   const methodologyReady = Boolean(state.methodology.selectedDesign && state.methodology.participants && state.methodology.collection && state.methodology.analysis);
   const ethicsReady = Boolean(state.methodology.participants && Object.values(state.ethics.checks).some(Boolean));
   const instrumentsReady = state.instrumentation.rows.map(normalizeInstrumentRow).some((row) => row.rq && row.instrument && row.description && row.purpose && row.validation && row.implementation);
@@ -1966,7 +2017,7 @@ function readinessPrintSummaryHtml(report) {
     ["Readiness score", `${report.score}/100 - ${report.label}`],
     ["Alignment status", report.score >= 80 ? "Ready for adviser review" : report.score >= 50 ? "Needs revision before submission" : "Major alignment issues remain"],
     ...levelRows,
-    ["Framework and scope status", frameworkReady ? "Framework and scope are connected to the problem, questions, and instruments." : "Framework or scope alignment still needs detail."],
+    ["Framework and scope status", frameworkReady ? "The framework is literature-supported, justified, and connected to the problem, questions, evidence, and scope." : "Framework finding, source support, fit reasoning, or scope alignment still needs detail."],
     ["Methodology status", methodologyReady ? "Methodology has the required core details." : "Methodology is missing design, participants, data gathering, or data analysis details."],
     ["Mixed methods status", mixedMethodsReady ? "Mixed methods integration is complete or not required." : "Mixed methods integration needs quantitative, qualitative, and integration details."],
     ["Ethics status", ethicsReady ? "Ethics safeguards have been started." : "Ethics safeguards need more detail before data gathering."],
@@ -2064,6 +2115,10 @@ function buildSubmissionHtml() {
     <h2>Specific Research Questions</h2>
     <ol>${state.a4.questions.filter(Boolean).map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ol>
     <h2 class="major-section">Framework and Scope Alignment</h2>
+    <p><strong>Research Pathway:</strong> ${escapeHtml(value("frameworkFinder.pathway") === "theory-led" ? "Theory-led" : "Problem-led")}</p>
+    <h3>Framework Finder</h3>
+    ${fieldSets.frameworkFinder.map(([key, label]) => `<p><strong>${escapeHtml(label)}</strong><br>${escapeHtml(value(`frameworkFinder.${key}`))}</p>`).join("")}
+    <h3>Selected Framework and Fit</h3>
     <p><strong>Framework or Explanatory Concept:</strong> ${escapeHtml(value("framework.theoryModel"))}</p>
     <p><strong>Connection to the Problem:</strong> ${escapeHtml(value("framework.problemConnection"))}</p>
     <p><strong>Connection to the Questions:</strong> ${escapeHtml(value("framework.questionConnection"))}</p>
@@ -2161,6 +2216,8 @@ function progressStageHtml(stageId) {
   }
   if (stageId === "framework") {
     return `<h2 class="major-section">Framework and Scope Alignment</h2>
+      <p><strong>Research Pathway:</strong> ${escapeHtml(value("frameworkFinder.pathway") === "theory-led" ? "Theory-led" : "Problem-led")}</p>
+      ${fieldSets.frameworkFinder.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`frameworkFinder.${key}`))}</p>`).join("")}
       ${fieldSets.framework.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`framework.${key}`))}</p>`).join("")}`;
   }
   if (stageId === "researchLevel") {
@@ -2297,6 +2354,10 @@ function finalSubmissionMissingItems() {
 
   ["theoryModel", "problemConnection", "questionConnection", "instrumentConnection", "scopeBoundaries"].forEach((key) => {
     requireValue(`framework.${key}`, `Framework and Scope: ${fieldSets.framework.find((field) => field[0] === key)?.[1] || key}`);
+  });
+  requireValue("frameworkFinder.pathway", "Framework Finder: research pathway");
+  fieldSets.frameworkFinder.forEach(([key, label]) => {
+    requireValue(`frameworkFinder.${key}`, `Framework Finder: ${label}`);
   });
 
   requireValue("submission.degreeLevel", "Research level / use context");
