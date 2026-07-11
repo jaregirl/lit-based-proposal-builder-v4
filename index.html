@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lit-Based Proposal Builder Upload Version</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260711-v454-framework-finder" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260711-v456-guided-alignment" />
   </head>
   <body>
     <div class="app-shell">
@@ -34,6 +34,10 @@
               <span>Stage</span>
               <strong id="currentStage">A1</strong>
             </div>
+          </div>
+          <div class="dashboard-row active-work-row">
+            <span>Estimated active work</span>
+            <strong id="activeWorkText">Not started</strong>
           </div>
         </section>
 
@@ -67,6 +71,8 @@
           Research ideas become clearer through refinement. It is okay if this changes later.
         </section>
 
+        <section class="migration-note" id="migrationNotice" hidden></section>
+
         <form id="stageForm" class="stage-form"></form>
 
         <section class="checker-panel" aria-label="Feedback">
@@ -77,11 +83,20 @@
           <div id="feedback" class="feedback">
             Add your working ideas, then run a check for alignment suggestions.
           </div>
+          <p class="hint">Developmental guidance only. Research decisions still require scholarly justification and adviser review.</p>
         </section>
+
+        <details class="app-feedback-panel">
+          <summary>Share Feedback About This Step</summary>
+          <p class="hint">Optional. Your comments are stored locally and are not included in your proposal.</p>
+          <div id="stageFeedbackForm"></div>
+          <button class="ghost compact" id="downloadFeedbackBtn" type="button">Download App Feedback Report</button>
+        </details>
 
         <footer class="footer-actions">
           <button class="ghost" id="backBtn" type="button">Back</button>
           <button id="saveBtn" type="button">Save Draft</button>
+          <button class="ghost" id="historyBtn" type="button">Draft History</button>
           <button id="summaryBtn" type="button">Generate Proposal Summary</button>
           <button id="previewBtn" type="button">Preview Submission</button>
           <button class="ghost" id="aboutBtn" type="button">About & Sources</button>
@@ -102,13 +117,24 @@
       </div>
     </dialog>
 
+    <dialog id="historyDialog" class="compact-dialog">
+      <div class="dialog-header">
+        <div>
+          <h2>Draft History</h2>
+          <p class="hint">Autosave keeps the latest work. Save Draft creates a restorable checkpoint.</p>
+        </div>
+        <button class="ghost" id="closeHistoryBtn" type="button">Close</button>
+      </div>
+      <div id="checkpointList" class="checkpoint-list"></div>
+    </dialog>
+
     <article id="printSubmission" class="submission print-submission" aria-hidden="true"></article>
 
     <dialog id="welcomeDialog" class="welcome-dialog">
       <section class="about-content">
         <h2>Before You Begin</h2>
         <p><strong>Your work is saved locally in your own browser.</strong> The app does not send your answers to the developer, instructor, or a cloud server.</p>
-        <p>Use <strong>Download Backup</strong> before changing devices, clearing browser data, or updating the app. Use <strong>Restore Backup</strong> if you need to recover a saved draft.</p>
+        <p>The app autosaves the latest work. <strong>Save Draft</strong> creates a restorable checkpoint. Use <strong>Download Backup</strong> before changing devices, clearing browser data, or updating the app.</p>
         <p><strong>Lit-Based Proposal Builder</strong> was developed by J. Arawiran with assistance from OpenAI Codex, a GPT-5-based coding assistant (June 2026).</p>
         <p>This is a guided academic thinking tool. It supports proposal drafting, but it does not replace adviser feedback, instructor requirements, department policies, institutional guidelines, or official ethics review processes.</p>
         <div class="dialog-actions inline-actions">
@@ -130,6 +156,7 @@
 
         <h3>Data Privacy and Local Storage</h3>
         <p>The app saves draft work locally in the user's own browser storage. The developer, instructor, and app do not receive, collect, or store the student's answers through this tool. Draft data is not transmitted to a cloud server by the app. Students should still use the Download Backup feature before changing devices, clearing browser data, or updating the app.</p>
+        <p>Optional app-experience feedback also remains local until the student downloads and submits an anonymous App Feedback Report. That report excludes student identity and proposal answers.</p>
 
         <h3>Conceptual and Educational Foundations</h3>
         <p>The design of this proposal builder draws upon established literature in research methodology, educational research, research ethics, and reflective inquiry. These sources informed the structure and guidance provided by the app. They are not automatically part of a student's proposal references unless they are directly consulted and cited by the student.</p>
@@ -236,6 +263,6 @@
 
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260711-v454-framework-finder"></script>
+    <script src="app-upload.js?v=20260711-v456-guided-alignment"></script>
   </body>
 </html>

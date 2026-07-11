@@ -1,5 +1,10 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const APP_VERSION = "v4.5.4 - Framework Finder";
+const APP_VERSION = "v4.5.6 - Guided A4 and Explainable Alignment";
+const SCHEMA_VERSION = "4.5.6";
+const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
+const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
+const MAX_CHECKPOINTS = 5;
+const IDLE_MS = 120000;
 const APP_CREDIT = "Developed by J. Arawiran with assistance from OpenAI Codex, GPT-5-based coding assistant, June 2026.";
 const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.0`;
 const SRQ_LIMITS = {
@@ -62,7 +67,7 @@ const stages = [
   { id: "a2", code: "A2", title: "Deepened Review and Pattern Mapping" },
   { id: "a3", code: "A3", title: "From Patterns to Gaps" },
   { id: "a4", code: "A4", title: "Literature-Based Problem and Questions" },
-  { id: "framework", code: "F", title: "Framework and Scope Alignment" },
+  { id: "framework", code: "F", title: "Framework Finder and Alignment" },
   { id: "methodology", code: "M", title: "Methodology Builder" },
   { id: "ethics", code: "E", title: "Ethical Considerations" },
   { id: "instrumentation", code: "I", title: "Instrumentation Builder" },
@@ -92,22 +97,27 @@ const fieldSets = {
     ["rqTypes", "What type of questions are being asked?", "Look at your research questions first. Their verbs usually guide the design: describe, compare, relate, evaluate, or explore."],
     ["dataNeeded", "What data are needed?", "Name the evidence needed to answer the questions: scores, survey responses, interview answers, observations, documents, or classroom outputs."],
     ["participants", "Who will participate?", "Identify the participant group, approximate number if known, grade level/program, and why they fit the study."],
-    ["purpose", "What is the purpose of the study?", "State whether the study aims to describe a condition, understand an experience, test an intervention, compare groups, or improve classroom practice."]
+    ["purpose", "What is the purpose of the study?", "State whether the study aims to describe a condition, understand an experience, test an intervention, compare groups, or improve classroom practice."],
+    ["evidenceSources", "Who or what can provide the evidence needed?", "Separate participants from documents, records, artifacts, outputs, observations, recordings, or test results."],
+    ["studyPeriod", "What period will the study cover?", "State the data collection period, academic term, document years, or other time boundary."],
+    ["operationalDelimitations", "What will the study include, and what will it deliberately not cover?", "State boundaries for participants, research environment or setting, period, evidence sources, procedures, and inclusion or exclusion decisions."]
   ],
   framework: [
-    ["theoryModel", "What theory, model, concept, or framework helps explain the problem?", "Name the framework that makes the problem understandable. If there is no formal theory yet, identify the concept or model that organizes the study."],
-    ["problemConnection", "How does the framework explain the literature-based problem?", "Explain how the framework helps make sense of the gap, problem, or phenomenon."],
-    ["questionConnection", "How does the framework connect to the central and specific questions?", "Show how the framework guides what the study asks, not just what the background section mentions."],
-    ["instrumentConnection", "How will the framework guide variables, indicators, instruments, or analysis?", "Connect the framework to what will be measured, observed, coded, compared, or interpreted."],
-    ["scopeBoundaries", "What boundaries keep this study feasible?", "Name what is included and excluded: participants, locale, variables, constructs, time, instruments, data sources, or claims."]
+    ["theoryModel", "What framework or combination of frameworks will guide the study?", "Name the selected framework or complementary combination. Do not combine frameworks merely because several seem relevant."],
+    ["problemConnection", "How does the selected framework or combination explain the literature-based problem?", "Explain how each selected framework helps make sense of the gap, problem, construct, relationship, or phenomenon."],
+    ["questionConnection", "How does the selected framework or combination connect to the central and specific questions?", "Show how each framework guides what the study asks."],
+    ["instrumentConnection", "How will the selected framework or combination inform evidence, instruments, analysis, or interpretation?", "Connect each framework to what will be measured, observed, coded, compared, analyzed, or interpreted."],
+    ["scopeBoundaries", "What is the conceptual scope of the study?", "State the constructs and relationships included, those excluded, and the theoretical boundaries that keep the explanation focused."]
   ],
   frameworkFinder: [
     ["literatureSignals", "Find: Which theories, models, concepts, or explanations appeared in your A2 literature?", "Look back at the Theory Pattern and supporting studies in A2. List what the authors used to explain the construct, problem, behavior, experience, relationship, system, or practice."],
-    ["candidateFrameworks", "Choose: Which one to three candidate frameworks could help explain this study?", "List only candidates supported by the literature. For each one, briefly state what part of the study it may explain."],
-    ["frameworkSource", "Source Check: What scholarly source supports the framework you are considering?", "Give the author, year, and publication or complete reference. Use a source you actually consulted; do not rely only on a website summary or an uncited name."],
-    ["selectionReason", "Test: Why is this candidate more useful than the alternatives?", "Compare the candidates. Explain why the selected framework best fits the gap, problem, constructs, and questions."],
-    ["withoutFramework", "Test: What would be harder to explain or interpret without this framework?", "Name the reasoning work the framework performs. If removing it changes nothing, it may be decorative."],
-    ["methodFit", "Test: How does the framework fit the planned research design?", "Explain the pairing. A framework and method do not need a one-to-one match, but they should work coherently in the questions, evidence, analysis, or interpretation."]
+    ["candidateFrameworks", "Compare: Which one to three candidate frameworks could help explain this study?", "For each literature-supported candidate, identify what it explains and does not explain."],
+    ["frameworkSource", "Source Check: What authoritative source supports each framework being considered?", "For every framework, give the author, year, and publication or complete reference actually consulted."],
+    ["selectionReason", "Select: Why is the selected framework or combination more useful than the alternatives?", "Compare candidates against the gap, problem, constructs, and questions."],
+    ["frameworkRoles", "Explain: What distinct role will each selected framework perform?", "For each framework, name the construct or relationship explained and the section, evidence, analysis, or interpretation it informs."],
+    ["combinationReason", "If combining frameworks, why is one framework alone insufficient?", "Explain what each contributes that the other does not. Write Not applicable if only one is selected."],
+    ["withoutFramework", "Test: What would be harder to explain or interpret without the selected framework or combination?", "Name the reasoning work performed. If removing it changes nothing, it may be decorative."],
+    ["methodFit", "Test: How does the selected framework or combination fit the planned research design?", "Explain how the pairing is coherent in the questions, evidence, analysis, or interpretation."]
   ],
   researchLevel: [
     ["guidedApplication", "How do your literature gap, research questions, methodology, instruments, and analysis work together as one research plan?", "Explain the chain from literature gap to questions to method to evidence. Show that the parts are not separate answers to a template."],
@@ -187,6 +197,8 @@ const tableScaffolds = {
 const defaultData = {
   currentStage: "details",
   startedAt: "",
+  meta: { schemaVersion: SCHEMA_VERSION, sourceAppVersion: APP_VERSION, currentAppVersion: APP_VERSION, migratedFrom: "" },
+  engagement: { workStartedAt: "", lastEditedAt: "", activeMs: 0, manualCheckpoints: 0 },
   a1: {},
   a2: {
     constructs: [
@@ -219,7 +231,14 @@ const defaultData = {
   },
   a4: {
     questions: ["", "", ""],
-    questionPurposes: ["", "", ""]
+    questionPurposes: ["", "", ""],
+    questionFocuses: ["", "", ""],
+    questionClaims: ["", "", ""],
+    refinedGap: "",
+    gapRevisionReason: "",
+    centralFocus: "",
+    studyComponents: "",
+    centralPurpose: ""
   },
   methodology: {
     selectedDesign: "",
@@ -240,7 +259,7 @@ const defaultData = {
   },
   instrumentation: {
     rows: [
-      { rq: "", instrument: "", description: "", purpose: "", validation: "", implementation: "" }
+      { rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" }
     ]
   },
   outline: {
@@ -275,6 +294,10 @@ const ethicsChecks = [
 ];
 
 let state = normalizeState(loadState());
+let checkpoints = loadCheckpoints();
+let appFeedback = loadAppFeedback();
+let lastInteractionAt = Date.now();
+let lastActiveTickAt = Date.now();
 
 const els = {
   stageNav: document.getElementById("stageNav"),
@@ -292,7 +315,12 @@ const els = {
   appVersion: document.getElementById("appVersion"),
   appCredit: document.getElementById("appCredit"),
   aboutDialog: document.getElementById("aboutDialog"),
-  welcomeDialog: document.getElementById("welcomeDialog")
+  welcomeDialog: document.getElementById("welcomeDialog"),
+  activeWorkText: document.getElementById("activeWorkText"),
+  migrationNotice: document.getElementById("migrationNotice"),
+  historyDialog: document.getElementById("historyDialog"),
+  checkpointList: document.getElementById("checkpointList"),
+  stageFeedbackForm: document.getElementById("stageFeedbackForm")
 };
 
 function clone(value) {
@@ -303,15 +331,49 @@ function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return clone(defaultData);
   try {
-    return { ...clone(defaultData), ...JSON.parse(saved) };
+    return JSON.parse(saved);
   } catch {
     return clone(defaultData);
   }
 }
 
+function loadCheckpoints() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || "[]");
+    return Array.isArray(saved) ? saved.slice(0, MAX_CHECKPOINTS) : [];
+  } catch {
+    return [];
+  }
+}
+
+function loadAppFeedback() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "{}");
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function inferSourceAppVersion(nextState) {
+  if (nextState.meta?.sourceAppVersion) return nextState.meta.sourceAppVersion;
+  if (nextState.frameworkFinder?.candidateFrameworks || nextState.frameworkFinder?.frameworkSource) return "v4.5.4 draft";
+  if (nextState.researchLevel || nextState.submission?.degreeLevel) return "v4.5.3 or earlier v4 draft";
+  return "Earlier v4 draft";
+}
+
 function normalizeState(nextState) {
   const normalized = { ...clone(defaultData), ...nextState };
-  if (!normalized.startedAt) normalized.startedAt = new Date().toISOString();
+  const sourceSchema = nextState.meta?.schemaVersion || "pre-4.5.5";
+  normalized.meta = {
+    ...clone(defaultData.meta),
+    ...(nextState.meta || {}),
+    schemaVersion: SCHEMA_VERSION,
+    sourceAppVersion: inferSourceAppVersion(nextState),
+    currentAppVersion: APP_VERSION,
+    migratedFrom: sourceSchema === SCHEMA_VERSION ? (nextState.meta?.migratedFrom || "") : sourceSchema
+  };
+  normalized.engagement = { ...clone(defaultData.engagement), ...(nextState.engagement || {}) };
   normalized.a1 = { ...clone(defaultData.a1), ...(nextState.a1 || {}) };
   normalized.a2 = { ...clone(defaultData.a2), ...(nextState.a2 || {}) };
   normalized.a3 = { ...clone(defaultData.a3), ...(nextState.a3 || {}) };
@@ -332,6 +394,10 @@ function normalizeState(nextState) {
   if (!Array.isArray(normalized.a4.questions)) normalized.a4.questions = ["", "", ""];
   if (!Array.isArray(normalized.a4.questionPurposes)) normalized.a4.questionPurposes = [];
   normalized.a4.questionPurposes = normalized.a4.questions.map((_, index) => normalized.a4.questionPurposes[index] || "");
+  if (!Array.isArray(normalized.a4.questionFocuses)) normalized.a4.questionFocuses = [];
+  if (!Array.isArray(normalized.a4.questionClaims)) normalized.a4.questionClaims = [];
+  normalized.a4.questionFocuses = normalized.a4.questions.map((_, index) => normalized.a4.questionFocuses[index] || "");
+  normalized.a4.questionClaims = normalized.a4.questions.map((_, index) => normalized.a4.questionClaims[index] || "");
   if (!Array.isArray(normalized.instrumentation.rows)) normalized.instrumentation.rows = clone(defaultData.instrumentation.rows);
   normalized.instrumentation.rows = normalized.instrumentation.rows.map(normalizeInstrumentRow);
   if (!Array.isArray(normalized.terms.rows)) {
@@ -352,11 +418,15 @@ function normalizeState(nextState) {
 function normalizeInstrumentRow(row = {}) {
   return {
     rq: row.rq || "",
+    claimNeeded: row.claimNeeded || "",
+    evidenceNeeded: row.evidenceNeeded || row.data || "",
+    evidenceSource: row.evidenceSource || row.source || "",
     instrument: row.instrument || "",
+    analysis: row.analysis || "",
     description: row.description || row.data || "",
     purpose: row.purpose || row.sample || "",
     validation: row.validation || "",
-    implementation: row.implementation || row.source || ""
+    implementation: row.implementation || ""
   };
 }
 
@@ -369,9 +439,99 @@ function normalizeTermRow(row = {}) {
   };
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  updateDashboard();
+function saveState(updateUi = true) {
+  state.meta.schemaVersion = SCHEMA_VERSION;
+  state.meta.currentAppVersion = APP_VERSION;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    alert("The current draft could not be saved because browser storage is full. Download a backup before continuing.");
+  }
+  if (updateUi) updateDashboard();
+}
+
+function saveCheckpoints() {
+  try {
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoints));
+    return true;
+  } catch {
+    if (checkpoints.length > 1) {
+      checkpoints.pop();
+      try {
+        localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoints));
+        alert("Browser storage is nearly full. The oldest checkpoint was removed. Download a backup to preserve a portable copy of your work.");
+        return true;
+      } catch {
+        // The current draft remains untouched even when checkpoint storage fails.
+      }
+    }
+    alert("A checkpoint could not be created. Download a backup to preserve your work.");
+    return false;
+  }
+}
+
+function overallCompletion() {
+  return Math.round((stages.reduce((sum, stage) => sum + stageCompletion(stage.id), 0) / stages.length) * 100);
+}
+
+function academicSnapshot() {
+  const snapshot = clone(state);
+  delete snapshot.engagement;
+  return snapshot;
+}
+
+function createCheckpoint(label = "", kind = "manual") {
+  checkpoints.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    label: String(label || "").trim(),
+    kind,
+    stage: state.currentStage,
+    completion: overallCompletion(),
+    appVersion: APP_VERSION,
+    schemaVersion: SCHEMA_VERSION,
+    data: academicSnapshot()
+  });
+  checkpoints = checkpoints.slice(0, MAX_CHECKPOINTS);
+  if (!saveCheckpoints()) return false;
+  if (kind === "manual") state.engagement.manualCheckpoints += 1;
+  saveState();
+  return true;
+}
+
+function restoreCheckpoint(id) {
+  const selected = checkpoints.find((checkpoint) => checkpoint.id === id);
+  if (!selected) return;
+  createCheckpoint("Before checkpoint restore", "recovery");
+  const preservedEngagement = clone(state.engagement);
+  state = normalizeState({ ...clone(selected.data), engagement: preservedEngagement });
+  markContentEdit();
+  saveState();
+  render();
+  renderCheckpointHistory();
+  alert("Checkpoint restored. The version from before restoration remains available in Draft History.");
+}
+
+function markInteraction() {
+  lastInteractionAt = Date.now();
+}
+
+function markContentEdit() {
+  const now = new Date().toISOString();
+  if (!state.engagement.workStartedAt) state.engagement.workStartedAt = now;
+  state.engagement.lastEditedAt = now;
+  markInteraction();
+}
+
+function tickActiveTime() {
+  const now = Date.now();
+  const delta = now - lastActiveTickAt;
+  lastActiveTickAt = now;
+  if (!state.engagement.workStartedAt || document.hidden || now - lastInteractionAt > IDLE_MS) return;
+  if (delta < 0 || delta > 60000) return;
+  state.engagement.activeMs += delta;
+  saveState(false);
+  updateActiveTimeDisplay();
 }
 
 function currentIndex() {
@@ -385,6 +545,7 @@ function value(path, fallback = "") {
 
 function setValue(section, key, nextValue) {
   state[section][key] = nextValue;
+  markContentEdit();
   saveState();
 }
 
@@ -422,6 +583,14 @@ function formatDuration(startValue, endDate = new Date()) {
   if (hours) parts.push(`${hours} hour${hours === 1 ? "" : "s"}`);
   if (minutes) parts.push(`${minutes} minute${minutes === 1 ? "" : "s"}`);
   return parts.join(", ");
+}
+
+function formatActiveTime(milliseconds = 0) {
+  const totalMinutes = Math.max(0, Math.round(Number(milliseconds || 0) / 60000));
+  if (totalMinutes < 1) return "Less than 1 minute";
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return [hours ? `${hours} hour${hours === 1 ? "" : "s"}` : "", minutes ? `${minutes} minute${minutes === 1 ? "" : "s"}` : ""].filter(Boolean).join(", ");
 }
 
 function sentence(parts) {
@@ -466,6 +635,74 @@ function render() {
   updateStudentDetailsButtonVisibility();
   updateUploadButtonLabel();
   updateDashboard();
+  renderMigrationNotice();
+  renderStageFeedback();
+}
+
+function renderMigrationNotice() {
+  if (!els.migrationNotice) return;
+  const migrated = state.meta.migratedFrom;
+  const stageNeedsReview = {
+    a4: !state.a4.centralFocus || !state.a4.studyComponents || state.a4.questionClaims.some((claim) => !claim),
+    framework: !state.frameworkFinder.frameworkRoles || !state.frameworkFinder.combinationReason,
+    methodology: !state.methodology.evidenceSources || !state.methodology.operationalDelimitations,
+    instrumentation: state.instrumentation.rows.some((row) => !row.claimNeeded || !row.evidenceSource || !row.analysis)
+  };
+  const needsReview = Boolean(migrated && stageNeedsReview[state.currentStage]);
+  els.migrationNotice.hidden = !needsReview;
+  els.migrationNotice.innerHTML = needsReview
+    ? `<strong>New fields need your review.</strong> This draft came from ${escapeHtml(state.meta.sourceAppVersion || migrated)}. Previous answers were preserved, but new semantic fields were left blank rather than inferred. Review and complete this section.`
+    : "";
+}
+
+function stageFeedbackEntry(stageId = state.currentStage) {
+  return appFeedback[stageId] || { clarity: "", helpfulness: "", difficulty: "", confusion: "", suggestion: "", updatedAt: "" };
+}
+
+function renderStageFeedback() {
+  if (!els.stageFeedbackForm) return;
+  const item = stageFeedbackEntry();
+  const ratingOptions = (selected) => ["", "1", "2", "3", "4", "5"].map((option) => `<option value="${option}" ${selected === option ? "selected" : ""}>${option || "Select"}</option>`).join("");
+  els.stageFeedbackForm.innerHTML = `
+    <div class="app-feedback-grid">
+      <label>Clarity (1-5)<select data-app-feedback="clarity">${ratingOptions(item.clarity)}</select></label>
+      <label>Helpfulness (1-5)<select data-app-feedback="helpfulness">${ratingOptions(item.helpfulness)}</select></label>
+      <label>Difficulty<select data-app-feedback="difficulty">
+        ${["", "Too easy", "Manageable", "Too difficult"].map((option) => `<option value="${option}" ${item.difficulty === option ? "selected" : ""}>${option || "Select"}</option>`).join("")}
+      </select></label>
+    </div>
+    <div class="app-feedback-comments">
+      <label>What confused you or felt unnecessary?<textarea data-app-feedback="confusion">${escapeHtml(item.confusion)}</textarea></label>
+      <label>What would improve this step?<textarea data-app-feedback="suggestion">${escapeHtml(item.suggestion)}</textarea></label>
+    </div>`;
+}
+
+function saveAppFeedbackField(key, nextValue) {
+  const stageId = state.currentStage;
+  appFeedback[stageId] = { ...stageFeedbackEntry(stageId), [key]: nextValue, updatedAt: new Date().toISOString() };
+  try {
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(appFeedback));
+  } catch {
+    alert("App feedback could not be saved because browser storage is full.");
+  }
+}
+
+function renderCheckpointHistory() {
+  if (!els.checkpointList) return;
+  els.checkpointList.innerHTML = checkpoints.length ? checkpoints.map((checkpoint) => `
+    <section class="checkpoint-item">
+      <div>
+        <p><strong>${escapeHtml(checkpoint.label || (checkpoint.kind === "recovery" ? "Recovery checkpoint" : "Draft checkpoint"))}</strong></p>
+        <p>${escapeHtml(formatTimestamp(checkpoint.createdAt))} - ${escapeHtml(checkpoint.stage.toUpperCase())} - ${escapeHtml(String(checkpoint.completion))}% complete</p>
+        <p class="hint">${escapeHtml(checkpoint.appVersion)} | schema ${escapeHtml(checkpoint.schemaVersion)}</p>
+      </div>
+      <button type="button" data-restore-checkpoint="${escapeHtml(checkpoint.id)}">Restore</button>
+    </section>`).join("") : `<p>No manual checkpoints yet. Autosave still protects the latest version.</p>`;
+}
+
+function updateActiveTimeDisplay() {
+  if (!els.activeWorkText) return;
+  els.activeWorkText.textContent = state.engagement.workStartedAt ? formatActiveTime(state.engagement.activeMs) : "Not started";
 }
 
 function updateStudentDetailsButtonVisibility() {
@@ -647,39 +884,80 @@ function renderA3() {
 }
 
 function renderA4() {
+  const purposeOptions = (selected) => `<option value="">Choose an inquiry purpose</option>${Object.entries(rqPurposeOptions).map(([key, option]) => `<option value="${key}" ${selected === key ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}`;
+  const centralStarter = state.a4.centralPurpose && rqPurposeOptions[state.a4.centralPurpose]
+    ? rqPurposeOptions[state.a4.centralPurpose].starters
+    : "Choose the broad inquiry purpose to see suitable question starters.";
   els.stageForm.innerHTML = `
-    ${renderFields("a4", fieldSets.a4)}
     <section class="output-box">
-      <h3>From Central Question to Specific Questions</h3>
-      <div class="generated-text">Use the central research question as the anchor. Each specific research question should answer one clear part of that central question. Start with purpose before wording: ask what specific information the question should produce, then choose the purpose and use the suggested starters.</div>
+      <h3>A4 Guided Reasoning Path</h3>
+      <div class="generated-text">Move from evidence to questions: A3 gap &rarr; literature-based problem &rarr; central study focus &rarr; components and environment &rarr; inquiry purpose &rarr; central question &rarr; specific questions. Open one step at a time.</div>
     </section>
-    <section class="table-wrap">
-      <h3>Break the Central Question into Specific Research Questions</h3>
-      <p class="hint">Each SRQ should be traceable to the central question, the A3 final gap, and the A1 core construct. Add ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} questions as needed.</p>
-      <section class="output-box rq-anchor-box">
-        <h3>Central Research Question to Break Down</h3>
-        <div class="generated-text">${escapeHtml(state.a4.centralQuestion || "Write the central research question above first. Then use it as the anchor for the SRQs.")}</div>
-      </section>
-      <div class="editable-list">
-        ${state.a4.questions.map((question, index) => `
-          <div class="question-row">
-            <label>
-              <span class="field-label">
-                <span>Question ${index + 1} purpose</span>
-                ${helpControl(`a4-question-${index}-purpose-help`, `Question ${index + 1} purpose`, questionStarterHint(index))}
-              </span>
-              <select data-question-purpose="${index}">
-                <option value="">Choose the purpose of this question</option>
-                ${Object.entries(rqPurposeOptions).map(([key, option]) => `<option value="${key}" ${state.a4.questionPurposes[index] === key ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
-              </select>
-            </label>
-            <textarea data-array="a4.questions" data-index="${index}" aria-label="Research question ${index + 1}">${escapeHtml(question)}</textarea>
-            <button class="row-remove" type="button" data-remove-question="${index}">X</button>
-          </div>
-        `).join("")}
+    <section class="output-box"><h3>Your original A3 final gap</h3><div class="generated-text">${escapeHtml(state.a3.finalGap || "Complete the A3 final gap first. Your answer to the literature-based problem begins there.")}</div></section>
+    <details class="guided-step" name="a4-flow" open>
+      <summary>1. State the literature-based problem</summary>
+      <div class="guided-step-content">
+        <label>Optional refined gap for A4<textarea data-section="a4" data-key="refinedGap">${escapeHtml(state.a4.refinedGap)}</textarea><span class="hint">Refine the wording if the gap became clearer. The original A3 gap will not be overwritten.</span></label>
+        <label>Why did the gap wording change?<textarea data-section="a4" data-key="gapRevisionReason">${escapeHtml(state.a4.gapRevisionReason)}</textarea></label>
+        <label>Literature-Based Problem: What problem becomes visible from A3?<textarea data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea><span class="hint">State the problem revealed by what remains less visible and what this limits us from understanding.</span></label>
       </div>
-      <button type="button" data-add-question>Add Question</button>
-    </section>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>2. Identify the central study focus</summary>
+      <div class="guided-step-content">
+        <label>Central Study Focus: What phenomenon, relationship, process, alignment, or condition will be investigated?<textarea data-section="a4" data-key="centralFocus">${escapeHtml(state.a4.centralFocus)}</textarea><span class="hint">State what is being investigated, not the people or materials that will provide evidence.</span></label>
+        ${state.a4.studiedGroup ? `<section class="output-box"><h3>Previous-version study-focus answer</h3><div class="generated-text">${escapeHtml(state.a4.studiedGroup)}</div><p class="hint">This answer was preserved. Decide whether it describes participants, an environment, evidence sources, or the central focus; the app will not reinterpret it automatically.</p></section>` : ""}
+      </div>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>3. Identify the study components</summary>
+      <div class="guided-step-content">
+        <label>Study Components: What dimensions, variables, experiences, processes, or categories are needed to examine that focus?<textarea data-section="a4" data-key="studyComponents">${escapeHtml(state.a4.studyComponents)}</textarea></label>
+        <label>Required Ideas: What A1 construct and A3 gap ideas must remain visible?<textarea data-section="a4" data-key="rqConstructs">${escapeHtml(state.a4.rqConstructs)}</textarea></label>
+      </div>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>4. Identify the research environment or setting</summary>
+      <div class="guided-step-content">
+        <label>Research environment or setting<textarea data-section="methodology" data-key="locale">${escapeHtml(state.methodology.locale)}</textarea><span class="hint">Describe the physical, institutional, social, community, workplace, classroom, document, or online environment relevant to the study.</span></label>
+      </div>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>5. Clarify the broad inquiry purpose</summary>
+      <div class="guided-step-content">
+        <label>Broad inquiry purpose<select data-section="a4" data-key="centralPurpose">${purposeOptions(state.a4.centralPurpose)}</select></label>
+        <section class="output-box"><h3>Possible central-question starters</h3><div class="generated-text" data-central-starters>${escapeHtml(centralStarter)}</div></section>
+      </div>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>6. Write the central research question</summary>
+      <div class="guided-step-content">
+        <label>Central Research Question: What broad question will the study answer?<textarea data-section="a4" data-key="centralQuestion">${escapeHtml(state.a4.centralQuestion)}</textarea></label>
+        <ul class="hint"><li>Responds to the A3 problem</li><li>Retains the central focus and required ideas</li><li>Names the relevant environment when needed</li><li>Is broad enough to contain the SRQs</li><li>Does not introduce an unsupported new idea</li></ul>
+      </div>
+    </details>
+    <details class="guided-step" name="a4-flow">
+      <summary>7. Break the central question into specific research questions</summary>
+      <div class="guided-step-content">
+        <section class="output-box rq-anchor-box"><h3>Central question to unpack</h3><div class="generated-text">${escapeHtml(state.a4.centralQuestion || "Write the central research question first.")}</div></section>
+        <p class="hint">Each SRQ should answer one necessary part of the central question. Add ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} as needed.</p>
+        <div class="editable-list">
+          ${state.a4.questions.map((question, index) => `
+            <details class="question-card" ${index === 0 ? "open" : ""}>
+              <summary>Specific Research Question ${index + 1}${question ? `: ${escapeHtml(question.slice(0, 90))}` : ""}</summary>
+              <div class="guided-step-content">
+                <label>What specific part of the central question will this answer?<textarea data-question-focus="${index}">${escapeHtml(state.a4.questionFocuses[index])}</textarea></label>
+                <label>Question purpose<select data-question-purpose="${index}">${purposeOptions(state.a4.questionPurposes[index])}</select></label>
+                <section class="output-box"><h3>Suggested starters</h3><div class="generated-text">${escapeHtml(questionStarterHint(index))}</div></section>
+                <label>What claim should the evidence allow the study to make?<textarea data-question-claim="${index}">${escapeHtml(state.a4.questionClaims[index])}</textarea></label>
+                <label>Write the specific research question<textarea data-array="a4.questions" data-index="${index}">${escapeHtml(question)}</textarea></label>
+                <button class="danger compact" type="button" data-remove-question="${index}">Remove Question</button>
+              </div>
+            </details>`).join("")}
+        </div>
+        <button type="button" data-add-question>Add Question</button>
+      </div>
+    </details>
   `;
 }
 
@@ -725,7 +1003,7 @@ function renderFramework() {
   const pathway = value("frameworkFinder.pathway") || "problem-led";
   els.stageForm.innerHTML = `
     <section class="output-box">
-      <h3>Framework Finder: Find &rarr; Choose &rarr; Test &rarr; Write</h3>
+      <h3>Framework Finder: Find &rarr; Compare &rarr; Select &rarr; Test &rarr; Explain</h3>
       <div class="generated-text">For most beginning researchers, formally select a framework after the literature gap, problem, and questions have become clear enough to test its fit. Theories noticed during A2 are candidates, not automatic choices. Research is iterative, so the selected framework may lead you back to refine A2-A4.</div>
     </section>
     <section class="field full framework-pathway">
@@ -741,12 +1019,12 @@ function renderFramework() {
     </section>
     ${renderFields("frameworkFinder", fieldSets.frameworkFinder)}
     <section class="output-box framework-write-intro">
-      <h3>Write the Framework and Scope</h3>
-      <div class="generated-text">Now state the selected framework and show the work it will do in this proposal. The framework may guide constructs, questions, interpretation, or relevant instrument dimensions; it does not have to control every part of the study.</div>
+      <h3>Explain the Selected Framework or Combination</h3>
+      <div class="generated-text">Show the distinct work performed by each framework. Keep conceptual scope here: included and excluded constructs, examined relationships, and theoretical boundaries. Operational delimitations belong in Methodology.</div>
     </section>
     ${renderFields("framework", fieldSets.framework)}
     <section class="checker-panel">
-      <h3>Framework and Scope Readiness</h3>
+      <h3>Framework Alignment Readiness</h3>
       <div class="feedback">${checkFramework().map(feedbackHtml).join("")}</div>
     </section>
   `;
@@ -862,7 +1140,7 @@ function updateTermPreview(index) {
 function methodologyOutputFields() {
   const fields = [
     ["sampling", "Sampling", "Explain how participants will be chosen. Examples: purposive, convenience, total enumeration, random sampling, or intact class selection."],
-    ["locale", "Locale", "Describe the school, classroom, community, or online setting without exposing private details unnecessarily."],
+    ["locale", "Research environment or setting", "Describe the physical, institutional, social, community, workplace, classroom, document, or online environment without exposing unnecessary identifying details."],
     ["collection", "Data Collection", "Sequence the steps: permission, consent, instrument administration, interview/observation, retrieval, and safekeeping."],
     ["analysis", "Data Analysis", "Match analysis to data: frequency/mean, t-test, correlation, thematic analysis, content analysis, or reflection cycle."]
   ];
@@ -900,8 +1178,8 @@ function renderInstrumentation() {
   const rows = state.instrumentation.rows;
   els.stageForm.innerHTML = `
     <section class="table-wrap">
-      <h3>Instrumentation Alignment Table</h3>
-      <p class="hint">Each non-empty research question from A4 gets one instrumentation row. The question purpose from A4 is shown so the instrument plan matches what the question is trying to find out.</p>
+      <h3>Question-to-Evidence Alignment</h3>
+      <p class="hint">Complete the chain for every SRQ: claim needed &rarr; evidence needed &rarr; evidence source &rarr; instrument/procedure &rarr; analysis. Participants are not the only possible sources; documents, artifacts, records, observations, and outputs may also provide evidence.</p>
       <div class="table-scroll">
         <div class="editable-list">
           ${rows.map((row, index) => instrumentationRow(index)).join("")}
@@ -920,7 +1198,7 @@ function syncInstrumentationRows() {
     return { ...existing, rq: question };
   });
   const extraRows = existingRows.slice(questions.length).filter((row) =>
-    row.instrument || row.description || row.purpose || row.validation || row.implementation
+    row.claimNeeded || row.evidenceNeeded || row.evidenceSource || row.instrument || row.analysis || row.description || row.purpose || row.validation || row.implementation
   );
   state.instrumentation.rows = nextRows.concat(extraRows);
 }
@@ -932,17 +1210,28 @@ function instrumentationRow(index) {
   const purposeHint = purpose
     ? `Question purpose from A4: ${purpose.label}. Suggested question starters: ${purpose.starters}`
     : "No A4 question purpose selected yet. Return to A4 and choose the purpose of this question.";
+  const labels = {
+    claimNeeded: "Claim Needed",
+    evidenceNeeded: "Evidence Needed",
+    evidenceSource: "Evidence Source",
+    instrument: "Instrument / Procedure",
+    analysis: "Analysis",
+    description: "Description",
+    purpose: "Purpose",
+    validation: "Validation",
+    implementation: "Implementation"
+  };
   return `
-    <div class="table-row instrumentation-row" style="--cols:6">
+    <div class="table-row instrumentation-row" style="--cols:10">
       <section class="output-box">
         <h3>Research Question ${index + 1}</h3>
         <div class="generated-text">${escapeHtml(row.rq || "No research question has been entered yet.")}</div>
         <p class="hint">${escapeHtml(purposeHint)}</p>
       </section>
-      ${["instrument", "description", "purpose", "validation", "implementation"].map((key) => `
+      ${["claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"].map((key) => `
         <label>
           <span class="field-label">
-            <span>${escapeHtml(key[0].toUpperCase() + key.slice(1))}</span>
+            <span>${escapeHtml(labels[key])}</span>
             ${helpControl(`instrumentation-${index}-${key}-help`, key, instrumentationScaffold(key, purposeKey))}
           </span>
           <textarea data-table="instrumentation" data-index="${index}" data-key="${key}" aria-describedby="instrumentation-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
@@ -965,7 +1254,11 @@ function instrumentationScaffold(key, purposeKey) {
     develop: "Name the evidence the instrument will gather to support model, framework, or theory development."
   };
   const base = {
-    instrument: "Choose a tool: survey, test, interview guide, focus group guide, observation checklist, rubric, journal, or document guide.",
+    claimNeeded: "State the defensible claim this SRQ should support. Distinguish reported understanding, documented expectation, produced output, and demonstrated practice.",
+    evidenceNeeded: "Name the evidence required to support that claim: detailed accounts, scores, policy statements, observed actions, artifacts, records, or another suitable form.",
+    evidenceSource: "Name who or what provides the evidence: participants, documents, artifacts, records, observations, recordings, outputs, or test results.",
+    instrument: "Choose the instrument or procedure: survey, test, interview guide, observation, document analysis, rubric, record review, or another defensible method.",
+    analysis: "State how this evidence will be analyzed to produce the intended claim, such as descriptive statistics, correlation, thematic analysis, content analysis, or comparison.",
     description: "Describe the instrument parts, scales, prompts, indicators, sections, and sample item or example indicator.",
     purpose: purposeSpecific[purposeKey] || "Explain what data this instrument needs to collect for the research question.",
     validation: "Explain expert validation, pilot testing, reliability, inter-rater checking, or trustworthiness strategy.",
@@ -994,13 +1287,16 @@ function renderReadiness() {
   const report = readinessReport();
   els.stageForm.innerHTML = `
     <section class="output-box">
-      <h3>Proposal Readiness Score</h3>
-      <div class="generated-text">${report.score}/100 - ${report.label}</div>
+      <h3>Proposal Readiness</h3>
+      <div class="generated-text">${escapeHtml(report.label)}
+Formative alignment indicator: ${report.score}/100</div>
     </section>
     <section class="checker-panel">
       <h3>Alignment Report</h3>
       <div class="feedback">${report.items.map(feedbackHtml).join("")}</div>
     </section>
+    <section class="output-box"><h3>Adviser-Review Reminder</h3><div class="generated-text">The app provides developmental guidance and alignment checks. Its outputs do not constitute adviser, panel, or institutional approval. Research decisions remain subject to scholarly justification and adviser review.</div></section>
+    ${workRecordHtml()}
   `;
 }
 
@@ -1077,7 +1373,7 @@ function emptyRowFor(section) {
   if (section === "a2Patterns") return { type: "", notice: "", authors: "", years: "" };
   if (section === "a3Gaps") return { type: "", show: "", emphasized: "", lessVisible: "", limits: "", gap: "" };
   if (section === "terms") return { term: "", conceptual: "", operational: "", measured: "" };
-  return { rq: "", instrument: "", description: "", purpose: "", validation: "", implementation: "" };
+  return { rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" };
 }
 
 function buildTopic() {
@@ -1095,14 +1391,14 @@ function buildProblem() {
 }
 
 function isMixedMethodsLikely() {
-  const text = `${state.a4.questionType || ""} ${state.methodology.selectedDesign || ""} ${state.methodology.rqTypes || ""} ${state.methodology.dataNeeded || ""} ${state.methodology.purpose || ""} ${state.a4.questions.join(" ")}`.toLowerCase();
+  const text = `${state.a4.questionType || ""} ${state.a4.centralPurpose || ""} ${state.methodology.selectedDesign || ""} ${state.methodology.rqTypes || ""} ${state.methodology.dataNeeded || ""} ${state.methodology.purpose || ""} ${state.a4.questions.join(" ")}`.toLowerCase();
   return /mixed|both|quantitative and qualitative|qualitative and quantitative|survey.*interview|interview.*survey|numeric.*experience|level.*experience/.test(text);
 }
 
 function scopeControlItems() {
   const rows = questionPurposeRows();
   const purposeCount = new Set(rows.map((row) => row.purposeKey).filter(Boolean)).size;
-  const text = `${state.a4.rqConstructs || ""} ${state.framework.scopeBoundaries || ""} ${state.methodology.dataNeeded || ""}`.toLowerCase();
+  const text = `${state.a4.rqConstructs || ""} ${state.framework.scopeBoundaries || ""} ${state.methodology.operationalDelimitations || ""} ${state.methodology.dataNeeded || ""}`.toLowerCase();
   const variableMarkers = (text.match(/,| and |;|\bvariable\b|\bconstruct\b/g) || []).length;
   const instrumentCount = state.instrumentation.rows.filter((row) => row.instrument).length;
   const items = [];
@@ -1110,7 +1406,7 @@ function scopeControlItems() {
   items.push(flag(purposeCount <= 3, "Question purposes are focused.", "The study uses many question purposes. Check whether it is trying to describe, compare, relate, predict, evaluate, explore, and develop too much at once."));
   items.push(flag(variableMarkers <= 8, "Construct/variable load appears manageable.", "The construct or variable load may be heavy. Narrow the study before adding instruments."));
   items.push(flag(instrumentCount <= Math.max(rows.length, 1), "Instrument count appears tied to the research questions.", "There may be more instruments than research questions. Check feasibility and respondent burden."));
-  items.push(flag(Boolean(state.framework.scopeBoundaries), "Scope boundaries are stated.", "State what is included and excluded so the study remains feasible."));
+  items.push(flag(Boolean(state.framework.scopeBoundaries), "Conceptual scope is stated.", "Clarify included and excluded constructs, relationships, and theoretical boundaries."));
   return items;
 }
 
@@ -1119,7 +1415,7 @@ function recommendMethodology() {
     .filter((purpose) => purpose && rqPurposeOptions[purpose])
     .map((purpose) => rqPurposeOptions[purpose].label)
     .join(" ");
-  const text = `${state.a4.questionType || ""} ${state.methodology.rqTypes || ""} ${state.methodology.purpose || ""} ${purposes}`.toLowerCase();
+  const text = `${state.a4.questionType || ""} ${state.a4.centralPurpose || ""} ${state.methodology.rqTypes || ""} ${state.methodology.purpose || ""} ${purposes}`.toLowerCase();
   if (text.includes("develop") || text.includes("model") || text.includes("framework") || text.includes("theory")) return "Recommendation: Model/framework development may fit if the design includes qualitative analysis, mixed methods integration, expert validation, Delphi review, grounded theory, or design/development research.";
   if (text.includes("relat") || text.includes("correl")) return "Recommendation: Correlational quantitative design, because the questions examine relationships between constructs.";
   if (text.includes("compar") || text.includes("difference")) return "Recommendation: Comparative quantitative design, because the questions compare groups or categories.";
@@ -1182,7 +1478,9 @@ Introduction
   Use these literature patterns as the basis:
 ${patterns}
 - Theoretical/Conceptual Framework
-  Framework or explanatory concept: ${state.framework.theoryModel || "[Name framework, theory, model, or concept]"}
+  Selected framework or combination: ${state.framework.theoryModel || "[Name framework, theory, model, or concept]"}
+  Authoritative sources: ${state.frameworkFinder.frameworkSource || "[Cite each selected framework]"}
+  Distinct roles: ${state.frameworkFinder.frameworkRoles || "[Explain what each framework contributes]"}
   Connection to the problem: ${state.framework.problemConnection || "[Explain how the framework explains the problem]"}
   Connection to the questions: ${state.framework.questionConnection || "[Explain how the framework guides the questions]"}
   Connection to instruments or analysis: ${state.framework.instrumentConnection || "[Explain how the framework guides indicators, instruments, or analysis]"}
@@ -1190,6 +1488,8 @@ ${patterns}
 Statement of the Problem
 - General Statement
   Carry forward this literature-based problem: ${problem}
+  Central study focus: ${state.a4.centralFocus || "[State the phenomenon, relationship, process, alignment, or condition]"}
+  Study components: ${state.a4.studyComponents || "[State dimensions, variables, experiences, processes, or categories]"}
 - Specific Statements in Question Form
   Central research question: ${crq}
 ${srqs}
@@ -1202,14 +1502,18 @@ Methodology
 - Design
   Current selected design: ${state.methodology.selectedDesign || "[Select methodology]"}
 - Scope and Limitations/Delimitations
-  ${state.framework.scopeBoundaries || "Identify participant boundaries, locale boundaries, construct boundaries, and what the study will not cover."}
+  Conceptual scope: ${state.framework.scopeBoundaries || "Identify included and excluded constructs, relationships, and theoretical boundaries."}
+  Operational delimitations: ${state.methodology.operationalDelimitations || "Identify participant, environment, period, evidence-source, and procedure boundaries."}
 - Participants
   ${state.methodology.participants || "[Describe participants]"}
   Sampling: ${state.methodology.sampling || "[Describe sampling]"}
-- Locale
-  ${state.methodology.locale || "[Describe locale]"}
+- Research Environment or Setting
+  ${state.methodology.locale || "[Describe research environment or setting]"}
+- Evidence Sources and Period
+  Evidence sources: ${state.methodology.evidenceSources || "[Identify participants, documents, artifacts, records, observations, outputs, or other sources]"}
+  Study period: ${state.methodology.studyPeriod || "[State the relevant time boundary]"}
 - Instrumentation
-  Describe each instrument, its purpose, validation, and how it will be implemented.
+  Align each SRQ with its intended claim, evidence, source, instrument/procedure, analysis, validation, and implementation.
 - Data Procedure
   Data gathering: ${state.methodology.collection || "[Describe data gathering procedure]"}
   Data analysis: ${state.methodology.analysis || "[Describe data analysis]"}
@@ -1296,15 +1600,21 @@ function checkA4() {
   const results = [
     flag(Boolean(state.a3.finalGap), "A3 final gap is available.", "Complete A3 first so the problem is traceable from literature."),
     flag(Boolean(state.a4.literatureProblem), "Literature-based problem is stated.", "Translate the final gap into a problem statement."),
+    flag(Boolean(state.a4.centralFocus), "Central study focus is stated separately from participants and evidence sources.", "State the phenomenon, relationship, process, alignment, or condition being investigated."),
+    flag(Boolean(state.a4.studyComponents), "Study components are identified.", "Identify the dimensions, variables, experiences, processes, or categories needed to examine the central focus."),
+    flag(Boolean(state.methodology.locale), "Research environment or setting is identified.", "Describe the environment or setting relevant to the inquiry."),
+    flag(Boolean(state.a4.centralPurpose), "Broad inquiry purpose is selected.", "Choose whether the central inquiry describes, compares, relates, predicts, explores, explains, evaluates, or develops."),
     flag(Boolean(state.a4.centralQuestion), "Central research question is written.", "Write the CRQ that responds to the problem."),
     flag(questions.length >= SRQ_LIMITS.minimum && questions.length <= SRQ_LIMITS.maximum, `There are ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} specific research questions.`, `Add ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} SRQs that unpack the central question.`),
-    flag(Boolean(state.a4.questionType), "Needed understanding is identified.", "Name whether the study needs measurement, explanation/description, or both."),
-    flag(Boolean(state.a4.studiedGroup), "Study focus is visible.", "Clarify who or what will be examined.")
+    flag(!state.a4.refinedGap || Boolean(state.a4.gapRevisionReason), "Any A4 gap refinement is explained.", "Explain why the A3 gap wording was refined in A4.")
   ];
   if (core && !`${state.a4.centralQuestion || ""} ${text} ${state.a4.literatureProblem || ""}`.toLowerCase().includes(core.split(" ")[0])) {
     results.push({ level: "yellow", text: `The core construct "${state.a1.coreConstruct || state.a1.rrlMajorityTest}" may be missing from the problem or questions.` });
   }
   questions.forEach((q, index) => {
+    if (!state.a4.questionFocuses[index]) results.push({ level: "yellow", text: `SRQ ${index + 1} needs a specific focus showing which part of the central question it answers.` });
+    if (!state.a4.questionPurposes[index]) results.push({ level: "yellow", text: `SRQ ${index + 1} needs an inquiry purpose.` });
+    if (!state.a4.questionClaims[index]) results.push({ level: "yellow", text: `SRQ ${index + 1} needs an intended claim before evidence can be planned.` });
     if (/^(do|does|is|are|will)\b/i.test(q) && !/significant|level|relationship|difference|experience|extent/i.test(q)) {
       results.push({ level: "yellow", text: `Question ${index + 1} may read like a yes/no opinion question.` });
     }
@@ -1405,7 +1715,15 @@ function centralQuestionAlignmentItems() {
     if (tokens.length && missing.length / tokens.length > 0.45) {
       items.push({
         level: "yellow",
-        text: `SRQ ${row.number} may introduce ideas not visible in the central question. Revise the central question to include this idea, or remove the SRQ if it is outside the study.`
+        text: `Review SRQ ${row.number}: it may introduce ideas not visible in the central question or literature-based problem.`,
+        evidence: {
+          compared: `A3 gap, A4 central question, and SRQ ${row.number}`,
+          matched: tokens.filter((token) => centralTokens.has(token) || problemTokens.has(token)).join(", ") || "General study wording",
+          mismatch: `Possible new terms: ${missing.slice(0, 8).join(", ")}`,
+          why: "A specific question should unpack the central inquiry rather than silently expand the study.",
+          revisit: "A2 patterns, A3 gap, or A4 question wording",
+          action: "Add literature and problem support, broaden the central question with justification, or revise the SRQ. Discuss uncertain additions with your adviser."
+        }
       });
     } else {
       items.push({ level: "green", text: `SRQ ${row.number} appears traceable to the central question or literature-based problem.` });
@@ -1416,9 +1734,56 @@ function centralQuestionAlignmentItems() {
   if (uncoveredCentral.length >= 2) {
     items.push({
       level: "yellow",
-      text: "Some central-question ideas may not be unpacked by the SRQs. Check whether each major idea in the central question has a matching specific question."
+      text: "Review coverage: some central-question ideas may not be unpacked by the SRQs.",
+      evidence: {
+        compared: "A4 central question and all SRQs",
+        matched: [...centralTokens].filter((token) => allSrqTokens.has(token)).join(", ") || "Limited direct overlap",
+        mismatch: `Possibly uncovered terms: ${uncoveredCentral.slice(0, 8).join(", ")}`,
+        why: "Every important part of the central inquiry should be answerable through at least one SRQ.",
+        revisit: "A4 central question and SRQ set",
+        action: "Clarify, combine, add, or remove questions after reviewing the intended coverage."
+      }
     });
   }
+  return items;
+}
+
+function claimEvidenceAlignmentItems() {
+  syncInstrumentationRows();
+  const items = [];
+  state.instrumentation.rows.map(normalizeInstrumentRow).forEach((row, index) => {
+    if (!row.rq) return;
+    const claim = `${row.claimNeeded} ${state.a4.questionClaims[index] || ""}`.toLowerCase();
+    const source = `${row.evidenceSource} ${row.instrument} ${row.description} ${row.implementation}`.toLowerCase();
+    const analysis = row.analysis.toLowerCase();
+    if (!row.claimNeeded || !row.evidenceNeeded || !row.evidenceSource || !row.instrument || !row.analysis) {
+      items.push({
+        level: "yellow",
+        text: `Complete the evidence chain for SRQ ${index + 1}.`,
+        evidence: {
+          compared: `SRQ ${index + 1}, intended claim, evidence, source, instrument/procedure, and analysis`,
+          matched: [row.claimNeeded && "claim", row.evidenceNeeded && "evidence", row.evidenceSource && "source", row.instrument && "instrument/procedure", row.analysis && "analysis"].filter(Boolean).join(", ") || "Research question only",
+          mismatch: "One or more warrant-chain elements are blank.",
+          why: "Data cannot support a claim unless the source, collection procedure, and analysis are explicit.",
+          revisit: `Instrumentation row ${index + 1}`,
+          action: "Complete the chain, then discuss whether it is sufficient with your adviser."
+        }
+      });
+      return;
+    }
+    if (/learned|understanding|competenc|knowledge/.test(claim) && /survey|questionnaire|self.report|response/.test(source) && !/observation|artifact|lesson plan|performance|test|output/.test(source)) {
+      items.push({ level: "yellow", text: `Review SRQ ${index + 1}: self-reports may support reported understanding, but not demonstrated learning by themselves.`, evidence: { compared: "Intended claim and evidence source", matched: "Self-report evidence is available", mismatch: "The claim may imply learned or demonstrated competence", why: "Reported understanding and demonstrated application are different claims.", revisit: `SRQ ${index + 1} wording and instrumentation`, action: "Narrow the claim to reported understanding or add appropriate performance, artifact, test, or observation evidence." } });
+    }
+    if (/demonstrat|appl|practice|perform/.test(claim) && !/observation|artifact|lesson plan|rubric|performance|output|recording/.test(source)) {
+      items.push({ level: "yellow", text: `Review SRQ ${index + 1}: a demonstrated-practice claim may need observable or artifact-based evidence.`, evidence: { compared: "Intended claim and evidence source", matched: row.evidenceSource, mismatch: "No clear observation, artifact, performance, or output source detected", why: "Practice claims require evidence of action or produced work, not perception alone.", revisit: `Evidence source and instrument for SRQ ${index + 1}`, action: "Add observable evidence or revise the claim and justify the decision with your adviser." } });
+    }
+    if (/taught|curriculum|instruction/.test(claim) && !/syllab|curricul|document|policy|faculty|teacher educator|course/.test(source)) {
+      items.push({ level: "yellow", text: `Review SRQ ${index + 1}: a claim about what is taught may need curriculum, syllabus, policy, or teacher-educator evidence.`, evidence: { compared: "Taught-content claim and evidence source", matched: row.evidenceSource, mismatch: "No formal teaching-content source detected", why: "Participant recall alone may not establish what the formal or enacted curriculum contains.", revisit: `Evidence source for SRQ ${index + 1}`, action: "Add documentary or educator evidence, or narrow the claim." } });
+    }
+    if (/expect|require|standard|policy/.test(claim) && !/policy|standard|document|administrator|school leader|teacher|employer/.test(source)) {
+      items.push({ level: "yellow", text: `Review SRQ ${index + 1}: an expectations claim may need policy, administrator, practitioner, or institutional evidence.`, evidence: { compared: "Expectation claim and evidence source", matched: row.evidenceSource, mismatch: "No clear institutional-expectation source detected", why: "Expectations should be traceable to those who set, communicate, or enact them.", revisit: `Evidence source for SRQ ${index + 1}`, action: "Add an authoritative expectation source or qualify the claim." } });
+    }
+  });
   return items;
 }
 
@@ -1561,6 +1926,10 @@ function checkMethodology() {
     flag(Boolean(state.methodology.selectedDesign), "A research design is selected.", "Select or enter a research design after reviewing the recommendation."),
     flag(!design || rec.includes(design.split(" ")[0]) || rec.includes("add question"), "Methodology appears aligned with the question type.", "Review whether the method matches the research questions."),
     flag(Boolean(state.methodology.participants), "Participants are described.", "Describe who will participate."),
+    flag(Boolean(state.methodology.locale), "Research environment or setting is described.", "Describe the physical, institutional, social, document, or online environment relevant to the study."),
+    flag(Boolean(state.methodology.evidenceSources), "Participants and other evidence sources are identified.", "Identify who or what provides evidence, including documents, artifacts, records, observations, or outputs where relevant."),
+    flag(Boolean(state.methodology.studyPeriod), "Study period is bounded.", "State the relevant data collection or document period."),
+    flag(Boolean(state.methodology.operationalDelimitations), "Operational delimitations are stated.", "State what the study includes and deliberately does not cover."),
     flag(Boolean(state.methodology.collection), "Data collection is planned.", "Add how data will be collected."),
     flag(Boolean(state.methodology.analysis), "Data analysis is planned.", "Add how the data will be analyzed."),
     ...purposeDesignAlignmentItems(),
@@ -1581,6 +1950,8 @@ function checkFramework() {
     flag(Boolean(state.framework.theoryModel), "Framework or explanatory concept is named.", "Name the theory, model, concept, or framework that helps explain the problem."),
     flag(hasFitEvidence, "Framework explains the problem and connects to the questions.", "Explain how the framework makes sense of the gap or problem and guides the central and specific questions."),
     flag(Boolean(state.frameworkFinder.selectionReason), "Selection is justified against alternatives.", "Explain why this candidate fits better than the alternatives considered."),
+    flag(Boolean(state.frameworkFinder.frameworkRoles), "Each selected framework has a distinct role.", "For each framework, explain the construct or relationship it explains and the section or interpretation it informs."),
+    flag(Boolean(state.frameworkFinder.combinationReason), "The single-framework choice or combination is justified.", "If combining frameworks, explain what each contributes that the other does not. If using one, state that a combination is not needed."),
     flag(doesAnalyticalWork, "Framework performs a clear role in evidence or interpretation.", "Explain what would be harder to explain without the framework and how it guides constructs, evidence, instrument dimensions, analysis, or interpretation."),
     flag(Boolean(state.frameworkFinder.methodFit), "Framework-method fit is explained.", "Explain why the framework and planned research design work coherently; a mismatch is not automatically wrong, but it requires justification."),
     ...scopeControlItems()
@@ -1615,13 +1986,18 @@ function checkInstrumentation() {
   const results = [flag(rows.length > 0, "At least one instrument row is listed.", "Add instruments for each research question.")];
   rows.forEach((row, index) => {
     if (!row.rq) results.push({ level: "red", text: `Row ${index + 1}: research question is missing.` });
+    if (!row.claimNeeded) results.push({ level: "yellow", text: `Row ${index + 1}: intended claim is missing.` });
+    if (!row.evidenceNeeded) results.push({ level: "yellow", text: `Row ${index + 1}: evidence needed is missing.` });
+    if (!row.evidenceSource) results.push({ level: "yellow", text: `Row ${index + 1}: evidence source is missing.` });
     if (!row.instrument) results.push({ level: "red", text: `Row ${index + 1}: instrument is missing.` });
+    if (!row.analysis) results.push({ level: "yellow", text: `Row ${index + 1}: analysis is missing.` });
     if (!row.description) results.push({ level: "yellow", text: `Row ${index + 1}: instrument description is missing.` });
     if (!row.purpose) results.push({ level: "yellow", text: `Row ${index + 1}: instrument purpose is missing.` });
     if (!row.validation) results.push({ level: "yellow", text: `Row ${index + 1}: validation or reliability/trustworthiness is missing.` });
     if (!row.implementation) results.push({ level: "yellow", text: `Row ${index + 1}: instrument implementation is missing.` });
   });
   results.push(...purposeInstrumentationAlignmentItems());
+  results.push(...claimEvidenceAlignmentItems());
   return results;
 }
 
@@ -1835,7 +2211,25 @@ function flag(condition, pass, fail) {
 }
 
 function feedbackHtml(item) {
-  return `<div class="feedback-item ${item.level}">${escapeHtml(item.text)}</div>`;
+  const evidence = item.evidence || (item.level !== "green" ? {
+    compared: "The current answer and the requirements of this proposal stage",
+    matched: "Any completed or traceable information already entered",
+    mismatch: item.text,
+    why: "The missing or unclear connection may weaken alignment or make the intended claim difficult to justify.",
+    revisit: `The ${stages.find((stage) => stage.id === state.currentStage)?.title || "relevant"} section`,
+    action: "Review, clarify, or justify the decision, then discuss unresolved choices with your adviser."
+  } : null);
+  return `<div class="feedback-item ${item.level}">
+    <div>${escapeHtml(item.text)}</div>
+    ${evidence ? `<details class="evidence-feedback"><summary>Why this guidance appears</summary><div class="evidence-grid">
+      <span><strong>Compared:</strong> ${escapeHtml(evidence.compared || "Relevant proposal sections")}</span>
+      <span><strong>Match found:</strong> ${escapeHtml(evidence.matched || "No clear match detected")}</span>
+      <span><strong>Review:</strong> ${escapeHtml(evidence.mismatch || "No mismatch identified")}</span>
+      <span><strong>Why it matters:</strong> ${escapeHtml(evidence.why || "Alignment supports a defensible research plan.")}</span>
+      <span><strong>Revisit:</strong> ${escapeHtml(evidence.revisit || "Discuss this decision with your adviser.")}</span>
+      <span><strong>Suggested action:</strong> ${escapeHtml(evidence.action || "Clarify or justify the connection.")}</span>
+    </div></details>` : ""}
+  </div>`;
 }
 
 function readinessReport() {
@@ -1844,6 +2238,8 @@ function readinessReport() {
     flag(state.a2.patterns.some((row) => row.notice) && Boolean(state.a3.finalGap), "Patterns to Gap: aligned.", "Patterns to Gap: connect A2 patterns to a final A3 gap."),
     flag(Boolean(state.a3.finalGap) && Boolean(state.a4.literatureProblem), "Gap to Problem: aligned.", "Gap to Problem: translate the A3 final gap into a literature-based problem."),
     flag(Boolean(state.a4.literatureProblem) && Boolean(state.a4.centralQuestion) && state.a4.questions.some(Boolean), "Problem to Questions: aligned.", "Problem to Questions: add a literature-based problem, central question, and SRQs."),
+    flag(Boolean(state.a4.centralFocus) && Boolean(state.a4.studyComponents), "Central focus and study components are distinguished.", "Clarify the central phenomenon or relationship and the components needed to examine it."),
+    flag(Boolean(state.methodology.locale) && Boolean(state.methodology.evidenceSources), "Research environment and evidence sources are identified separately.", "Distinguish the research environment from participants, documents, artifacts, observations, and other evidence sources."),
     flag(!degreeLevelReadiness().hasMajorGap, "Research Level Readiness: acceptable for formative review.", "Research Level Readiness: add stronger evidence or narrow the scope for the selected context."),
     flag(Boolean(state.methodology.participants) && Object.values(state.ethics.checks).some(Boolean), "Ethics to Participants: aligned.", "Ethics to Participants: describe participants and select applicable ethics safeguards.")
   ];
@@ -1856,10 +2252,11 @@ function readinessReport() {
     ...purposeAnalysisAlignmentItems(),
     ...checkMixedMethods(),
     ...purposeInstrumentationAlignmentItems(),
+    ...claimEvidenceAlignmentItems(),
     ...checkTerms()
-  ].map((item) => ({ ...item, level: item.level === "yellow" ? "red" : item.level }));
+  ];
   const score = Math.round((items.filter((item) => item.level === "green").length / Math.max(items.length, 1)) * 100);
-  const label = score >= 80 ? "Ready" : score >= 50 ? "Needs Revision" : "Major Alignment Issue";
+  const label = score >= 80 ? "Ready for adviser review" : score >= 50 ? "Needs alignment review" : "Needs development";
   return { score, label, items };
 }
 
@@ -1886,8 +2283,10 @@ function stageCompletion(stageId) {
     return (gapProgress + selectionFields.filter((field) => state.a3[field]).length / selectionFields.length) / 2;
   }
   if (stageId === "a4") {
-    const fields = ["literatureProblem", "centralQuestion", "questionType", "studiedGroup", "rqConstructs"];
-    return (fields.filter((field) => state.a4[field]).length / fields.length + Math.min(state.a4.questions.filter(Boolean).length / 3, 1)) / 2;
+    const fields = ["literatureProblem", "centralQuestion", "centralFocus", "studyComponents", "centralPurpose", "rqConstructs"];
+    const questionSlots = state.a4.questions.length * 4;
+    const questionFilled = state.a4.questions.reduce((sum, question, index) => sum + [question, state.a4.questionFocuses[index], state.a4.questionPurposes[index], state.a4.questionClaims[index]].filter(Boolean).length, 0);
+    return (fields.filter((field) => state.a4[field]).length / fields.length + (questionSlots ? questionFilled / questionSlots : 0)) / 2;
   }
   if (stageId === "framework") {
     const finderFields = ["pathway", ...fieldSets.frameworkFinder.map((field) => field[0])];
@@ -1900,7 +2299,7 @@ function stageCompletion(stageId) {
     return fields.filter((field) => state.researchLevel[field]).length / fields.length;
   }
   if (stageId === "methodology") {
-    const fields = ["rqTypes", "dataNeeded", "participants", "purpose", "selectedDesign", "sampling", "locale", "collection", "analysis"];
+    const fields = ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations", "selectedDesign", "sampling", "locale", "collection", "analysis"];
     const baseProgress = fields.filter((field) => state.methodology[field]).length / fields.length;
     if (!isMixedMethodsLikely()) return baseProgress;
     const mixedFields = ["quantStrand", "qualStrand", "integrationPoint", "integrationPurpose"];
@@ -1908,7 +2307,11 @@ function stageCompletion(stageId) {
     return (baseProgress + mixedProgress) / 2;
   }
   if (stageId === "instrumentation") {
-    return state.instrumentation.rows.some((row) => row.rq && row.instrument) ? 1 : 0;
+    const rows = state.instrumentation.rows.map(normalizeInstrumentRow).filter((row) => row.rq || row.instrument || row.claimNeeded);
+    if (!rows.length) return 0;
+    const required = ["rq", "claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"];
+    const filled = rows.reduce((sum, row) => sum + required.filter((field) => row[field]).length, 0);
+    return filled / (rows.length * required.length);
   }
   if (stageId === "terms") {
     const rows = state.terms.rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
@@ -1922,11 +2325,12 @@ function stageCompletion(stageId) {
 }
 
 function updateDashboard() {
-  const completion = Math.round((stages.reduce((sum, stage) => sum + stageCompletion(stage.id), 0) / stages.length) * 100);
+  const completion = overallCompletion();
   const score = readinessReport().score;
   els.completionText.textContent = `${completion}%`;
   els.completionBar.style.width = `${completion}%`;
   els.alignmentScore.textContent = score;
+  updateActiveTimeDisplay();
   const issues = readinessReport().items.filter((item) => item.level !== "green").slice(0, 5);
   els.issueList.innerHTML = issues.length ? issues.map((item) => `<li>${escapeHtml(item.text)}</li>`).join("") : "<li>No major alignment issues detected.</li>";
 }
@@ -1944,14 +2348,18 @@ function wordCount(text = "") {
 function instrumentationOutputHtml(rows) {
   const labels = [
     ["rq", "Research Question"],
-    ["instrument", "Instrument"],
+    ["claimNeeded", "Claim Needed"],
+    ["evidenceNeeded", "Evidence Needed"],
+    ["evidenceSource", "Evidence Source"],
+    ["instrument", "Instrument / Procedure"],
+    ["analysis", "Analysis"],
     ["description", "Description"],
     ["purpose", "Purpose"],
     ["validation", "Validation"],
     ["implementation", "Implementation"]
   ];
   rows = rows.map(normalizeInstrumentRow);
-  const shouldStack = rows.some((row) => wordCount(Object.values(row).join(" ")) > 150);
+  const shouldStack = labels.length > 6 || rows.some((row) => wordCount(Object.values(row).join(" ")) > 150);
   if (shouldStack) {
     return `<div class="instrument-cards">${rows.map((row, index) => `
       <section class="instrument-card">
@@ -1960,8 +2368,8 @@ function instrumentationOutputHtml(rows) {
       </section>
     `).join("")}</div>`;
   }
-  const instrumentRows = rows.map((row) => `<tr><td>${escapeHtml(row.rq)}</td><td>${escapeHtml(row.instrument)}</td><td>${escapeHtml(row.description)}</td><td>${escapeHtml(row.purpose)}</td><td>${escapeHtml(row.validation)}</td><td>${escapeHtml(row.implementation)}</td></tr>`).join("");
-  return `<table><thead><tr><th>Research Question</th><th>Instrument</th><th>Description</th><th>Purpose</th><th>Validation</th><th>Implementation</th></tr></thead><tbody>${instrumentRows}</tbody></table>`;
+  const instrumentRows = rows.map((row) => `<tr>${labels.map(([key]) => `<td>${escapeHtml(row[key])}</td>`).join("")}</tr>`).join("");
+  return `<table><thead><tr>${labels.map(([, label]) => `<th>${escapeHtml(label)}</th>`).join("")}</tr></thead><tbody>${instrumentRows}</tbody></table>`;
 }
 
 function termsOutputHtml(rows) {
@@ -1977,7 +2385,7 @@ function termsOutputHtml(rows) {
   `).join("")}</div>`;
 }
 
-function readinessPrintSummaryHtml(report) {
+function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
   const warnings = report.items.filter((item) => item.level !== "green");
   const degreeReadiness = degreeLevelReadiness();
   const frameworkReady = Boolean(
@@ -1985,6 +2393,8 @@ function readinessPrintSummaryHtml(report) {
     state.frameworkFinder.candidateFrameworks &&
     state.frameworkFinder.frameworkSource &&
     state.frameworkFinder.selectionReason &&
+    state.frameworkFinder.frameworkRoles &&
+    state.frameworkFinder.combinationReason &&
     state.frameworkFinder.withoutFramework &&
     state.frameworkFinder.methodFit &&
     state.framework.theoryModel &&
@@ -1993,9 +2403,9 @@ function readinessPrintSummaryHtml(report) {
     state.framework.instrumentConnection &&
     state.framework.scopeBoundaries
   );
-  const methodologyReady = Boolean(state.methodology.selectedDesign && state.methodology.participants && state.methodology.collection && state.methodology.analysis);
+  const methodologyReady = Boolean(state.methodology.selectedDesign && state.methodology.participants && state.methodology.locale && state.methodology.evidenceSources && state.methodology.operationalDelimitations && state.methodology.collection && state.methodology.analysis);
   const ethicsReady = Boolean(state.methodology.participants && Object.values(state.ethics.checks).some(Boolean));
-  const instrumentsReady = state.instrumentation.rows.map(normalizeInstrumentRow).some((row) => row.rq && row.instrument && row.description && row.purpose && row.validation && row.implementation);
+  const instrumentsReady = state.instrumentation.rows.map(normalizeInstrumentRow).some((row) => row.rq && row.claimNeeded && row.evidenceNeeded && row.evidenceSource && row.instrument && row.analysis && row.description && row.purpose && row.validation && row.implementation);
   const mixedMethodsReady = !isMixedMethodsLikely() || Boolean(state.mixedMethods.quantStrand && state.mixedMethods.qualStrand && state.mixedMethods.integrationPoint && state.mixedMethods.integrationPurpose);
   const termsRows = state.terms.rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
   const termsReady = termsRows.length > 0 && termsRows.every((row) => row.term && row.conceptual && row.operational && row.measured);
@@ -2015,9 +2425,9 @@ function readinessPrintSummaryHtml(report) {
       ];
   const statusRows = [
     ["Readiness score", `${report.score}/100 - ${report.label}`],
-    ["Alignment status", report.score >= 80 ? "Ready for adviser review" : report.score >= 50 ? "Needs revision before submission" : "Major alignment issues remain"],
+    ["Alignment status", report.label],
     ...levelRows,
-    ["Framework and scope status", frameworkReady ? "The framework is literature-supported, justified, and connected to the problem, questions, evidence, and scope." : "Framework finding, source support, fit reasoning, or scope alignment still needs detail."],
+    ["Framework and conceptual-scope status", frameworkReady ? "The framework is literature-supported, justified, and connected to the problem, questions, evidence, and conceptual scope." : "Framework finding, source support, distinct roles, fit reasoning, or conceptual scope still needs detail."],
     ["Methodology status", methodologyReady ? "Methodology has the required core details." : "Methodology is missing design, participants, data gathering, or data analysis details."],
     ["Mixed methods status", mixedMethodsReady ? "Mixed methods integration is complete or not required." : "Mixed methods integration needs quantitative, qualitative, and integration details."],
     ["Ethics status", ethicsReady ? "Ethics safeguards have been started." : "Ethics safeguards need more detail before data gathering."],
@@ -2026,12 +2436,26 @@ function readinessPrintSummaryHtml(report) {
     ["Definition of terms status", termsReady ? "Terms are conceptually and operationally defined." : "Definition of terms needs conceptual, operational, and measurement details."]
   ];
   return `
+    ${includeWorkRecord ? workRecordHtml() : ""}
     <div class="readiness-summary">
       ${statusRows.map(([label, text]) => `<p><strong>${label}:</strong> ${escapeHtml(text)}</p>`).join("")}
     </div>
     <h3>Warnings</h3>
-    ${warnings.length ? `<ul class="warning-list">${warnings.map((item) => `<li>${escapeHtml(item.text)}</li>`).join("")}</ul>` : "<p>No major warnings detected.</p>"}
+    ${warnings.length ? `<div class="feedback">${warnings.map((item) => {
+      const evidence = item.evidence || { compared: "Relevant proposal sections", matched: "Completed information", mismatch: item.text, why: "The connection may need clarification.", revisit: "Relevant proposal section", action: "Review and discuss with your adviser." };
+      return `<section class="feedback-item ${item.level}"><strong>${escapeHtml(item.text)}</strong><div class="evidence-grid"><span><strong>Compared:</strong> ${escapeHtml(evidence.compared)}</span><span><strong>Match found:</strong> ${escapeHtml(evidence.matched)}</span><span><strong>Review:</strong> ${escapeHtml(evidence.mismatch)}</span><span><strong>Why it matters:</strong> ${escapeHtml(evidence.why)}</span><span><strong>Revisit:</strong> ${escapeHtml(evidence.revisit)}</span><span><strong>Suggested action:</strong> ${escapeHtml(evidence.action)}</span></div></section>`;
+    }).join("")}</div>` : "<p>No major warnings detected.</p>"}
+    <p><strong>Adviser-review reminder:</strong> The app provides developmental guidance and alignment checks. Its outputs do not constitute adviser, panel, or institutional approval. Research decisions remain subject to scholarly justification and adviser review.</p>
   `;
+}
+
+function workRecordHtml() {
+  return `<section class="work-record"><h2>Work Record</h2>
+    <p><strong>Work started:</strong> ${escapeHtml(formatTimestamp(state.engagement.workStartedAt))}<br>
+    <strong>Last edited:</strong> ${escapeHtml(formatTimestamp(state.engagement.lastEditedAt))}<br>
+    <strong>Estimated active work time:</strong> ${escapeHtml(formatActiveTime(state.engagement.activeMs))}<br>
+    <strong>Manual checkpoints created:</strong> ${escapeHtml(String(state.engagement.manualCheckpoints || 0))}</p>
+    <p>Estimated active work time reflects detected interaction with this app only. It does not include work completed outside the app and should not be interpreted as a measure of research quality.</p></section>`;
 }
 
 function outlineHtml() {
@@ -2053,7 +2477,8 @@ function outlineHtml() {
     "Design",
     "Scope and Limitations/Delimitations",
     "Participants",
-    "Locale",
+    "Research Environment or Setting",
+    "Evidence Sources and Period",
     "Instrumentation",
     "Data Procedure",
     "Operational Definition of Key Terms"
@@ -2072,12 +2497,9 @@ function outlineHtml() {
 }
 
 function buildSubmissionHtml() {
-  const report = readinessReport();
   const degreeReadiness = degreeLevelReadiness();
   const generatedAt = new Date();
   const printedBy = value("submission.studentName") || "__________";
-  const startedAt = formatTimestamp(state.startedAt);
-  const workDuration = formatDuration(state.startedAt, generatedAt);
   const patternRows = state.a2.patterns.map((row) => `<tr><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.notice)}</td><td>${escapeHtml(row.authors)}</td><td>${escapeHtml(row.years)}</td></tr>`).join("");
   const gapRows = state.a3.gaps.map((row) => `<tr><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.show)}</td><td>${escapeHtml(row.emphasized)}</td><td>${escapeHtml(row.lessVisible)}</td><td>${escapeHtml(row.limits)}</td><td>${escapeHtml(row.gap)}</td></tr>`).join("");
   const instrumentOutput = instrumentationOutputHtml(state.instrumentation.rows);
@@ -2110,29 +2532,36 @@ function buildSubmissionHtml() {
     <table><thead><tr><th>Pattern Type</th><th>Studies Repeatedly Show</th><th>Emphasized</th><th>Less Visible</th><th>Limits Understanding Of</th><th>Refined Gap</th></tr></thead><tbody>${gapRows}</tbody></table>
     <p><strong>Final gap:</strong> ${escapeHtml(value("a3.finalGap"))}</p>
     <h2 class="major-section">A4 Literature-Based Problem</h2>
+    <p><strong>Original A3 Gap:</strong> ${escapeHtml(value("a3.finalGap"))}</p>
+    ${state.a4.refinedGap ? `<p><strong>Refined Gap Used in A4:</strong> ${escapeHtml(state.a4.refinedGap)}</p>` : ""}
     <p>${escapeHtml(buildProblem())}</p>
+    <p><strong>Central Study Focus:</strong> ${escapeHtml(value("a4.centralFocus"))}</p>
+    <p><strong>Study Components:</strong> ${escapeHtml(value("a4.studyComponents"))}</p>
     <p><strong>Central research question:</strong> ${escapeHtml(value("a4.centralQuestion"))}</p>
     <h2>Specific Research Questions</h2>
     <ol>${state.a4.questions.filter(Boolean).map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ol>
-    <h2 class="major-section">Framework and Scope Alignment</h2>
+    <h2 class="major-section">Framework and Conceptual Scope</h2>
     <p><strong>Research Pathway:</strong> ${escapeHtml(value("frameworkFinder.pathway") === "theory-led" ? "Theory-led" : "Problem-led")}</p>
-    <h3>Framework Finder</h3>
-    ${fieldSets.frameworkFinder.map(([key, label]) => `<p><strong>${escapeHtml(label)}</strong><br>${escapeHtml(value(`frameworkFinder.${key}`))}</p>`).join("")}
-    <h3>Selected Framework and Fit</h3>
-    <p><strong>Framework or Explanatory Concept:</strong> ${escapeHtml(value("framework.theoryModel"))}</p>
+    <p><strong>Selected Framework or Combination:</strong> ${escapeHtml(value("framework.theoryModel"))}</p>
+    <p><strong>Authoritative Sources:</strong> ${escapeHtml(value("frameworkFinder.frameworkSource"))}</p>
+    <p><strong>Selection Justification:</strong> ${escapeHtml(value("frameworkFinder.selectionReason"))}</p>
+    <p><strong>Distinct Roles:</strong> ${escapeHtml(value("frameworkFinder.frameworkRoles"))}</p>
+    <p><strong>Combination Justification:</strong> ${escapeHtml(value("frameworkFinder.combinationReason"))}</p>
     <p><strong>Connection to the Problem:</strong> ${escapeHtml(value("framework.problemConnection"))}</p>
     <p><strong>Connection to the Questions:</strong> ${escapeHtml(value("framework.questionConnection"))}</p>
     <p><strong>Connection to Instruments or Analysis:</strong> ${escapeHtml(value("framework.instrumentConnection"))}</p>
-    <p><strong>Scope Boundaries:</strong> ${escapeHtml(value("framework.scopeBoundaries"))}</p>
+    <p><strong>Conceptual Scope:</strong> ${escapeHtml(value("framework.scopeBoundaries"))}</p>
     <h2 class="major-section">Research Level Justification</h2>
     ${state.submission.degreeLevel === "shs" ? `<p><strong>PQF Reference:</strong> ${escapeHtml(PQF_REFERENCE)}</p><p><strong>SHS / PQF Level 3 Note:</strong> Advanced ideas are welcome. The proposal should still be scoped to structured research tasks, emerging independence, available time, data, guidance, and ethical safeguards.</p>` : `<p><strong>PQF Reference:</strong> ${escapeHtml(PQF_REFERENCE)}</p><p><strong>Formative Note:</strong> ${escapeHtml(PQF_NOTE)}</p>`}
     ${fieldSets.researchLevel.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`researchLevel.${key}`))}</p>`).join("")}
     <h2 class="major-section">Methodology</h2>
     <p><strong>Research Design:</strong> ${escapeHtml(value("methodology.selectedDesign"))}</p>
-    <p><strong>Scope and Limitations/Delimitations:</strong> ${escapeHtml(value("framework.scopeBoundaries") || "This study is bounded by the selected participants, locale, constructs, instruments, and data procedures described below.")}</p>
+    <p><strong>Operational Delimitations:</strong> ${escapeHtml(value("methodology.operationalDelimitations"))}</p>
     <p><strong>Participants:</strong> ${escapeHtml(value("methodology.participants"))}</p>
     <p><strong>Sampling:</strong> ${escapeHtml(value("methodology.sampling"))}</p>
-    <p><strong>Locale:</strong> ${escapeHtml(value("methodology.locale"))}</p>
+    <p><strong>Research Environment or Setting:</strong> ${escapeHtml(value("methodology.locale"))}</p>
+    <p><strong>Evidence Sources:</strong> ${escapeHtml(value("methodology.evidenceSources"))}</p>
+    <p><strong>Study Period:</strong> ${escapeHtml(value("methodology.studyPeriod"))}</p>
     ${mixedMethodsOutput}
     <h2 class="major-section">Instrumentation</h2>
     <p>Each instrument should include its description, purpose, validation, and implementation.</p>
@@ -2146,13 +2575,9 @@ function buildSubmissionHtml() {
     ${termsOutputHtml(state.terms.rows)}
     <h2>Chapter 1 Template Alignment</h2>
     <div class="chapter-template">${outlineHtml()}</div>
-    <h2 class="major-section">Proposal Readiness Report</h2>
-    ${readinessPrintSummaryHtml(report)}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
     ${escapeHtml(APP_CREDIT)}<br>
-    Printed by ${escapeHtml(printedBy)} on ${escapeHtml(formatTimestamp(generatedAt))}.<br>
-    Started work on ${escapeHtml(startedAt)}.<br>
-    Duration of work: ${escapeHtml(workDuration)}.</p></footer>
+    Printed by ${escapeHtml(printedBy)} on ${escapeHtml(formatTimestamp(generatedAt))}.</p></footer>
   `;
 }
 
@@ -2181,9 +2606,11 @@ function buildProgressPdfHtml(stageId, scope) {
     <strong>Section:</strong> ${escapeHtml(value("submission.section"))}<br>
     <strong>Date:</strong> ${escapeHtml(value("submission.submissionDate"))}<br>
     <strong>Research Level / Use Context:</strong> ${escapeHtml(degree.label)} (${escapeHtml(degree.pqf)})</p>
+    ${workRecordHtml()}
     ${selectedStages.map((stage) => progressStageHtml(stage.id)).join("")}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
-    Printed by ${escapeHtml(value("submission.studentName") || "__________")} on ${escapeHtml(formatTimestamp(generatedAt))}.</p></footer>
+    Printed by ${escapeHtml(value("submission.studentName") || "__________")} on ${escapeHtml(formatTimestamp(generatedAt))}.<br>
+    The app provides developmental guidance and alignment checks. Its outputs do not constitute adviser, panel, or institutional approval.</p></footer>
   `;
 }
 
@@ -2211,11 +2638,18 @@ function progressStageHtml(stageId) {
   }
   if (stageId === "a4") {
     return `<h2 class="major-section">A4 Literature-Based Problem and Questions</h2>
-      ${fieldSets.a4.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`a4.${key}`))}</p>`).join("")}
-      <h3>Specific Research Questions</h3><ol>${state.a4.questions.filter(Boolean).map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ol>`;
+      <h3>Original A3 Gap</h3><p>${escapeHtml(value("a3.finalGap"))}</p>
+      <h3>Refined Gap Used in A4</h3><p>${escapeHtml(value("a4.refinedGap"))}</p>
+      <h3>Reason for Gap Revision</h3><p>${escapeHtml(value("a4.gapRevisionReason"))}</p>
+      <h3>Literature-Based Problem</h3><p>${escapeHtml(value("a4.literatureProblem"))}</p>
+      <h3>Central Study Focus</h3><p>${escapeHtml(value("a4.centralFocus"))}</p>
+      <h3>Study Components</h3><p>${escapeHtml(value("a4.studyComponents"))}</p>
+      <h3>Research Environment or Setting</h3><p>${escapeHtml(value("methodology.locale"))}</p>
+      <h3>Central Research Question</h3><p>${escapeHtml(value("a4.centralQuestion"))}</p>
+      <h3>Specific Research Questions</h3><ol>${state.a4.questions.filter(Boolean).map((q, index) => `<li>${escapeHtml(q)}<br><strong>Specific focus:</strong> ${escapeHtml(state.a4.questionFocuses[index])}<br><strong>Intended claim:</strong> ${escapeHtml(state.a4.questionClaims[index])}</li>`).join("")}</ol>`;
   }
   if (stageId === "framework") {
-    return `<h2 class="major-section">Framework and Scope Alignment</h2>
+    return `<h2 class="major-section">Framework Finder and Alignment</h2>
       <p><strong>Research Pathway:</strong> ${escapeHtml(value("frameworkFinder.pathway") === "theory-led" ? "Theory-led" : "Problem-led")}</p>
       ${fieldSets.frameworkFinder.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`frameworkFinder.${key}`))}</p>`).join("")}
       ${fieldSets.framework.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`framework.${key}`))}</p>`).join("")}`;
@@ -2231,7 +2665,7 @@ function progressStageHtml(stageId) {
       ${fieldSets.methodology.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`methodology.${key}`))}</p>`).join("")}
       <p><strong>Selected Design:</strong> ${escapeHtml(value("methodology.selectedDesign"))}</p>
       <p><strong>Sampling:</strong> ${escapeHtml(value("methodology.sampling"))}</p>
-      <p><strong>Locale:</strong> ${escapeHtml(value("methodology.locale"))}</p>
+      <p><strong>Research Environment or Setting:</strong> ${escapeHtml(value("methodology.locale"))}</p>
       <p><strong>Data Gathering:</strong> ${escapeHtml(value("methodology.collection"))}</p>
       <p><strong>Data Analysis:</strong> ${escapeHtml(value("methodology.analysis"))}</p>`;
   }
@@ -2250,7 +2684,7 @@ function progressStageHtml(stageId) {
     return `<h2 class="major-section">Proposal Outline</h2><div class="chapter-template">${outlineHtml()}</div>`;
   }
   if (stageId === "readiness") {
-    return `<h2 class="major-section">Proposal Readiness Report</h2>${readinessPrintSummaryHtml(readinessReport())}`;
+    return `<h2 class="major-section">Proposal Readiness Report</h2>${readinessPrintSummaryHtml(readinessReport(), false)}`;
   }
   return "";
 }
@@ -2341,19 +2775,20 @@ function finalSubmissionMissingItems() {
     requireValue(`a3.${key}`, `A3: ${key}`);
   });
 
-  ["literatureProblem", "centralQuestion", "questionType", "studiedGroup", "rqConstructs"].forEach((key) => {
-    requireValue(`a4.${key}`, `A4: ${fieldSets.a4.find((field) => field[0] === key)?.[1] || key}`);
-  });
+  [["literatureProblem", "literature-based problem"], ["centralFocus", "central study focus"], ["studyComponents", "study components"], ["centralPurpose", "broad inquiry purpose"], ["centralQuestion", "central research question"], ["rqConstructs", "required construct and gap ideas"]].forEach(([key, label]) => requireValue(`a4.${key}`, `A4: ${label}`));
+  if (state.a4.refinedGap && !state.a4.gapRevisionReason) missing.push("A4: reason for refining the A3 gap");
   const questions = state.a4.questions.filter((question) => question.trim());
   if (questions.length < SRQ_LIMITS.minimum || questions.length > SRQ_LIMITS.maximum) {
     missing.push(`A4: ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} specific research questions`);
   }
   questions.forEach((question, index) => {
     if (!state.a4.questionPurposes[index]) missing.push(`A4: purpose for SRQ ${index + 1}`);
+    if (!state.a4.questionFocuses[index]) missing.push(`A4: specific focus for SRQ ${index + 1}`);
+    if (!state.a4.questionClaims[index]) missing.push(`A4: intended claim for SRQ ${index + 1}`);
   });
 
   ["theoryModel", "problemConnection", "questionConnection", "instrumentConnection", "scopeBoundaries"].forEach((key) => {
-    requireValue(`framework.${key}`, `Framework and Scope: ${fieldSets.framework.find((field) => field[0] === key)?.[1] || key}`);
+    requireValue(`framework.${key}`, `Framework Alignment: ${fieldSets.framework.find((field) => field[0] === key)?.[1] || key}`);
   });
   requireValue("frameworkFinder.pathway", "Framework Finder: research pathway");
   fieldSets.frameworkFinder.forEach(([key, label]) => {
@@ -2368,7 +2803,7 @@ function finalSubmissionMissingItems() {
     missing.push("Research Level Justification: not enough evidence or feasible scope for the selected context");
   }
 
-  ["rqTypes", "dataNeeded", "participants", "purpose"].forEach((key) => {
+  ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations"].forEach((key) => {
     requireValue(`methodology.${key}`, `Methodology: ${fieldSets.methodology.find((field) => field[0] === key)?.[1] || key}`);
   });
   ["selectedDesign", "sampling", "locale", "collection", "analysis"].forEach((key) => {
@@ -2388,7 +2823,7 @@ function finalSubmissionMissingItems() {
 
   questions.forEach((question, index) => {
     const row = normalizeInstrumentRow(state.instrumentation.rows[index] || emptyRowFor("instrumentation"));
-    ["instrument", "description", "purpose", "validation", "implementation"].forEach((key) => {
+    ["claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"].forEach((key) => {
       if (!row[key]) missing.push(`Instrumentation: ${key} for SRQ ${index + 1}`);
     });
   });
@@ -2447,11 +2882,30 @@ function showWelcomeIfNeeded() {
 }
 
 function exportJson() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const backup = { backupFormat: "lit-based-proposal-builder", appVersion: APP_VERSION, schemaVersion: SCHEMA_VERSION, state, checkpoints };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "proposal-builder-a4-draft.json";
+  link.download = `proposal-builder-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadAppFeedbackReport() {
+  const entries = stages.map((stage) => ({ stage, feedback: appFeedback[stage.id] })).filter((entry) => entry.feedback && Object.values(entry.feedback).some(Boolean));
+  const degree = degreeLevelInfo();
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Lit-Based Proposal Builder App Feedback</title><style>body{font-family:Arial,sans-serif;max-width:850px;margin:40px auto;padding:0 24px;color:#1e2528}section{border-top:1px solid #ccd4d6;padding:18px 0}h1,h2{color:#214f48}dt{font-weight:bold;margin-top:8px}dd{margin-left:0}</style></head><body>
+    <h1>Anonymous App Feedback Report</h1>
+    <p><strong>App version:</strong> ${escapeHtml(APP_VERSION)}<br><strong>Research level / use context:</strong> ${escapeHtml(degree.label)}<br><strong>Generated:</strong> ${escapeHtml(formatTimestamp(new Date()))}</p>
+    <p>This report contains app-experience ratings and comments only. It excludes student identity and proposal answers.</p>
+    ${entries.length ? entries.map(({ stage, feedback }) => `<section><h2>${escapeHtml(stage.code)} - ${escapeHtml(stage.title)}</h2><dl><dt>Clarity</dt><dd>${escapeHtml(feedback.clarity || "Not rated")}/5</dd><dt>Helpfulness</dt><dd>${escapeHtml(feedback.helpfulness || "Not rated")}/5</dd><dt>Difficulty</dt><dd>${escapeHtml(feedback.difficulty || "Not rated")}</dd><dt>Confusing or unnecessary</dt><dd>${escapeHtml(feedback.confusion || "No comment")}</dd><dt>Suggested improvement</dt><dd>${escapeHtml(feedback.suggestion || "No comment")}</dd></dl></section>`).join("") : "<p>No app feedback has been entered yet.</p>"}
+  </body></html>`;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `lit-based-proposal-builder-feedback-${new Date().toISOString().slice(0, 10)}.html`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -2702,21 +3156,41 @@ function openUploadDialog() {
 function attachEvents() {
   document.addEventListener("input", (event) => {
     const target = event.target;
+    markInteraction();
+    if (target.dataset.appFeedback) {
+      saveAppFeedbackField(target.dataset.appFeedback, target.value);
+      return;
+    }
     if (target.dataset.section && target.dataset.key) {
       setValue(target.dataset.section, target.dataset.key, target.value);
     }
     if (target.dataset.array === "a4.questions") {
       state.a4.questions[Number(target.dataset.index)] = target.value;
+      markInteraction();
+      saveState();
+    }
+    if (target.dataset.questionFocus !== undefined) {
+      state.a4.questionFocuses[Number(target.dataset.questionFocus)] = target.value;
+      markContentEdit();
+      saveState();
+    }
+    if (target.dataset.questionClaim !== undefined) {
+      state.a4.questionClaims[Number(target.dataset.questionClaim)] = target.value;
+      markContentEdit();
       saveState();
     }
     if (target.dataset.questionPurpose !== undefined) {
-      state.a4.questionPurposes[Number(target.dataset.questionPurpose)] = target.value;
+      const questionIndex = Number(target.dataset.questionPurpose);
+      state.a4.questionPurposes[questionIndex] = target.value;
+      markContentEdit();
       saveState();
-      renderStage();
+      const starter = target.closest(".question-card")?.querySelector(".generated-text");
+      if (starter) starter.textContent = questionStarterHint(questionIndex);
     }
     if (target.dataset.table) {
       const collection = getTableRows(target.dataset.table);
       collection[Number(target.dataset.index)][target.dataset.key] = target.value;
+      markContentEdit();
       saveState();
       if (target.dataset.table === "terms") {
         updateTermPreview(Number(target.dataset.index));
@@ -2726,19 +3200,29 @@ function attachEvents() {
 
   document.addEventListener("change", (event) => {
     const target = event.target;
+    markInteraction();
+    if (target.dataset.appFeedback) {
+      saveAppFeedbackField(target.dataset.appFeedback, target.value);
+      return;
+    }
     if (target.dataset.ethicsCheck) {
       state.ethics.checks[target.dataset.ethicsCheck] = target.checked;
+      markContentEdit();
       if (!state.ethics.draft) state.ethics.draft = buildEthicsDraft();
       saveState();
       renderStage();
     }
     if (target.dataset.section && target.dataset.key) {
       setValue(target.dataset.section, target.dataset.key, target.value);
-      if (target.tagName === "SELECT") renderStage();
+      if (target.dataset.section === "a4" && target.dataset.key === "centralPurpose") {
+        const starter = document.querySelector("[data-central-starters]");
+        if (starter) starter.textContent = rqPurposeOptions[target.value]?.starters || "Choose the broad inquiry purpose to see suitable question starters.";
+      } else if (target.tagName === "SELECT") renderStage();
     }
   });
 
   document.addEventListener("click", (event) => {
+    markInteraction();
     const target = event.target.closest("button");
     if (!target) return;
     if (target.dataset.stage) {
@@ -2754,6 +3238,7 @@ function attachEvents() {
     }
     if (target.dataset.addRow) {
       getTableRows(target.dataset.addRow).push(emptyRowFor(target.dataset.addRow));
+      markContentEdit();
       saveState();
       renderStage();
     }
@@ -2761,6 +3246,7 @@ function attachEvents() {
       const [section, index] = target.dataset.removeRow.split(":");
       const rows = getTableRows(section);
       rows.splice(Number(index), 1);
+      markContentEdit();
       saveState();
       renderStage();
     }
@@ -2768,7 +3254,10 @@ function attachEvents() {
       if (state.a4.questions.length < SRQ_LIMITS.maximum) {
         state.a4.questions.push("");
         state.a4.questionPurposes.push("");
+        state.a4.questionFocuses.push("");
+        state.a4.questionClaims.push("");
       }
+      markContentEdit();
       saveState();
       renderStage();
     }
@@ -2776,9 +3265,13 @@ function attachEvents() {
       const index = Number(target.dataset.removeQuestion);
       state.a4.questions.splice(index, 1);
       state.a4.questionPurposes.splice(index, 1);
+      state.a4.questionFocuses.splice(index, 1);
+      state.a4.questionClaims.splice(index, 1);
+      markContentEdit();
       saveState();
       renderStage();
     }
+    if (target.dataset.restoreCheckpoint) restoreCheckpoint(target.dataset.restoreCheckpoint);
   });
 
   document.getElementById("backBtn").addEventListener("click", () => {
@@ -2795,7 +3288,17 @@ function attachEvents() {
     render();
   });
 
-  document.getElementById("saveBtn").addEventListener("click", saveState);
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    const label = prompt("Optional checkpoint label (for example: Before adviser consultation)", "");
+    if (label === null) return;
+    if (createCheckpoint(label, "manual")) alert("Draft checkpoint created. Autosave continues to protect your latest work.");
+  });
+  document.getElementById("historyBtn").addEventListener("click", () => {
+    renderCheckpointHistory();
+    els.historyDialog.showModal();
+  });
+  document.getElementById("closeHistoryBtn").addEventListener("click", () => els.historyDialog.close());
+  document.getElementById("downloadFeedbackBtn").addEventListener("click", downloadAppFeedbackReport);
   document.getElementById("checkBtn").addEventListener("click", showFeedback);
   document.getElementById("summaryBtn").addEventListener("click", previewSubmission);
   document.getElementById("previewBtn").addEventListener("click", previewCurrentOutput);
@@ -2827,6 +3330,7 @@ function attachEvents() {
       return;
     }
     state = mergeUploadStage(state, uploadTargetStage, pending);
+    markContentEdit();
     saveState();
     render();
     document.getElementById("uploadDialog").close();
@@ -2837,6 +3341,8 @@ function attachEvents() {
   document.getElementById("resetBtn").addEventListener("click", () => {
     if (confirm("Reset this draft? This clears saved work in this browser.")) {
       state = normalizeState(clone(defaultData));
+      checkpoints = [];
+      localStorage.removeItem(CHECKPOINT_KEY);
       saveState();
       render();
     }
@@ -2846,7 +3352,14 @@ function attachEvents() {
     const file = event.target.files[0];
     if (!file) return;
     try {
-      state = normalizeState({ ...clone(defaultData), ...JSON.parse(await file.text()) });
+      const imported = JSON.parse(await file.text());
+      const importedState = imported.backupFormat === "lit-based-proposal-builder" ? imported.state : imported;
+      state = normalizeState(importedState);
+      if (imported.backupFormat === "lit-based-proposal-builder" && Array.isArray(imported.checkpoints)) {
+        checkpoints = imported.checkpoints.slice(0, MAX_CHECKPOINTS);
+        saveCheckpoints();
+      }
+      markInteraction();
       saveState();
       render();
     } catch {
@@ -2860,3 +3373,12 @@ render();
 showWelcomeIfNeeded();
 saveState();
 setInterval(saveState, 30000);
+setInterval(tickActiveTime, 15000);
+document.addEventListener("visibilitychange", () => {
+  lastActiveTickAt = Date.now();
+  if (!document.hidden) markInteraction();
+});
+window.addEventListener("beforeunload", () => {
+  tickActiveTime();
+  saveState(false);
+});

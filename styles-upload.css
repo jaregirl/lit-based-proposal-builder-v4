@@ -168,6 +168,19 @@ button.compact {
   margin-top: 14px;
 }
 
+.active-work-row {
+  align-items: end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.active-work-row strong {
+  max-width: 145px;
+  text-align: right;
+  font-size: 0.86rem;
+}
+
 .dashboard span,
 .side-panel {
   color: var(--muted);
@@ -301,6 +314,121 @@ button.compact {
   padding: 14px 16px;
   line-height: 1.5;
   background: #eef6f4;
+}
+
+.migration-note {
+  border: 1px solid #d5b36a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #664d17;
+  background: #fff8e6;
+}
+
+.app-feedback-panel {
+  border-top: 1px solid var(--line);
+  padding: 14px 0;
+}
+
+.app-feedback-panel summary {
+  color: var(--accent-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.app-feedback-comments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.compact-dialog {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.checkpoint-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0;
+}
+
+.checkpoint-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.checkpoint-item p {
+  margin: 3px 0;
+}
+
+.guided-step {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.guided-step > summary {
+  padding: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guided-step[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-dark);
+}
+
+.guided-step-content {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.question-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.question-card > summary {
+  padding: 12px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.question-card[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-dark);
+}
+
+.evidence-feedback {
+  margin-top: 6px;
+}
+
+.evidence-feedback summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.evidence-grid {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .stage-form {
@@ -827,7 +955,9 @@ dialog::backdrop {
 
 @media (max-width: 640px) {
   .stage-nav,
-  .field-grid {
+  .field-grid,
+  .app-feedback-grid,
+  .app-feedback-comments {
     grid-template-columns: 1fr;
   }
 
@@ -872,6 +1002,21 @@ dialog::backdrop {
 
   .footer-actions {
     gap: 8px;
+  }
+
+  .field-label {
+    flex-wrap: wrap;
+  }
+
+  .help-tooltip {
+    position: static;
+    order: 3;
+    width: 100%;
+    box-shadow: none;
+  }
+
+  .checkpoint-item {
+    grid-template-columns: 1fr;
   }
 
 }
