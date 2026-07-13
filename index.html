@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lit-Based Proposal Builder Upload Version</title>
+    <title>Lit-Based Proposal Builder v4.6.0 Pilot</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260711-v456-guided-alignment" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260714-v460-pilot" />
   </head>
   <body>
     <div class="app-shell">
@@ -71,6 +71,8 @@
           Research ideas become clearer through refinement. It is okay if this changes later.
         </section>
 
+        <section class="update-notice" id="updateNotice" hidden aria-live="polite"></section>
+
         <section class="migration-note" id="migrationNotice" hidden></section>
 
         <form id="stageForm" class="stage-form"></form>
@@ -134,6 +136,7 @@
       <section class="about-content">
         <h2>Before You Begin</h2>
         <p><strong>Your work is saved locally in your own browser.</strong> The app does not send your answers to the developer, instructor, or a cloud server.</p>
+        <p>When online, the app checks only its same-site version file for updates. No proposal answer is included in that request, and the app continues normally when offline.</p>
         <p>The app autosaves the latest work. <strong>Save Draft</strong> creates a restorable checkpoint. Use <strong>Download Backup</strong> before changing devices, clearing browser data, or updating the app.</p>
         <p><strong>Lit-Based Proposal Builder</strong> was developed by J. Arawiran with assistance from OpenAI Codex, a GPT-5-based coding assistant (June 2026).</p>
         <p>This is a guided academic thinking tool. It supports proposal drafting, but it does not replace adviser feedback, instructor requirements, department policies, institutional guidelines, or official ethics review processes.</p>
@@ -157,6 +160,15 @@
         <h3>Data Privacy and Local Storage</h3>
         <p>The app saves draft work locally in the user's own browser storage. The developer, instructor, and app do not receive, collect, or store the student's answers through this tool. Draft data is not transmitted to a cloud server by the app. Students should still use the Download Backup feature before changing devices, clearing browser data, or updating the app.</p>
         <p>Optional app-experience feedback also remains local until the student downloads and submits an anonymous App Feedback Report. That report excludes student identity and proposal answers.</p>
+        <p>When the app opens online, it requests only the small same-site <code>version.json</code> file from GitHub Pages to check whether a newer release exists. Proposal answers are not included in that request. If the request fails or the user is offline, the app continues without an update message.</p>
+
+        <h3>How to Cite This App</h3>
+        <p>Ordinary student use does not require citation. When the app, its workflow, or its scaffolds are discussed in a paper or presentation, an optional citation is:</p>
+        <p>Arawiran, J. (2026). <em>Lit-Based Proposal Builder</em> (Version 4.6.0) [Computer software].</p>
+        <p>Reproduced or presented scaffolds and instructional materials should credit J. Arawiran. Adaptation or redistribution requires permission while institutional ownership is being clarified.</p>
+
+        <h3>Third-Party and Institutional Materials</h3>
+        <p>The app includes or relies on PDF.js, JSZip, and an HNU Consent Forms v2-based draft-template workflow. Their respective rights and notices remain with their authors or institutions. The generated ethics forms are drafts and do not replace the current official HNU or institutional ERB forms.</p>
 
         <h3>Conceptual and Educational Foundations</h3>
         <p>The design of this proposal builder draws upon established literature in research methodology, educational research, research ethics, and reflective inquiry. These sources informed the structure and guidance provided by the app. They are not automatically part of a student's proposal references unless they are directly consulted and cited by the student.</p>
@@ -197,7 +209,7 @@
         </ul>
 
         <h3>Use Reminder</h3>
-        <p>Students should treat all generated content as a working draft. Final research decisions, methodological choices, ethical considerations, proposal requirements, and formatting requirements should be reviewed and approved by the adviser, instructor, program head, dean, or other authorized academic personnel.</p>
+        <p>Students should treat all generated content as a working draft. Final research decisions, methodological choices, ethical considerations, proposal requirements, and formatting requirements should be reviewed with the adviser, instructor, program head, dean, or other authorized academic personnel.</p>
       </section>
     </dialog>
 
@@ -207,41 +219,7 @@
         <button class="ghost" id="closeStudentDetailsBtn" type="button">Close</button>
       </div>
       <section class="details-panel">
-        <div class="field-grid">
-          <div class="field full">
-            <label for="details-degreeLevel">Research Level / Use Context</label>
-            <select id="details-degreeLevel" data-section="submission" data-key="degreeLevel">
-              <option value="shs">SHS / Basic Education Research (PQF Level 3)</option>
-              <option value="bachelor">Bachelor's degree (PQF Level 6)</option>
-              <option value="master">Master's degree (PQF Level 7)</option>
-              <option value="doctoral">Doctoral degree (PQF Level 8)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="details-studentName">Student Name</label>
-            <input id="details-studentName" data-section="submission" data-key="studentName" />
-          </div>
-          <div class="field">
-            <label for="details-course">Course</label>
-            <input id="details-course" data-section="submission" data-key="course" />
-          </div>
-          <div class="field">
-            <label for="details-section">Section</label>
-            <input id="details-section" data-section="submission" data-key="section" />
-          </div>
-          <div class="field">
-            <label for="details-submissionDate">Date</label>
-            <input id="details-submissionDate" data-section="submission" data-key="submissionDate" />
-          </div>
-          <div class="field full">
-            <div class="field-label">
-              <label for="details-initialReadiness">Initial Readiness Reflection</label>
-              <span class="help-icon" role="button" tabindex="0" aria-label="Guidance for Initial Readiness Reflection" aria-describedby="details-initialReadiness-help">?</span>
-              <span class="help-tooltip" id="details-initialReadiness-help" role="tooltip">Before starting A1, briefly state how ready you think your proposal idea is.</span>
-            </div>
-            <textarea id="details-initialReadiness" data-section="submission" data-key="initialReadiness" aria-describedby="details-initialReadiness-help"></textarea>
-          </div>
-        </div>
+        <div id="studentDetailsDialogForm"></div>
       </section>
     </dialog>
 
@@ -263,6 +241,6 @@
 
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260711-v456-guided-alignment"></script>
+    <script src="app-upload.js?v=20260714-v460-pilot"></script>
   </body>
 </html>

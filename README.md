@@ -1,45 +1,53 @@
-# Lit-Based Proposal Builder
+# Lit-Based Proposal Builder v4
 
-A browser-based guided proposal development tool for education students.
+The Lit-Based Proposal Builder is a browser-based guided academic thinking tool developed by J. Arawiran. It helps novice researchers move from literature patterns to a gap, problem, questions, framework, methodology, ethics, instrumentation, and proposal-ready outputs.
 
-The app helps students move from literature review work into a research proposal through:
+## v4.6.0 Pilot
 
-- Student Details
-- A1 Core Construct Identification
-- A2 Deepened Review and Pattern Mapping
-- A3 From Patterns to Gaps
-- A4 Literature-Based Problem and Questions
-- Methodology
-- Ethics
-- Instrumentation
-- Proposal Outline
-- Readiness Check
-- Print / Save as PDF
+This pilot adds:
 
-## Versions
+- individual and group work with per-person readiness reflections;
+- adviser information and review records;
+- stable research-question-to-instrument alignment;
+- a transparent quantitative, qualitative, and mixed-methods design cascade;
+- action research as a separate orientation;
+- local ERB consent, permission, and assent draft preparation;
+- forward restoration of older backups;
+- local update notifications, checkpoints, active-work estimates, and anonymous app feedback;
+- progress, readiness, and academically clean final outputs.
 
-- `index.html` is the stable version.
-- `index-upload.html` is the upload version. It accepts accomplished A1-A3 forms as DOCX, PDF, or TXT files.
+## Run Locally
 
-## How To Run
+Serve this folder with any static file server, then open `index.html`. The app has no backend and does not require an AI service.
 
-Open `index.html` or `index-upload.html` in a browser.
+## Privacy and Saving
 
-For best results, serve the folder locally:
+Proposal data is stored in the user's browser. The app does not send proposal answers to the developer, instructor, or a cloud server. When online, the app requests only the same-site `version.json` file to check for a newer release.
 
-```bash
-python -m http.server 4173
+- **Autosave** preserves the latest browser state.
+- **Save Draft** creates a restorable checkpoint.
+- **Download Backup** creates a portable JSON file.
+
+Users should download a backup before opening a newer version or changing devices or browsers.
+
+## ERB Drafts
+
+Generated consent, permission, and assent documents are working drafts for adviser and ERB review. They do not constitute ethics approval and must not be used to begin recruitment or data collection. The current official institutional form and procedures must be verified before use. Signed forms and participant-identifying information must never be stored in the app.
+
+## Verification
+
+Run the browser smoke test from this directory:
+
+```powershell
+node tools/pilot-smoke-test.js
 ```
 
-Then open:
+The test covers responsive layouts, old-backup migration, group work, stable SRQ/instrument linkage, methodology cascading, ERB draft download, and update-check behavior.
 
-```text
-http://127.0.0.1:4173/
-http://127.0.0.1:4173/index-upload.html
-```
+The tokenized DOCX files are structurally checked by `tools/build_erb_templates.py`. Visual rendering still requires Microsoft Word or LibreOffice.
 
-## Notes
+## Attribution and Rights
 
-This app uses localStorage to save drafts in the browser. It does not require a backend.
+Ordinary student use does not require citation. A suggested citation is available inside the app. Reproducing or presenting the instructional scaffolds requires attribution to J. Arawiran. Adaptation or redistribution requires permission while institutional ownership is being clarified.
 
-The upload version includes local browser libraries for DOCX and PDF text extraction.
+See `THIRD_PARTY_NOTICES.md` for third-party and HNU template notices. No definitive proprietary license is asserted in this pilot.

@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const APP_VERSION = "v4.5.6 - Guided A4 and Explainable Alignment";
-const SCHEMA_VERSION = "4.5.6";
+const APP_VERSION = "v4.6.0 - Pilot";
+const SCHEMA_VERSION = "4.6.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
 const MAX_CHECKPOINTS = 5;
@@ -53,6 +53,50 @@ const rqPurposeOptions = {
     label: "Develop a model, framework, or theory",
     starters: "What framework can be developed...? What model explains...? What theory may be generated from...?"
   }
+};
+const methodologyDesigns = {
+  quantitative: [
+    ["descriptive", "Descriptive quantitative"],
+    ["correlational", "Correlational"],
+    ["comparative", "Comparative"],
+    ["predictive", "Predictive / regression"],
+    ["experimental", "Experimental"],
+    ["quasiExperimental", "Quasi-experimental"]
+  ],
+  qualitative: [
+    ["qualitativeDescriptive", "Qualitative descriptive / basic qualitative"],
+    ["phenomenology", "Phenomenology"],
+    ["caseStudy", "Case study"],
+    ["narrativeInquiry", "Narrative inquiry"],
+    ["groundedTheory", "Grounded theory"],
+    ["ethnography", "Ethnography"]
+  ],
+  mixed: [
+    ["convergent", "Convergent mixed methods"],
+    ["explanatorySequential", "Explanatory sequential mixed methods"],
+    ["exploratorySequential", "Exploratory sequential mixed methods"],
+    ["embedded", "Embedded mixed methods"],
+    ["multiphase", "Multiphase mixed methods"]
+  ]
+};
+const designGuidance = {
+  descriptive: ["Describes levels, profiles, frequencies, or conditions numerically.", "Requires clearly defined variables, suitable measures, and an appropriate sample.", "Consider qualitative descriptive if meanings or detailed accounts matter more than numeric estimates."],
+  correlational: ["Examines the direction or strength of relationships among measured variables.", "Requires variables that can be measured defensibly and assumptions appropriate to the selected statistic.", "It does not by itself establish causation."],
+  comparative: ["Compares outcomes or conditions across existing groups or categories.", "Requires a defensible grouping basis and comparable evidence from each group.", "Clarify whether the design is descriptive-comparative or causal-comparative."],
+  predictive: ["Estimates how one or more factors predict an outcome.", "Requires adequate sample size, defensible measures, and regression assumptions.", "Consider correlational design if prediction is not actually intended."],
+  experimental: ["Tests an intervention through deliberate manipulation and strong control, usually including random assignment.", "Requires ethical and practical ability to assign conditions and control competing explanations.", "Use quasi-experimental when random assignment is not feasible."],
+  quasiExperimental: ["Tests change or group differences around an intervention without full random assignment.", "Requires comparison logic, baseline or pretest planning where suitable, and attention to alternative explanations.", "Consider action research when local improvement, not causal estimation, is the main purpose."],
+  qualitativeDescriptive: ["Provides a close, accessible description of perceptions, practices, events, or processes.", "Requires information-rich participants or sources and a transparent qualitative analysis process.", "Consider phenomenology only when lived experience and its meaning are the central focus."],
+  phenomenology: ["Examines the meaning and structure of a shared lived experience.", "Requires participants who experienced the phenomenon and rich first-person accounts.", "It is not a general label for every interview study."],
+  caseStudy: ["Investigates a bounded case in depth using multiple sources of evidence.", "Requires a clearly bounded case, context, period, and evidence-source plan.", "Consider qualitative descriptive if there is no defensible case boundary."],
+  narrativeInquiry: ["Examines stories, experience over time, and how participants make meaning through narrative.", "Requires narrative data and attention to chronology, context, and researcher-participant relationships.", "Use phenomenology if the goal is a shared essence rather than individual stories."],
+  groundedTheory: ["Develops an explanatory process or theory grounded in systematically analyzed data.", "Requires iterative sampling, constant comparison, memoing, and sufficient theoretical depth.", "Do not select it merely because the intended output is called a model."],
+  ethnography: ["Examines shared meanings and practices within a culture-sharing group.", "Usually requires sustained engagement, observation, and cultural interpretation.", "Consider case study when the emphasis is a bounded institution rather than culture."],
+  convergent: ["Collects quantitative and qualitative evidence in a similar period and integrates results for comparison.", "Requires both strands to address related aspects and an explicit integration strategy.", "Explain how differences or convergence will be interpreted."],
+  explanatorySequential: ["Uses quantitative findings first, then qualitative evidence to explain selected results.", "Requires a clear rule for choosing follow-up participants or findings and connecting the phases.", "Use exploratory sequential when qualitative exploration should come first."],
+  exploratorySequential: ["Uses qualitative exploration first, then quantitative work to test, measure, or extend findings.", "Requires an explicit process for building the second phase from the first.", "This may fit instrument or model development when validation is planned."],
+  embedded: ["Places a secondary evidence strand inside a larger primary design.", "Requires a clear primary design and a distinct purpose for the embedded strand.", "Clarify when and how the strands connect."],
+  multiphase: ["Coordinates multiple linked studies or phases toward a larger program goal.", "Requires a feasible sequence, resources, and explicit integration across phases.", "This is usually too extensive for a short student project unless tightly scoped."]
 };
 const uploadStageIds = ["a1", "a2", "a3"];
 let uploadTargetStage = "a1";
@@ -188,7 +232,7 @@ const tableScaffolds = {
   },
   terms: {
     term: "Write one term only. Use a construct, variable, participant label, intervention name, or context-specific term.",
-    conceptual: "State the general meaning of the term based on literature or accepted academic use.",
+    conceptual: "State the general meaning based on literature and identify the author or authors and year of the definition you actually consulted.",
     operational: "Define exactly what the term means in this study.",
     measured: "Explain how this term will be measured, observed, identified, coded, or represented in an instrument."
   }
@@ -231,6 +275,7 @@ const defaultData = {
   },
   a4: {
     questions: ["", "", ""],
+    questionIds: ["", "", ""],
     questionPurposes: ["", "", ""],
     questionFocuses: ["", "", ""],
     questionClaims: ["", "", ""],
@@ -241,6 +286,10 @@ const defaultData = {
     centralPurpose: ""
   },
   methodology: {
+    approach: "",
+    design: "",
+    actionResearch: "no",
+    designJustification: "",
     selectedDesign: "",
     sampling: "",
     locale: "",
@@ -255,11 +304,34 @@ const defaultData = {
   mixedMethods: {},
   ethics: {
     checks: {},
-    draft: ""
+    draft: "",
+    documents: {
+      humanParticipants: "",
+      capableAdults: "",
+      minorsDirect: "",
+      vulnerableParticipants: "",
+      representativePermission: "",
+      twoRepresentativeSignatures: "",
+      studyTitle: "",
+      coInvestigator: "",
+      sponsor: "",
+      inclusionCriteria: "",
+      exclusionCriteria: "",
+      expectedParticipants: "",
+      participantActivities: "",
+      participantTime: "",
+      risks: "",
+      riskMitigation: "",
+      benefits: "",
+      compensation: "",
+      researchContact: "",
+      childAgeRange: "",
+      assentLanguage: ""
+    }
   },
   instrumentation: {
     rows: [
-      { rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" }
+      { questionId: "", rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" }
     ]
   },
   outline: {
@@ -272,7 +344,12 @@ const defaultData = {
   },
   readiness: {},
   submission: {
-    degreeLevel: "master"
+    degreeLevel: "master",
+    workArrangement: "individual",
+    adviserName: "",
+    groupName: "",
+    groupLeader: { id: "", name: "", initialReadiness: "", confidence: "", readinessChange: "" },
+    groupMembers: []
   }
 };
 
@@ -321,10 +398,16 @@ const els = {
   historyDialog: document.getElementById("historyDialog"),
   checkpointList: document.getElementById("checkpointList"),
   stageFeedbackForm: document.getElementById("stageFeedbackForm")
+  ,updateNotice: document.getElementById("updateNotice")
 };
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function createStableId(prefix = "item") {
+  if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function loadState() {
@@ -382,16 +465,24 @@ function normalizeState(nextState) {
   normalized.frameworkFinder = { ...clone(defaultData.frameworkFinder), ...(nextState.frameworkFinder || {}) };
   normalized.researchLevel = { ...clone(defaultData.researchLevel), ...(nextState.researchLevel || {}) };
   normalized.methodology = { ...clone(defaultData.methodology), ...(nextState.methodology || {}) };
+  migrateMethodologySelection(normalized.methodology);
   normalized.mixedMethods = { ...clone(defaultData.mixedMethods), ...(nextState.mixedMethods || {}) };
   normalized.ethics = { ...clone(defaultData.ethics), ...(nextState.ethics || {}) };
+  normalized.ethics.documents = { ...clone(defaultData.ethics.documents), ...(nextState.ethics?.documents || {}) };
   normalized.instrumentation = { ...clone(defaultData.instrumentation), ...(nextState.instrumentation || {}) };
   normalized.terms = { ...clone(defaultData.terms), ...(nextState.terms || {}) };
   normalized.outline = { ...clone(defaultData.outline), ...(nextState.outline || {}) };
   normalized.submission = { ...clone(defaultData.submission), ...(nextState.submission || {}) };
   if (!normalized.submission.degreeLevel) normalized.submission.degreeLevel = "master";
+  if (!normalized.submission.workArrangement) normalized.submission.workArrangement = "individual";
+  normalized.submission.groupLeader = normalizeGroupPerson(normalized.submission.groupLeader, "leader");
+  if (!Array.isArray(normalized.submission.groupMembers)) normalized.submission.groupMembers = [];
+  normalized.submission.groupMembers = normalized.submission.groupMembers.map((person) => normalizeGroupPerson(person, "member"));
   if (!Array.isArray(normalized.a2.patterns)) normalized.a2.patterns = clone(defaultData.a2.patterns);
   if (!Array.isArray(normalized.a3.gaps)) normalized.a3.gaps = clone(defaultData.a3.gaps);
   if (!Array.isArray(normalized.a4.questions)) normalized.a4.questions = ["", "", ""];
+  if (!Array.isArray(normalized.a4.questionIds)) normalized.a4.questionIds = [];
+  normalized.a4.questionIds = normalized.a4.questions.map((_, index) => normalized.a4.questionIds[index] || createStableId("srq"));
   if (!Array.isArray(normalized.a4.questionPurposes)) normalized.a4.questionPurposes = [];
   normalized.a4.questionPurposes = normalized.a4.questions.map((_, index) => normalized.a4.questionPurposes[index] || "");
   if (!Array.isArray(normalized.a4.questionFocuses)) normalized.a4.questionFocuses = [];
@@ -417,6 +508,7 @@ function normalizeState(nextState) {
 
 function normalizeInstrumentRow(row = {}) {
   return {
+    questionId: row.questionId || "",
     rq: row.rq || "",
     claimNeeded: row.claimNeeded || "",
     evidenceNeeded: row.evidenceNeeded || row.data || "",
@@ -427,6 +519,37 @@ function normalizeInstrumentRow(row = {}) {
     purpose: row.purpose || row.sample || "",
     validation: row.validation || "",
     implementation: row.implementation || ""
+  };
+}
+
+function migrateMethodologySelection(methodology) {
+  if (methodology.approach && methodology.design) {
+    methodology.selectedDesign = methodologyDisplayName(methodology.approach, methodology.design, methodology.actionResearch === "yes");
+    return;
+  }
+  const old = String(methodology.selectedDesign || "").toLowerCase();
+  const mappings = [
+    ["descriptive quantitative", "quantitative", "descriptive"], ["correlational", "quantitative", "correlational"],
+    ["comparative", "quantitative", "comparative"], ["predictive", "quantitative", "predictive"],
+    ["quasi-experimental", "quantitative", "quasiExperimental"], ["phenomenology", "qualitative", "phenomenology"],
+    ["case study", "qualitative", "caseStudy"], ["narrative", "qualitative", "narrativeInquiry"],
+    ["basic qualitative", "qualitative", "qualitativeDescriptive"], ["mixed methods", "mixed", "convergent"]
+  ];
+  const match = mappings.find(([needle]) => old.includes(needle));
+  if (match) {
+    methodology.approach = match[1];
+    methodology.design = match[2];
+  }
+  if (old.includes("action research")) methodology.actionResearch = "yes";
+}
+
+function normalizeGroupPerson(person = {}, role = "member") {
+  return {
+    id: person.id || createStableId(role),
+    name: person.name || "",
+    initialReadiness: person.initialReadiness || "",
+    confidence: person.confidence || "",
+    readinessChange: person.readinessChange || ""
   };
 }
 
@@ -655,6 +778,35 @@ function renderMigrationNotice() {
     : "";
 }
 
+function semverParts(version = "") {
+  return String(version).match(/\d+/g)?.slice(0, 3).map(Number) || [0, 0, 0];
+}
+
+function isNewerVersion(candidate, current) {
+  const next = semverParts(candidate);
+  const here = semverParts(current);
+  for (let index = 0; index < 3; index += 1) {
+    if ((next[index] || 0) > (here[index] || 0)) return true;
+    if ((next[index] || 0) < (here[index] || 0)) return false;
+  }
+  return false;
+}
+
+async function checkForUpdates() {
+  if (!els.updateNotice) return;
+  try {
+    const response = await fetch(`version.json?checked=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const release = await response.json();
+    if (!release.version || !isNewerVersion(release.version, APP_VERSION)) return;
+    const notes = Array.isArray(release.notes) ? release.notes : [];
+    els.updateNotice.hidden = false;
+    els.updateNotice.innerHTML = `<div><strong>A newer version (${escapeHtml(release.version)}) is available.</strong><p>Your current draft will not reload or update automatically. Download a backup first.</p></div><div class="inline-actions"><button type="button" class="ghost compact" data-show-whats-new>What's New</button><button type="button" class="ghost compact" data-download-update-backup>Download Backup</button><a class="button-link compact" href="${escapeHtml(release.url || "./")}" target="_blank" rel="noopener">Open New Version</a></div><div class="update-notes" hidden>${notes.length ? `<ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : "<p>No release notes were provided.</p>"}</div>`;
+  } catch {
+    // Offline or malformed version checks never interrupt local work.
+  }
+}
+
 function stageFeedbackEntry(stageId = state.currentStage) {
   return appFeedback[stageId] || { clarity: "", helpfulness: "", difficulty: "", confusion: "", suggestion: "", updatedAt: "" };
 }
@@ -794,11 +946,100 @@ function renderStudentDetailsStage() {
       <h3>Student Details</h3>
       <p class="hint">These details will appear in the proposal summary and PDF submission. You can update them later from the Student Details button.</p>
     </section>
-    <div class="field-grid">
-      ${renderDegreeLevelSelect()}
-    </div>
-    ${renderFields("submission", fieldSets.submission)}
+    ${renderStudentDetailsForm()}
   `;
+}
+
+function renderStudentDetailsForm(prefix = "") {
+  const group = state.submission.workArrangement === "group";
+  const commonFields = [
+    ["adviserName", "Adviser Name", "Enter the adviser assigned to review this proposal."],
+    ["course", "Course", "Enter the course or subject where this output will be submitted."],
+    ["section", "Section", "Add the section, block, program, or class schedule if required."],
+    ["submissionDate", "Date", "Use the submission date or the date required by the instructor."]
+  ];
+  return `
+    <div class="field-grid">
+      ${renderDegreeLevelSelect(prefix)}
+      <fieldset class="field full arrangement-picker">
+        <legend>Work Arrangement</legend>
+        <div class="segmented-control" role="radiogroup" aria-label="Work arrangement">
+          <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="individual" ${group ? "" : "checked"}> Individual</label>
+          <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="group" ${group ? "checked" : ""}> Group</label>
+        </div>
+        <p class="hint">For group work, every person records a separate readiness reflection. Estimated active work is shared app-session activity, not an individual contribution measure.</p>
+      </fieldset>
+      ${commonFields.map(([key, label, hint]) => studentDetailField(prefix, key, label, hint)).join("")}
+    </div>
+    ${group ? renderGroupDetails(prefix) : renderIndividualDetails(prefix)}
+  `;
+}
+
+function studentDetailField(prefix, key, label, hint, full = false) {
+  const id = `${prefix}${key}`;
+  return `
+    <div class="field ${full ? "full" : ""}">
+      <div class="field-label"><label for="${id}">${escapeHtml(label)}</label>${helpControl(`${id}-help`, label, hint)}</div>
+      <input id="${id}" data-section="submission" data-key="${key}" value="${escapeHtml(value(`submission.${key}`))}" aria-describedby="${id}-help">
+    </div>`;
+}
+
+function renderIndividualDetails(prefix) {
+  const nameId = `${prefix}studentName`;
+  const reflectionId = `${prefix}initialReadiness`;
+  return `
+    <div class="field-grid">
+      <div class="field full">
+        <div class="field-label"><label for="${nameId}">Student Name</label>${helpControl(`${nameId}-help`, "Student Name", "Use the name required by the instructor or institution.")}</div>
+        <input id="${nameId}" data-section="submission" data-key="studentName" value="${escapeHtml(value("submission.studentName"))}" aria-describedby="${nameId}-help">
+      </div>
+      <div class="field full">
+        <div class="field-label"><label for="${reflectionId}">Initial Readiness Reflection</label>${helpControl(`${reflectionId}-help`, "Initial Readiness Reflection", "Before starting A1, state how ready you think your proposal idea is and why.")}</div>
+        <textarea id="${reflectionId}" data-section="submission" data-key="initialReadiness" aria-describedby="${reflectionId}-help">${escapeHtml(value("submission.initialReadiness"))}</textarea>
+      </div>
+    </div>`;
+}
+
+function renderGroupDetails(prefix) {
+  const groupNameId = `${prefix}groupName`;
+  return `
+    <section class="group-details">
+      <div class="field">
+        <label for="${groupNameId}">Group Name <span class="hint">(optional)</span></label>
+        <input id="${groupNameId}" data-section="submission" data-key="groupName" value="${escapeHtml(state.submission.groupName || "")}">
+      </div>
+      ${groupPersonCard(state.submission.groupLeader, "leader", 0, prefix, true)}
+      <div class="group-member-list">
+        ${state.submission.groupMembers.map((person, index) => groupPersonCard(person, "member", index, prefix)).join("")}
+      </div>
+      <button type="button" class="ghost" data-add-group-member>Add Group Member</button>
+    </section>`;
+}
+
+function groupPersonCard(person, role, index, prefix, open = false) {
+  const label = role === "leader" ? "Group Leader" : `Group Member ${index + 1}`;
+  return `
+    <details class="group-person-card" ${open ? "open" : ""}>
+      <summary>${escapeHtml(person.name || label)}</summary>
+      <div class="field-grid">
+        <div class="field full">
+          <label>${label} Name</label>
+          <input data-group-person-role="${role}" data-group-person-index="${index}" data-group-person-key="name" value="${escapeHtml(person.name)}">
+        </div>
+        ${groupReflectionField(person, role, index, "initialReadiness", "Initial Readiness Reflection")}
+        ${groupReflectionField(person, role, index, "confidence", "Final Readiness Reflection")}
+        ${groupReflectionField(person, role, index, "readinessChange", "What Changed and Why?")}
+      </div>
+      ${role === "member" ? `<button type="button" class="danger ghost" data-remove-group-member="${index}">Remove Member</button>` : ""}
+    </details>`;
+}
+
+function groupReflectionField(person, role, index, key, label) {
+  return `
+    <div class="field full">
+      <label>${label}</label>
+      <textarea data-group-person-role="${role}" data-group-person-index="${index}" data-group-person-key="${key}">${escapeHtml(person[key] || "")}</textarea>
+    </div>`;
 }
 
 function renderA1() {
@@ -951,7 +1192,11 @@ function renderA4() {
                 <section class="output-box"><h3>Suggested starters</h3><div class="generated-text">${escapeHtml(questionStarterHint(index))}</div></section>
                 <label>What claim should the evidence allow the study to make?<textarea data-question-claim="${index}">${escapeHtml(state.a4.questionClaims[index])}</textarea></label>
                 <label>Write the specific research question<textarea data-array="a4.questions" data-index="${index}">${escapeHtml(question)}</textarea></label>
-                <button class="danger compact" type="button" data-remove-question="${index}">Remove Question</button>
+                <div class="inline-actions question-actions">
+                  <button class="ghost compact" type="button" data-move-question="${index}:up" ${index === 0 ? "disabled" : ""}>Move Up</button>
+                  <button class="ghost compact" type="button" data-move-question="${index}:down" ${index === state.a4.questions.length - 1 ? "disabled" : ""}>Move Down</button>
+                  <button class="danger compact" type="button" data-remove-question="${index}">Remove Question</button>
+                </div>
               </div>
             </details>`).join("")}
         </div>
@@ -970,19 +1215,45 @@ function questionStarterHint(index) {
 }
 
 function renderMethodology() {
-  const mixedNeeded = isMixedMethodsLikely();
+  const approach = state.methodology.approach || "";
+  const design = state.methodology.design || "";
+  const mixedNeeded = approach === "mixed";
+  const recommendation = methodologyRecommendation();
   els.stageForm.innerHTML = `
     ${renderFields("methodology", fieldSets.methodology)}
-    <section class="field">
-      <div class="field-label">
-        <label for="selectedDesign">Recommended or selected research design</label>
-        ${helpControl("selectedDesign-help", "Recommended or selected research design", recommendMethodology())}
+    <section class="output-box methodology-recommendation">
+      <h3>Design Guidance from A4</h3>
+      <div class="generated-text">${escapeHtml(recommendation.summary)}</div>
+      <p class="hint">Compared with: A4 inquiry purposes, intended claims, and evidence needs. This is a recommendation, not a decision. Review alternatives with your adviser.</p>
+    </section>
+    <section class="field-grid methodology-cascade">
+      <div class="field full">
+        <label for="methodology-approach">1. What broad evidence approach will answer the questions?</label>
+        <select id="methodology-approach" data-methodology-selection="approach">
+          <option value="">Choose after reviewing A4</option>
+          <option value="quantitative" ${approach === "quantitative" ? "selected" : ""}>Quantitative</option>
+          <option value="qualitative" ${approach === "qualitative" ? "selected" : ""}>Qualitative</option>
+          <option value="mixed" ${approach === "mixed" ? "selected" : ""}>Mixed Methods</option>
+        </select>
+        <p class="hint">Quantitative uses measurable variables; qualitative examines meanings, experiences, processes, cases, or culture; mixed methods requires both and an explicit integration purpose.</p>
       </div>
-      <select id="selectedDesign" data-section="methodology" data-key="selectedDesign">
-        ${["", "Descriptive Quantitative", "Correlational Quantitative", "Comparative Quantitative", "Quasi-experimental", "Phenomenology", "Case Study", "Narrative Inquiry", "Basic Qualitative Study", "Mixed Methods", "Action Research"].map((option) => `
-          <option value="${option}" ${value("methodology.selectedDesign") === option ? "selected" : ""}>${option || "Select after reviewing recommendation"}</option>
-        `).join("")}
-      </select>
+      ${approach ? `<div class="field full">
+        <label for="methodology-design">2. Which design within ${escapeHtml(approachLabel(approach))} may fit?</label>
+        <select id="methodology-design" data-methodology-selection="design">
+          <option value="">Choose a design</option>
+          ${methodologyDesigns[approach].map(([key, label]) => `<option value="${key}" ${design === key ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+        </select>
+      </div>` : ""}
+      <div class="field full">
+        <label class="toggle-line"><input type="checkbox" data-methodology-action ${state.methodology.actionResearch === "yes" ? "checked" : ""}> This study also uses an Action Research orientation</label>
+        <p class="hint">Action research is an improvement orientation, not a fourth evidence approach. It may use quantitative, qualitative, or mixed evidence through a plan-act-observe-reflect cycle.</p>
+      </div>
+    </section>
+    ${design ? designGuidanceHtml(design) : ""}
+    <section class="field full">
+      <label for="methodology-designJustification">Why does this design fit better than the alternatives?</label>
+      <textarea id="methodology-designJustification" data-section="methodology" data-key="designJustification">${escapeHtml(state.methodology.designJustification || "")}</textarea>
+      <p class="hint">Connect the design to the questions, claims, evidence, feasibility, and assumptions. Name an alternative considered and why it fits less well.</p>
     </section>
     <section class="output-box">
       <h3>Ethics Comes Before Instruments</h3>
@@ -997,6 +1268,39 @@ function renderMethodology() {
     ` : ""}
     ${methodologyOutputFields()}
   `;
+}
+
+function approachLabel(approach) {
+  return { quantitative: "Quantitative", qualitative: "Qualitative", mixed: "Mixed Methods" }[approach] || "";
+}
+
+function methodologyDisplayName(approach, design, actionResearch = false) {
+  const label = methodologyDesigns[approach]?.find(([key]) => key === design)?.[1] || "";
+  return [label, actionResearch ? "with Action Research orientation" : ""].filter(Boolean).join(" ");
+}
+
+function designGuidanceHtml(design) {
+  const guidance = designGuidance[design] || [];
+  return `<section class="output-box design-guidance"><h3>Why this option may fit</h3><p>${escapeHtml(guidance[0] || "Review how this design produces the intended claims.")}</p><h3>Requirements and assumptions</h3><p>${escapeHtml(guidance[1] || "State the conditions this design requires.")}</p><h3>Alternative to discuss</h3><p>${escapeHtml(guidance[2] || "Compare at least one defensible alternative with your adviser.")}</p></section>`;
+}
+
+function methodologyRecommendation() {
+  const purposes = state.a4.questionPurposes.filter(Boolean);
+  const claims = state.a4.questionClaims.join(" ").toLowerCase();
+  const evidence = `${state.methodology.dataNeeded || ""} ${state.methodology.evidenceSources || ""}`.toLowerCase();
+  const numeric = purposes.some((p) => ["describe", "compare", "relationship", "predict", "evaluate"].includes(p)) || /score|level|frequency|difference|relationship|predict|numeric|survey/.test(`${claims} ${evidence}`);
+  const qualitative = purposes.some((p) => ["exploreExperience", "explain", "develop"].includes(p)) || /experience|meaning|process|theme|narrative|interview|observation|document/.test(`${claims} ${evidence}`);
+  let approach = numeric && qualitative ? "mixed" : qualitative ? "qualitative" : numeric ? "quantitative" : "";
+  const candidates = [];
+  if (purposes.includes("relationship")) candidates.push("correlational");
+  if (purposes.includes("compare")) candidates.push("comparative");
+  if (purposes.includes("predict")) candidates.push("predictive");
+  if (purposes.includes("exploreExperience")) candidates.push("phenomenology", "qualitative descriptive", "case study");
+  if (purposes.includes("develop")) candidates.push("grounded theory", "exploratory sequential mixed methods");
+  if (purposes.includes("evaluate")) candidates.push("quasi-experimental", "case study", "mixed methods", "action research orientation");
+  if (!candidates.length && purposes.includes("describe")) candidates.push(numeric ? "descriptive quantitative" : "qualitative descriptive");
+  const approachText = approach ? `${approachLabel(approach)} may fit` : "More A4 detail is needed";
+  return { approach, candidates, summary: `${approachText}${candidates.length ? `. Candidate designs to compare: ${[...new Set(candidates)].join(", ")}.` : ". Add the intended claims and evidence needs before selecting a design."}` };
 }
 
 function renderFramework() {
@@ -1071,8 +1375,8 @@ Usually, do not define ordinary words unless the study uses them in a special te
     </section>
     <section class="output-box">
       <h3>Example</h3>
-      <div class="generated-text">Term: Science teaching confidence
-Conceptual definition: A teacher's belief in their ability to teach science effectively.
+      <div class="generated-text">Term: Science teaching self-efficacy
+Conceptual definition (with author/s and year): Bandura (1997) describes self-efficacy as a person's belief in their capability to organize and carry out actions needed for a task.
 Operational definition: In this study, science teaching confidence refers to the participant's self-rated confidence in planning, explaining, and assessing science lessons.
 Measured, observed, or identified through: Survey items on confidence in lesson planning, explaining concepts, facilitating activities, and assessing learning.</div>
     </section>
@@ -1089,7 +1393,7 @@ function termRow(index) {
   const row = normalizeTermRow(state.terms.rows[index]);
   const fields = [
     ["term", "Term"],
-    ["conceptual", "Conceptual Definition"],
+    ["conceptual", "Conceptual Definition (with Author/s and Year)"],
     ["operational", "Operational Definition"],
     ["measured", "Measured, Observed, or Identified Through"]
   ];
@@ -1123,7 +1427,7 @@ function termDefinitionPreview(row) {
     return "The draft definition will appear here after you add the term details.";
   }
   const term = row.term || "[term]";
-  const conceptual = row.conceptual || "[add the general or literature-based meaning]";
+  const conceptual = row.conceptual || "[add the literature-based meaning with author/s and year]";
   const operational = row.operational || "[add how the term is used in this study]";
   const measured = row.measured || "[add how it will be measured, observed, identified, coded, or represented]";
   return `${term} refers generally to ${conceptual}. In this study, ${term} refers to ${operational}. It will be measured, observed, or identified through ${measured}.`;
@@ -1148,11 +1452,37 @@ function methodologyOutputFields() {
     <div class="field">
       <div class="field-label">
         <label for="methodology-${key}">${label}</label>
-        ${helpControl(`methodology-${key}-help`, label, `${fields.find((field) => field[0] === key)[2]} This can change after your adviser checks the design.`)}
+        ${helpControl(`methodology-${key}-help`, label, `${methodologyFieldGuidance(key, fields.find((field) => field[0] === key)[2])} This can change after your adviser checks the design.`)}
       </div>
       <textarea id="methodology-${key}" data-section="methodology" data-key="${key}" aria-describedby="methodology-${key}-help">${escapeHtml(value(`methodology.${key}`))}</textarea>
     </div>
   `).join("")}</div>`;
+}
+
+function methodologyFieldGuidance(key, fallback) {
+  const approach = state.methodology.approach;
+  const design = state.methodology.design;
+  const specifics = {
+    quantitative: {
+      sampling: "State the target population, sampling frame where available, selection procedure, and how the intended analysis affects sample needs.",
+      collection: "Describe standardized administration, scoring, quality checks, and comparable procedures across respondents or groups.",
+      analysis: "Name descriptive and inferential procedures that directly answer each SRQ, including assumptions that must be checked."
+    },
+    qualitative: {
+      sampling: "Explain how information-rich participants, cases, events, or documents will be selected and when sufficient depth will be judged.",
+      collection: "Describe interviews, observations, documents, artifacts, field notes, or other sources and how depth and reflexivity will be supported.",
+      analysis: "Name the qualitative analytic process, coding or interpretation steps, and trustworthiness strategies."
+    },
+    mixed: {
+      sampling: "Explain sampling for both strands and whether the same, nested, or different participants or sources will be used.",
+      collection: "Sequence both strands and identify where one phase informs the other or where the evidence is brought together.",
+      analysis: "State the analysis for each strand and the integration method, such as connecting, merging, embedding, or a joint display."
+    }
+  };
+  let text = specifics[approach]?.[key] || fallback;
+  if (design === "caseStudy" && key === "locale") text = "Define the bounded case, its environment, the relevant period, and why that boundary forms one case.";
+  if (state.methodology.actionResearch === "yes" && key === "collection") text += " Show the plan-act-observe-reflect cycle and how each cycle informs improvement.";
+  return text;
 }
 
 function renderEthics() {
@@ -1170,12 +1500,144 @@ function renderEthics() {
       <textarea data-section="ethics" data-key="draft">${escapeHtml(value("ethics.draft") || buildEthicsDraft())}</textarea>
       <p class="hint">Risk level: ${escapeHtml(ethicsRisk().label)}. ${escapeHtml(ethicsRisk().reason)}</p>
     </section>
+    ${renderConsentDocumentPreparation()}
   `;
+}
+
+function renderConsentDocumentPreparation() {
+  const docs = state.ethics.documents;
+  const fields = [
+    ["studyTitle", "Study title", state.ethics.documents.studyTitle || state.a1.initialTopic || ""],
+    ["coInvestigator", "Co-investigator/s", docs.coInvestigator],
+    ["sponsor", "Study sponsor", docs.sponsor],
+    ["inclusionCriteria", "Inclusion criteria", docs.inclusionCriteria],
+    ["exclusionCriteria", "Exclusion criteria", docs.exclusionCriteria],
+    ["expectedParticipants", "Expected number of participants", docs.expectedParticipants],
+    ["participantActivities", "What participants will do", docs.participantActivities],
+    ["participantTime", "Participant time commitment", docs.participantTime],
+    ["risks", "Foreseeable risks or discomforts", docs.risks],
+    ["riskMitigation", "Safeguards and risk mitigation", docs.riskMitigation],
+    ["benefits", "Expected benefits", docs.benefits],
+    ["compensation", "Compensation, reimbursement, or gift", docs.compensation],
+    ["researchContact", "Researcher contact information", docs.researchContact],
+    ["childAgeRange", "Child age range, if applicable", docs.childAgeRange],
+    ["assentLanguage", "Assent form language, if applicable", docs.assentLanguage]
+  ];
+  return `<details class="table-wrap consent-preparation">
+    <summary><strong>Consent, Permission, and Assent Document Preparation</strong></summary>
+    <div class="guided-step-content">
+      <section class="notice-box"><strong>Draft for Adviser and ERB Review - Not Approved for Recruitment or Data Collection</strong><p>This tool prepares editable drafts from the supplied HNU Consent Forms v2 template. Verify the latest official ERB form and instructions with your adviser or institution before use.</p></section>
+      <div class="field-grid">
+        ${consentSelect("humanParticipants", "Does the study involve direct human participants?", [["", "Choose"], ["yes", "Yes"], ["no", "No - documents or non-human sources only"], ["uncertain", "Uncertain - adviser/ERB decision needed"]])}
+        ${consentSelect("capableAdults", "Are all direct participants adults able to provide their own consent?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["uncertain", "Uncertain"]])}
+        ${consentSelect("minorsDirect", "Are minors direct participants?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["uncertain", "Uncertain"]])}
+        ${consentSelect("vulnerableParticipants", "Are vulnerable participants involved?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["uncertain", "Uncertain"]])}
+        ${consentSelect("representativePermission", "Is parent or legally authorized representative permission needed?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["adviser", "Adviser/ERB must decide"]])}
+        ${docs.minorsDirect === "yes" ? consentSelect("twoRepresentativeSignatures", "Did the adviser or ERB explicitly require two representative signatures?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["adviser", "Not yet decided"]]) : ""}
+      </div>
+      <div class="field-grid">${fields.map(([key, label, current]) => `<div class="field"><label>${escapeHtml(label)}</label><textarea data-ethics-document="${key}">${escapeHtml(current || "")}</textarea></div>`).join("")}</div>
+      <section class="output-box"><h3>Documents indicated by current answers</h3><div class="generated-text">${escapeHtml(consentDocumentDecision().message)}</div></section>
+      <button type="button" data-download-consent-docs ${consentDocumentDecision().files.length ? "" : "disabled"}>Generate Draft Word Form${consentDocumentDecision().files.length === 1 ? "" : "s"}</button>
+      <p class="hint">The app creates one master copy of each applicable form. Participant names, signatures, and signed dates remain blank. Never store signed forms or participant-identifying information in this app.</p>
+      <p class="hint">This proposal builder only helps you draft the Ethical Considerations section. It does not replace the official ethics review process. Before data gathering, ask your adviser, program head, or dean for the official ERB protocol packet and submission procedures required by your institution. Do not begin recruitment or data collection until the required permissions and ethics clearance, when applicable, have been secured.</p>
+    </div>
+  </details>`;
+}
+
+function consentSelect(key, label, options) {
+  return `<div class="field"><label>${escapeHtml(label)}</label><select data-ethics-document="${key}">${options.map(([value, text]) => `<option value="${value}" ${state.ethics.documents[key] === value ? "selected" : ""}>${escapeHtml(text)}</option>`).join("")}</select></div>`;
+}
+
+function consentDocumentDecision() {
+  const docs = state.ethics.documents;
+  if (docs.humanParticipants === "no") return { files: [], message: "No consent form is indicated because the study is currently marked as having no direct human participants. Institutional permission or an ERB determination may still be needed." };
+  if (docs.humanParticipants !== "yes") return { files: [], message: "Clarify whether direct human participants are involved and discuss uncertain cases with the adviser or ERB." };
+  const files = [];
+  if (docs.capableAdults === "yes") files.push(["adult-consent.docx", "HNU-v2-adult-informed-consent.docx"]);
+  if (docs.minorsDirect === "yes") {
+    files.push(["parent-permission.docx", "HNU-v2-parent-LAR-permission.docx"], ["child-assent.docx", "HNU-v2-child-assent.docx"]);
+    if (docs.twoRepresentativeSignatures === "yes") files.push(["two-representative-permission.docx", "HNU-v2-two-representative-permission.docx"]);
+  } else if (docs.representativePermission === "yes") {
+    files.push(["parent-permission.docx", "HNU-v2-LAR-permission.docx"]);
+  }
+  if (!files.length) return { files, message: "No form can be selected confidently yet. Complete adult capacity, minor participation, and representative-permission decisions with your adviser or ERB." };
+  return { files, message: `Prepare: ${files.map(([, name]) => name.replace("HNU-v2-", "").replace(".docx", "")).join(", ")}. These remain drafts for adviser and ERB review.` };
+}
+
+function consentTemplateValues() {
+  const docs = state.ethics.documents;
+  return {
+    "{{STUDY_TITLE}}": docs.studyTitle || state.a1.initialTopic || "[Study title]",
+    "{{PRINCIPAL_INVESTIGATOR}}": state.submission.workArrangement === "group" ? state.submission.groupLeader.name : state.submission.studentName,
+    "{{CO_INVESTIGATOR}}": docs.coInvestigator || (state.submission.workArrangement === "group" ? state.submission.groupMembers.map((person) => person.name).filter(Boolean).join(", ") : ""),
+    "{{FACULTY_ADVISER}}": state.submission.adviserName || "[Faculty adviser]",
+    "{{SPONSOR}}": docs.sponsor || "None stated",
+    "{{PURPOSE}}": state.a4.literatureProblem || "[Purpose and significance]",
+    "{{INCLUSION}}": docs.inclusionCriteria || "[Inclusion criteria]",
+    "{{EXCLUSION}}": docs.exclusionCriteria || "[Exclusion criteria]",
+    "{{EXPECTED_PARTICIPANTS}}": docs.expectedParticipants || "[Expected number]",
+    "{{SETTING}}": state.methodology.locale || "[Research environment or setting]",
+    "{{ACTIVITIES}}": docs.participantActivities || state.methodology.collection || "[Participant activities and procedures]",
+    "{{TIME_COMMITMENT}}": docs.participantTime || "[Time commitment]",
+    "{{RISKS}}": docs.risks || "[Foreseeable risks or discomforts]",
+    "{{SAFEGUARDS}}": docs.riskMitigation || state.ethics.draft || "[Safeguards]",
+    "{{BENEFITS}}": docs.benefits || "[Expected benefits]",
+    "{{COMPENSATION}}": docs.compensation || "No compensation stated",
+    "{{CONTACT}}": docs.researchContact || "[Researcher contact information]",
+    "{{CHILD_AGE}}": docs.childAgeRange || "[Child age range]",
+    "{{ASSENT_LANGUAGE}}": docs.assentLanguage || "[Assent language]"
+  };
+}
+
+async function generateConsentDocxDrafts() {
+  const decision = consentDocumentDecision();
+  if (!decision.files.length) return;
+  try {
+    const output = new JSZip();
+    for (const [templateName, outputName] of decision.files) {
+      const response = await fetch(`erb-templates/${templateName}`);
+      if (!response.ok) throw new Error(`Missing template: ${templateName}`);
+      const docx = await JSZip.loadAsync(await response.arrayBuffer());
+      const documentFile = docx.file("word/document.xml");
+      let xml = await documentFile.async("string");
+      Object.entries(consentTemplateValues()).forEach(([token, replacement]) => {
+        xml = xml.split(token).join(escapeXml(replacement));
+      });
+      docx.file("word/document.xml", xml);
+      output.file(outputName, await docx.generateAsync({ type: "blob" }));
+    }
+    const blob = await output.generateAsync({ type: "blob" });
+    downloadBlob(blob, `ERB-draft-forms-${new Date().toISOString().slice(0, 10)}.zip`);
+  } catch (error) {
+    alert(`The Word drafts could not be generated. ${error.message}`);
+  }
+}
+
+function escapeXml(text = "") {
+  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function renderInstrumentation() {
   syncInstrumentationRows();
   const rows = state.instrumentation.rows;
+  if (!rows.length) {
+    els.stageForm.innerHTML = `
+      <section class="output-box empty-state">
+        <h3>No Specific Research Questions Yet</h3>
+        <div class="generated-text">Instrumentation begins with the specific research questions. Return to A4, add the SRQs, and this section will create exactly one instrumentation card for each question.</div>
+        <button type="button" data-stage="a4">Go to A4</button>
+      </section>`;
+    return;
+  }
   els.stageForm.innerHTML = `
     <section class="table-wrap">
       <h3>Question-to-Evidence Alignment</h3>
@@ -1185,27 +1647,37 @@ function renderInstrumentation() {
           ${rows.map((row, index) => instrumentationRow(index)).join("")}
         </div>
       </div>
-      <button type="button" data-add-row="instrumentation">Add Instrument Row</button>
     </section>
   `;
 }
 
 function syncInstrumentationRows() {
   const existingRows = state.instrumentation.rows.map(normalizeInstrumentRow);
-  const questions = state.a4.questions.filter((question) => question.trim());
-  const nextRows = questions.map((question, index) => {
-    const existing = existingRows[index] || emptyRowFor("instrumentation");
-    return { ...existing, rq: question };
-  });
-  const extraRows = existingRows.slice(questions.length).filter((row) =>
-    row.claimNeeded || row.evidenceNeeded || row.evidenceSource || row.instrument || row.analysis || row.description || row.purpose || row.validation || row.implementation
-  );
-  state.instrumentation.rows = nextRows.concat(extraRows);
+  const byId = new Map(existingRows.filter((row) => row.questionId).map((row) => [row.questionId, row]));
+  const usedLegacyIndexes = new Set();
+  state.instrumentation.rows = state.a4.questions.map((question, index) => ({ question, index }))
+    .filter(({ question }) => question.trim())
+    .map(({ question, index }) => {
+      const questionId = state.a4.questionIds[index] || (state.a4.questionIds[index] = createStableId("srq"));
+      let existing = byId.get(questionId);
+      if (!existing) {
+        existing = existingRows.find((row, legacyIndex) => !row.questionId && !usedLegacyIndexes.has(legacyIndex) && row.rq.trim() === question.trim());
+      }
+      if (!existing) {
+        const legacyIndex = existingRows.findIndex((row, rowIndex) => !row.questionId && !usedLegacyIndexes.has(rowIndex));
+        if (legacyIndex >= 0) {
+          usedLegacyIndexes.add(legacyIndex);
+          existing = existingRows[legacyIndex];
+        }
+      }
+      return { ...(existing || emptyRowFor("instrumentation")), questionId, rq: question };
+    });
 }
 
 function instrumentationRow(index) {
   const row = state.instrumentation.rows[index];
-  const purposeKey = state.a4.questionPurposes[index] || "";
+  const questionIndex = state.a4.questionIds.indexOf(row.questionId);
+  const purposeKey = state.a4.questionPurposes[questionIndex] || "";
   const purpose = rqPurposeOptions[purposeKey];
   const purposeHint = purpose
     ? `Question purpose from A4: ${purpose.label}. Suggested question starters: ${purpose.starters}`
@@ -1237,7 +1709,6 @@ function instrumentationRow(index) {
           <textarea data-table="instrumentation" data-index="${index}" data-key="${key}" aria-describedby="instrumentation-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
         </label>
       `).join("")}
-      <button class="row-remove" type="button" data-remove-row="instrumentation:${index}">X</button>
     </div>
   `;
 }
@@ -1335,12 +1806,18 @@ function renderSubmission() {
       <h3>PDF Readiness</h3>
       <div class="generated-text">${missing.length ? `Locked. Missing required items:\n${missing.slice(0, 10).map((item) => `- ${item}`).join("\n")}${missing.length > 10 ? `\n...and ${missing.length - 10} more.` : ""}` : "Ready. Required parts are complete, and PDF/Print can be generated."}</div>
     </section>
-    <section class="output-box">
-      <h3>Initial Readiness Reflection</h3>
-      <div class="generated-text">${escapeHtml(value("submission.initialReadiness") || "No initial readiness reflection has been entered yet. Return to Info - Student Details to add it.")}</div>
-      <p class="hint">This is read-only here. Edit it in Info - Student Details if correction is needed.</p>
-    </section>
-    ${renderFields("submission", fieldSets.finalSubmission)}
+    ${state.submission.workArrangement === "group" ? `
+      <section class="output-box">
+        <h3>Group Readiness Reflections</h3>
+        <div class="generated-text">Every group member must complete an initial reflection, final reflection, and explanation of what changed before the clean final PDF can be generated.</div>
+        <button type="button" data-stage="details">Review Group Reflections</button>
+      </section>` : `
+      <section class="output-box">
+        <h3>Initial Readiness Reflection</h3>
+        <div class="generated-text">${escapeHtml(value("submission.initialReadiness") || "No initial readiness reflection has been entered yet. Return to Info - Student Details to add it.")}</div>
+        <p class="hint">This is read-only here. Edit it in Info - Student Details if correction is needed.</p>
+      </section>
+      ${renderFields("submission", fieldSets.finalSubmission)}`}
   `;
 }
 
@@ -1373,7 +1850,7 @@ function emptyRowFor(section) {
   if (section === "a2Patterns") return { type: "", notice: "", authors: "", years: "" };
   if (section === "a3Gaps") return { type: "", show: "", emphasized: "", lessVisible: "", limits: "", gap: "" };
   if (section === "terms") return { term: "", conceptual: "", operational: "", measured: "" };
-  return { rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" };
+  return { questionId: "", rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" };
 }
 
 function buildTopic() {
@@ -1411,23 +1888,7 @@ function scopeControlItems() {
 }
 
 function recommendMethodology() {
-  const purposes = state.a4.questionPurposes
-    .filter((purpose) => purpose && rqPurposeOptions[purpose])
-    .map((purpose) => rqPurposeOptions[purpose].label)
-    .join(" ");
-  const text = `${state.a4.questionType || ""} ${state.a4.centralPurpose || ""} ${state.methodology.rqTypes || ""} ${state.methodology.purpose || ""} ${purposes}`.toLowerCase();
-  if (text.includes("develop") || text.includes("model") || text.includes("framework") || text.includes("theory")) return "Recommendation: Model/framework development may fit if the design includes qualitative analysis, mixed methods integration, expert validation, Delphi review, grounded theory, or design/development research.";
-  if (text.includes("relat") || text.includes("correl")) return "Recommendation: Correlational quantitative design, because the questions examine relationships between constructs.";
-  if (text.includes("compar") || text.includes("difference")) return "Recommendation: Comparative quantitative design, because the questions compare groups or categories.";
-  if (text.includes("predict")) return "Recommendation: Predictive quantitative design or regression-based analysis may fit because the questions examine predictors and outcomes.";
-  if (text.includes("evaluat")) return "Recommendation: Evaluation research, action research, quasi-experimental design, or mixed methods may fit because the questions examine effectiveness, implementation, or impact.";
-  if (text.includes("explain")) return "Recommendation: Explanatory qualitative, explanatory sequential mixed methods, or causal/comparative design may fit depending on the evidence needed.";
-  if (text.includes("effect") || text.includes("improv") || text.includes("experiment")) return "Recommendation: Quasi-experimental design may fit if an intervention is tested with measurable outcomes.";
-  if (text.includes("experience") || text.includes("explor") || text.includes("describe their")) return "Recommendation: Qualitative design such as phenomenology, case study, or basic qualitative study may fit.";
-  if (text.includes("describe") || text.includes("level") || text.includes("extent")) return "Recommendation: Descriptive quantitative or qualitative descriptive design may fit, depending on whether the question needs numeric levels or descriptive meanings.";
-  if (text.includes("action") || text.includes("classroom intervention")) return "Recommendation: Action research may fit if the goal is to improve practice in a specific classroom.";
-  if (text.includes("mixed")) return "Recommendation: Mixed methods may fit if both numeric trends and participant explanations are needed.";
-  return "Recommendation: Add question type and data needs to receive a methodology suggestion. Do not force the method; let the research questions guide it.";
+  return `Recommendation: ${methodologyRecommendation().summary}`;
 }
 
 function buildEthicsDraft() {
@@ -1753,7 +2214,8 @@ function claimEvidenceAlignmentItems() {
   const items = [];
   state.instrumentation.rows.map(normalizeInstrumentRow).forEach((row, index) => {
     if (!row.rq) return;
-    const claim = `${row.claimNeeded} ${state.a4.questionClaims[index] || ""}`.toLowerCase();
+    const questionIndex = state.a4.questionIds.indexOf(row.questionId);
+    const claim = `${row.claimNeeded} ${state.a4.questionClaims[questionIndex] || ""}`.toLowerCase();
     const source = `${row.evidenceSource} ${row.instrument} ${row.description} ${row.implementation}`.toLowerCase();
     const analysis = row.analysis.toLowerCase();
     if (!row.claimNeeded || !row.evidenceNeeded || !row.evidenceSource || !row.instrument || !row.analysis) {
@@ -1920,11 +2382,13 @@ function purposeInstrumentationAlignmentItems() {
 }
 
 function checkMethodology() {
-  const rec = recommendMethodology().toLowerCase();
-  const design = (state.methodology.selectedDesign || "").toLowerCase();
+  const rec = methodologyRecommendation();
+  const selectedApproach = state.methodology.approach || "";
   return [
-    flag(Boolean(state.methodology.selectedDesign), "A research design is selected.", "Select or enter a research design after reviewing the recommendation."),
-    flag(!design || rec.includes(design.split(" ")[0]) || rec.includes("add question"), "Methodology appears aligned with the question type.", "Review whether the method matches the research questions."),
+    flag(Boolean(selectedApproach), "A broad evidence approach is selected.", "Select Quantitative, Qualitative, or Mixed Methods after reviewing what the questions need."),
+    flag(Boolean(state.methodology.design), "A research design is selected.", "Select a design within the chosen evidence approach."),
+    flag(!selectedApproach || !rec.approach || rec.approach === selectedApproach, "The selected evidence approach is consistent with the current A4 purposes and intended claims.", `Review why ${approachLabel(selectedApproach) || "the selected approach"} fits better than ${approachLabel(rec.approach) || "the suggested candidate"}. A different choice may still be justified.`),
+    flag(Boolean(state.methodology.designJustification), "The design choice is justified.", "Explain why this design fits the problem and questions better than the alternatives you considered."),
     flag(Boolean(state.methodology.participants), "Participants are described.", "Describe who will participate."),
     flag(Boolean(state.methodology.locale), "Research environment or setting is described.", "Describe the physical, institutional, social, document, or online environment relevant to the study."),
     flag(Boolean(state.methodology.evidenceSources), "Participants and other evidence sources are identified.", "Identify who or what provides evidence, including documents, artifacts, records, observations, or outputs where relevant."),
@@ -2007,10 +2471,15 @@ function checkTerms() {
   rows.forEach((row, index) => {
     if (!row.term) results.push({ level: "red", text: `Term ${index + 1}: term name is missing.` });
     if (!row.conceptual) results.push({ level: "yellow", text: `Term ${index + 1}: conceptual definition is missing.` });
+    else if (!conceptualDefinitionHasSource(row.conceptual)) results.push({ level: "yellow", text: `Term ${index + 1}: identify the author or authors and year supporting the conceptual definition.` });
     if (!row.operational) results.push({ level: "yellow", text: `Term ${index + 1}: operational definition is missing.` });
     if (!row.measured) results.push({ level: "yellow", text: `Term ${index + 1}: measurement, observation, or identification detail is missing.` });
   });
   return results;
+}
+
+function conceptualDefinitionHasSource(text = "") {
+  return /[A-Za-z][A-Za-z .,&'-]{1,80}\(?\s*(?:19|20)\d{2}\s*\)?/.test(text);
 }
 
 function textIncludesAny(text, terms) {
@@ -2263,10 +2732,22 @@ function readinessReport() {
 function stageCompletion(stageId) {
   const section = state[stageId] || {};
   if (stageId === "details") {
-    const fields = ["studentName", "course", "section", "submissionDate", "initialReadiness"];
-    return fields.filter((field) => state.submission[field]).length / fields.length;
+    const common = ["adviserName", "course", "section", "submissionDate"].filter((field) => state.submission[field]).length;
+    if (state.submission.workArrangement === "group") {
+      const people = [state.submission.groupLeader, ...state.submission.groupMembers];
+      const peopleTotal = Math.max(people.length * 2, 2);
+      const peopleDone = people.reduce((sum, person) => sum + [person.name, person.initialReadiness].filter(Boolean).length, 0);
+      return (common + peopleDone) / (4 + peopleTotal);
+    }
+    const individual = ["studentName", "initialReadiness"].filter((field) => state.submission[field]).length;
+    return (common + individual) / 6;
   }
   if (stageId === "submission") {
+    if (state.submission.workArrangement === "group") {
+      const people = [state.submission.groupLeader, ...state.submission.groupMembers];
+      if (!people.length) return 0;
+      return people.reduce((sum, person) => sum + [person.confidence, person.readinessChange].filter(Boolean).length, 0) / (people.length * 2);
+    }
     return ["confidence", "readinessChange"].filter((field) => state.submission[field]).length / 2;
   }
   if (stageId === "a1") {
@@ -2299,7 +2780,7 @@ function stageCompletion(stageId) {
     return fields.filter((field) => state.researchLevel[field]).length / fields.length;
   }
   if (stageId === "methodology") {
-    const fields = ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations", "selectedDesign", "sampling", "locale", "collection", "analysis"];
+    const fields = ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations", "approach", "design", "designJustification", "sampling", "locale", "collection", "analysis"];
     const baseProgress = fields.filter((field) => state.methodology[field]).length / fields.length;
     if (!isMixedMethodsLikely()) return baseProgress;
     const mixedFields = ["quantStrand", "qualStrand", "integrationPoint", "integrationPurpose"];
@@ -2378,7 +2859,7 @@ function termsOutputHtml(rows) {
   return `<div class="instrument-cards">${rows.map((row, index) => `
     <section class="instrument-card">
       <h3>Term ${index + 1}: ${escapeHtml(row.term)}</h3>
-      <p><strong>Conceptual Definition:</strong> ${escapeHtml(row.conceptual)}</p>
+      <p><strong>Conceptual Definition (Author/s and Year):</strong> ${escapeHtml(row.conceptual)}</p>
       <p><strong>Operational Definition:</strong> ${escapeHtml(row.operational)}</p>
       <p><strong>Measured, Observed, or Identified Through:</strong> ${escapeHtml(row.measured)}</p>
     </section>
@@ -2403,12 +2884,12 @@ function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
     state.framework.instrumentConnection &&
     state.framework.scopeBoundaries
   );
-  const methodologyReady = Boolean(state.methodology.selectedDesign && state.methodology.participants && state.methodology.locale && state.methodology.evidenceSources && state.methodology.operationalDelimitations && state.methodology.collection && state.methodology.analysis);
+  const methodologyReady = Boolean(state.methodology.approach && state.methodology.design && state.methodology.designJustification && state.methodology.participants && state.methodology.locale && state.methodology.evidenceSources && state.methodology.operationalDelimitations && state.methodology.collection && state.methodology.analysis);
   const ethicsReady = Boolean(state.methodology.participants && Object.values(state.ethics.checks).some(Boolean));
   const instrumentsReady = state.instrumentation.rows.map(normalizeInstrumentRow).some((row) => row.rq && row.claimNeeded && row.evidenceNeeded && row.evidenceSource && row.instrument && row.analysis && row.description && row.purpose && row.validation && row.implementation);
   const mixedMethodsReady = !isMixedMethodsLikely() || Boolean(state.mixedMethods.quantStrand && state.mixedMethods.qualStrand && state.mixedMethods.integrationPoint && state.mixedMethods.integrationPurpose);
   const termsRows = state.terms.rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
-  const termsReady = termsRows.length > 0 && termsRows.every((row) => row.term && row.conceptual && row.operational && row.measured);
+  const termsReady = termsRows.length > 0 && termsRows.every((row) => row.term && row.conceptual && conceptualDefinitionHasSource(row.conceptual) && row.operational && row.measured);
   const levelRows = state.submission.degreeLevel === "shs"
     ? [
         ["Research level / use context", degreeReadiness.degree.label],
@@ -2428,12 +2909,12 @@ function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
     ["Alignment status", report.label],
     ...levelRows,
     ["Framework and conceptual-scope status", frameworkReady ? "The framework is literature-supported, justified, and connected to the problem, questions, evidence, and conceptual scope." : "Framework finding, source support, distinct roles, fit reasoning, or conceptual scope still needs detail."],
-    ["Methodology status", methodologyReady ? "Methodology has the required core details." : "Methodology is missing design, participants, data gathering, or data analysis details."],
+    ["Methodology status", methodologyReady ? "Methodology includes a justified approach and design, participants, boundaries, evidence sources, data gathering, and analysis." : "Methodology is missing a justified approach or design, participants, boundaries, evidence sources, data gathering, or analysis."],
     ["Mixed methods status", mixedMethodsReady ? "Mixed methods integration is complete or not required." : "Mixed methods integration needs quantitative, qualitative, and integration details."],
     ["Ethics status", ethicsReady ? "Ethics safeguards have been started." : "Ethics safeguards need more detail before data gathering."],
     ["Formatting status", "Letter-size print layout with 1-inch margins is applied."],
     ["Instrumentation status", instrumentsReady ? "At least one instrument row includes alignment and validation details." : "Instrumentation needs clearer alignment or validation details."],
-    ["Definition of terms status", termsReady ? "Terms are conceptually and operationally defined." : "Definition of terms needs conceptual, operational, and measurement details."]
+    ["Definition of terms status", termsReady ? "Terms are conceptually defined with author and year, then operationally defined for this study." : "Definition of terms needs a cited conceptual definition, operational definition, and measurement or observation details."]
   ];
   return `
     ${includeWorkRecord ? workRecordHtml() : ""}
@@ -2456,6 +2937,51 @@ function workRecordHtml() {
     <strong>Estimated active work time:</strong> ${escapeHtml(formatActiveTime(state.engagement.activeMs))}<br>
     <strong>Manual checkpoints created:</strong> ${escapeHtml(String(state.engagement.manualCheckpoints || 0))}</p>
     <p>Estimated active work time reflects detected interaction with this app only. It does not include work completed outside the app and should not be interpreted as a measure of research quality.</p></section>`;
+}
+
+function submissionIdentityHtml() {
+  if (state.submission.workArrangement !== "group") {
+    return `<strong>Student Name:</strong> ${escapeHtml(value("submission.studentName"))}`;
+  }
+  const members = state.submission.groupMembers.map((person) => person.name).filter(Boolean);
+  return `<strong>Work Arrangement:</strong> Group<br>
+    ${state.submission.groupName ? `<strong>Group Name:</strong> ${escapeHtml(state.submission.groupName)}<br>` : ""}
+    <strong>Group Leader:</strong> ${escapeHtml(state.submission.groupLeader.name)}<br>
+    <strong>Group Members:</strong> ${escapeHtml(members.join(", ") || "None listed")}`;
+}
+
+function readinessReflectionsHtml() {
+  if (state.submission.workArrangement !== "group") {
+    return `<h2>Readiness Reflections</h2>
+      <h3>Initial Readiness Reflection</h3><p>${escapeHtml(value("submission.initialReadiness"))}</p>
+      <h3>Final Readiness Reflection</h3><p>${escapeHtml(value("submission.confidence"))}</p>
+      <h3>What Changed and Why</h3><p>${escapeHtml(value("submission.readinessChange"))}</p>`;
+  }
+  const people = [state.submission.groupLeader, ...state.submission.groupMembers];
+  return `<h2>Individual Readiness Reflections</h2>${people.map((person, index) => `
+    <section class="reflection-entry">
+      <h3>${index === 0 ? "Group Leader" : `Group Member ${index}`}: ${escapeHtml(person.name)}</h3>
+      <p><strong>Initial:</strong> ${escapeHtml(person.initialReadiness)}</p>
+      <p><strong>Final:</strong> ${escapeHtml(person.confidence)}</p>
+      <p><strong>What Changed and Why:</strong> ${escapeHtml(person.readinessChange)}</p>
+    </section>`).join("")}`;
+}
+
+function adviserReviewBlock(stage) {
+  return `<section class="adviser-review-block">
+    <h3>Adviser Review Record: ${escapeHtml(stage.code)} - ${escapeHtml(stage.title)}</h3>
+    <div class="review-lines"><span><strong>Reviewed by:</strong> ${escapeHtml(state.submission.adviserName || "________________________")}</span><span><strong>Signature:</strong> ________________________</span><span><strong>Date reviewed:</strong> ________________________</span></div>
+  </section>`;
+}
+
+function finalAdviserReviewRecordHtml() {
+  const academicStages = stages.filter((stage) => !["details", "submission"].includes(stage.id));
+  return `<section class="major-section adviser-review-record"><h2>Adviser Review Record</h2>
+    <p><strong>Adviser:</strong> ${escapeHtml(state.submission.adviserName || "________________________")}</p>
+    <p>This record documents review. It does not indicate institutional or ethics approval.</p>
+    <table><thead><tr><th>Academic Part</th><th>Reviewed by</th><th>Signature</th><th>Date reviewed</th></tr></thead><tbody>
+      ${academicStages.map((stage) => `<tr><td>${escapeHtml(stage.code)} - ${escapeHtml(stage.title)}</td><td>${escapeHtml(state.submission.adviserName || "")}</td><td></td><td></td></tr>`).join("")}
+    </tbody></table></section>`;
 }
 
 function outlineHtml() {
@@ -2499,7 +3025,7 @@ function outlineHtml() {
 function buildSubmissionHtml() {
   const degreeReadiness = degreeLevelReadiness();
   const generatedAt = new Date();
-  const printedBy = value("submission.studentName") || "__________";
+  const printedBy = state.submission.workArrangement === "group" ? (state.submission.groupLeader.name || state.submission.groupName || "__________") : (value("submission.studentName") || "__________");
   const patternRows = state.a2.patterns.map((row) => `<tr><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.notice)}</td><td>${escapeHtml(row.authors)}</td><td>${escapeHtml(row.years)}</td></tr>`).join("");
   const gapRows = state.a3.gaps.map((row) => `<tr><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.show)}</td><td>${escapeHtml(row.emphasized)}</td><td>${escapeHtml(row.lessVisible)}</td><td>${escapeHtml(row.limits)}</td><td>${escapeHtml(row.gap)}</td></tr>`).join("");
   const instrumentOutput = instrumentationOutputHtml(state.instrumentation.rows);
@@ -2512,18 +3038,13 @@ function buildSubmissionHtml() {
   ` : "";
   return `
     <h1>Lit-Based Proposal Builder</h1>
-    <p><strong>Student Name:</strong> ${escapeHtml(value("submission.studentName"))}<br>
+    <p>${submissionIdentityHtml()}<br>
+    <strong>Adviser Name:</strong> ${escapeHtml(value("submission.adviserName"))}<br>
     <strong>Course:</strong> ${escapeHtml(value("submission.course"))}<br>
     <strong>Section:</strong> ${escapeHtml(value("submission.section"))}<br>
     <strong>Date:</strong> ${escapeHtml(value("submission.submissionDate"))}<br>
     <strong>Research Level / Use Context:</strong> ${escapeHtml(degreeReadiness.degree.label)} (${escapeHtml(degreeReadiness.degree.pqf)})</p>
-    <h2>Readiness Reflections</h2>
-    <h3>Initial Readiness Reflection</h3>
-    <p>${escapeHtml(value("submission.initialReadiness"))}</p>
-    <h3>Final Readiness Reflection</h3>
-    <p>${escapeHtml(value("submission.confidence"))}</p>
-    <h3>What Changed and Why</h3>
-    <p>${escapeHtml(value("submission.readinessChange"))}</p>
+    ${readinessReflectionsHtml()}
     <h2>A1 Core Construct</h2>
     <p>${escapeHtml(buildTopic())}</p>
     <h2 class="major-section">A2 Literature Pattern Mapping</h2>
@@ -2556,6 +3077,7 @@ function buildSubmissionHtml() {
     ${fieldSets.researchLevel.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`researchLevel.${key}`))}</p>`).join("")}
     <h2 class="major-section">Methodology</h2>
     <p><strong>Research Design:</strong> ${escapeHtml(value("methodology.selectedDesign"))}</p>
+    <p><strong>Design Justification:</strong> ${escapeHtml(value("methodology.designJustification"))}</p>
     <p><strong>Operational Delimitations:</strong> ${escapeHtml(value("methodology.operationalDelimitations"))}</p>
     <p><strong>Participants:</strong> ${escapeHtml(value("methodology.participants"))}</p>
     <p><strong>Sampling:</strong> ${escapeHtml(value("methodology.sampling"))}</p>
@@ -2575,6 +3097,7 @@ function buildSubmissionHtml() {
     ${termsOutputHtml(state.terms.rows)}
     <h2>Chapter 1 Template Alignment</h2>
     <div class="chapter-template">${outlineHtml()}</div>
+    ${finalAdviserReviewRecordHtml()}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
     ${escapeHtml(APP_CREDIT)}<br>
     Printed by ${escapeHtml(printedBy)} on ${escapeHtml(formatTimestamp(generatedAt))}.</p></footer>
@@ -2601,15 +3124,16 @@ function buildProgressPdfHtml(stageId, scope) {
   return `
     <h1>Lit-Based Proposal Builder</h1>
     <p><strong>Progress PDF:</strong> ${scope === "single" ? "Selected part only" : "Cumulative progress"}<br>
-    <strong>Student Name:</strong> ${escapeHtml(value("submission.studentName"))}<br>
+    ${submissionIdentityHtml()}<br>
+    <strong>Adviser Name:</strong> ${escapeHtml(value("submission.adviserName"))}<br>
     <strong>Course:</strong> ${escapeHtml(value("submission.course"))}<br>
     <strong>Section:</strong> ${escapeHtml(value("submission.section"))}<br>
     <strong>Date:</strong> ${escapeHtml(value("submission.submissionDate"))}<br>
     <strong>Research Level / Use Context:</strong> ${escapeHtml(degree.label)} (${escapeHtml(degree.pqf)})</p>
     ${workRecordHtml()}
-    ${selectedStages.map((stage) => progressStageHtml(stage.id)).join("")}
+    ${selectedStages.map((stage) => `${progressStageHtml(stage.id)}${adviserReviewBlock(stage)}`).join("")}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
-    Printed by ${escapeHtml(value("submission.studentName") || "__________")} on ${escapeHtml(formatTimestamp(generatedAt))}.<br>
+    Printed by ${escapeHtml(state.submission.workArrangement === "group" ? (state.submission.groupLeader.name || state.submission.groupName || "__________") : (value("submission.studentName") || "__________"))} on ${escapeHtml(formatTimestamp(generatedAt))}.<br>
     The app provides developmental guidance and alignment checks. Its outputs do not constitute adviser, panel, or institutional approval.</p></footer>
   `;
 }
@@ -2617,7 +3141,8 @@ function buildProgressPdfHtml(stageId, scope) {
 function progressStageHtml(stageId) {
   if (stageId === "details") {
     return `<h2 class="major-section">Student Details</h2>
-      <p><strong>Initial Readiness Reflection:</strong> ${escapeHtml(value("submission.initialReadiness"))}</p>`;
+      <p>${submissionIdentityHtml()}<br><strong>Adviser Name:</strong> ${escapeHtml(value("submission.adviserName"))}</p>
+      ${readinessReflectionsHtml()}`;
   }
   if (stageId === "a1") {
     return `<h2 class="major-section">A1 Core Construct</h2>
@@ -2664,6 +3189,7 @@ function progressStageHtml(stageId) {
     return `<h2 class="major-section">Methodology</h2>
       ${fieldSets.methodology.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`methodology.${key}`))}</p>`).join("")}
       <p><strong>Selected Design:</strong> ${escapeHtml(value("methodology.selectedDesign"))}</p>
+      <p><strong>Design Justification:</strong> ${escapeHtml(value("methodology.designJustification"))}</p>
       <p><strong>Sampling:</strong> ${escapeHtml(value("methodology.sampling"))}</p>
       <p><strong>Research Environment or Setting:</strong> ${escapeHtml(value("methodology.locale"))}</p>
       <p><strong>Data Gathering:</strong> ${escapeHtml(value("methodology.collection"))}</p>
@@ -2755,11 +3281,25 @@ function finalSubmissionMissingItems() {
     if (!String(value(path) || "").trim()) missing.push(label);
   };
 
-  requireValue("submission.studentName", "Student name");
+  requireValue("submission.adviserName", "Adviser name");
+  if (state.submission.workArrangement === "group") {
+    const people = [state.submission.groupLeader, ...state.submission.groupMembers];
+    if (!state.submission.groupLeader.name) missing.push("Group leader name");
+    if (!state.submission.groupMembers.length) missing.push("At least one group member");
+    people.forEach((person, index) => {
+      const label = index === 0 ? "Group leader" : `Group member ${index}`;
+      if (!person.name) missing.push(`${label}: name`);
+      if (!person.initialReadiness) missing.push(`${label}: initial readiness reflection`);
+      if (!person.confidence) missing.push(`${label}: final readiness reflection`);
+      if (!person.readinessChange) missing.push(`${label}: what changed and why`);
+    });
+  } else {
+    requireValue("submission.studentName", "Student name");
+    requireValue("submission.initialReadiness", "Initial readiness reflection");
+  }
   requireValue("submission.course", "Course");
   requireValue("submission.section", "Section");
   requireValue("submission.submissionDate", "Date");
-  requireValue("submission.initialReadiness", "Initial readiness reflection");
 
   ["initialTopic", "majorNouns", "fifteenPageTest", "rrlMajorityTest", "coreConstruct"].forEach((key) => {
     requireValue(`a1.${key}`, `A1: ${fieldSets.a1.find((field) => field[0] === key)?.[1] || key}`);
@@ -2806,7 +3346,7 @@ function finalSubmissionMissingItems() {
   ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations"].forEach((key) => {
     requireValue(`methodology.${key}`, `Methodology: ${fieldSets.methodology.find((field) => field[0] === key)?.[1] || key}`);
   });
-  ["selectedDesign", "sampling", "locale", "collection", "analysis"].forEach((key) => {
+  ["approach", "design", "designJustification", "selectedDesign", "sampling", "locale", "collection", "analysis"].forEach((key) => {
     requireValue(`methodology.${key}`, `Methodology: ${key}`);
   });
   if (isMixedMethodsLikely()) {
@@ -2833,12 +3373,15 @@ function finalSubmissionMissingItems() {
   termRows.forEach((row, index) => {
     if (!row.term) missing.push(`Definition of Terms: term name for Term ${index + 1}`);
     if (!row.conceptual) missing.push(`Definition of Terms: conceptual definition for Term ${index + 1}`);
+    else if (!conceptualDefinitionHasSource(row.conceptual)) missing.push(`Definition of Terms: author/s and year for the conceptual definition of Term ${index + 1}`);
     if (!row.operational) missing.push(`Definition of Terms: operational definition for Term ${index + 1}`);
     if (!row.measured) missing.push(`Definition of Terms: measurement, observation, or identification detail for Term ${index + 1}`);
   });
 
-  requireValue("submission.confidence", "Final readiness reflection");
-  requireValue("submission.readinessChange", "What changed and why");
+  if (state.submission.workArrangement !== "group") {
+    requireValue("submission.confidence", "Final readiness reflection");
+    requireValue("submission.readinessChange", "What changed and why");
+  }
 
   return missing;
 }
@@ -2865,10 +3408,8 @@ function printSubmission() {
 }
 
 function syncStudentDetailsFields() {
-  ["degreeLevel", "studentName", "course", "section", "submissionDate", "initialReadiness"].forEach((key) => {
-    const field = document.getElementById(`details-${key}`);
-    if (field) field.value = value(`submission.${key}`);
-  });
+  const form = document.getElementById("studentDetailsDialogForm");
+  if (form) form.innerHTML = renderStudentDetailsForm("details-");
 }
 
 function openStudentDetails() {
@@ -3161,6 +3702,23 @@ function attachEvents() {
       saveAppFeedbackField(target.dataset.appFeedback, target.value);
       return;
     }
+    if (target.dataset.groupPersonKey) {
+      const person = target.dataset.groupPersonRole === "leader"
+        ? state.submission.groupLeader
+        : state.submission.groupMembers[Number(target.dataset.groupPersonIndex)];
+      if (person) {
+        person[target.dataset.groupPersonKey] = target.value;
+        markContentEdit();
+        saveState();
+      }
+      return;
+    }
+    if (target.dataset.ethicsDocument) {
+      state.ethics.documents[target.dataset.ethicsDocument] = target.value;
+      markContentEdit();
+      saveState();
+      return;
+    }
     if (target.dataset.section && target.dataset.key) {
       setValue(target.dataset.section, target.dataset.key, target.value);
     }
@@ -3203,6 +3761,43 @@ function attachEvents() {
     markInteraction();
     if (target.dataset.appFeedback) {
       saveAppFeedbackField(target.dataset.appFeedback, target.value);
+      return;
+    }
+    if (target.dataset.workArrangement !== undefined) {
+      state.submission.workArrangement = target.value;
+      if (target.value === "group" && !state.submission.groupLeader.name && state.submission.studentName) {
+        state.submission.groupLeader.name = state.submission.studentName;
+        state.submission.groupLeader.initialReadiness = state.submission.initialReadiness || "";
+      }
+      markContentEdit();
+      saveState();
+      renderStage();
+      syncStudentDetailsFields();
+      return;
+    }
+    if (target.dataset.methodologySelection) {
+      const key = target.dataset.methodologySelection;
+      state.methodology[key] = target.value;
+      if (key === "approach") state.methodology.design = "";
+      state.methodology.selectedDesign = methodologyDisplayName(state.methodology.approach, state.methodology.design, state.methodology.actionResearch === "yes");
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
+    if (target.dataset.ethicsDocument) {
+      state.ethics.documents[target.dataset.ethicsDocument] = target.value;
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
+    if (target.dataset.methodologyAction !== undefined) {
+      state.methodology.actionResearch = target.checked ? "yes" : "no";
+      state.methodology.selectedDesign = methodologyDisplayName(state.methodology.approach, state.methodology.design, target.checked);
+      markContentEdit();
+      saveState();
+      renderStage();
       return;
     }
     if (target.dataset.ethicsCheck) {
@@ -3253,6 +3848,7 @@ function attachEvents() {
     if (target.dataset.addQuestion !== undefined) {
       if (state.a4.questions.length < SRQ_LIMITS.maximum) {
         state.a4.questions.push("");
+        state.a4.questionIds.push(createStableId("srq"));
         state.a4.questionPurposes.push("");
         state.a4.questionFocuses.push("");
         state.a4.questionClaims.push("");
@@ -3263,13 +3859,55 @@ function attachEvents() {
     }
     if (target.dataset.removeQuestion !== undefined) {
       const index = Number(target.dataset.removeQuestion);
+      const questionId = state.a4.questionIds[index];
+      const linkedInstrument = state.instrumentation.rows.find((row) => row.questionId === questionId);
+      if (linkedInstrument && instrumentRowHasAnswers(linkedInstrument) && !confirm("This research question has completed instrumentation details. Remove the question and its linked instrumentation card?")) return;
       state.a4.questions.splice(index, 1);
+      state.a4.questionIds.splice(index, 1);
       state.a4.questionPurposes.splice(index, 1);
       state.a4.questionFocuses.splice(index, 1);
       state.a4.questionClaims.splice(index, 1);
       markContentEdit();
       saveState();
       renderStage();
+    }
+    if (target.dataset.moveQuestion) {
+      const [indexText, direction] = target.dataset.moveQuestion.split(":");
+      const index = Number(indexText);
+      const nextIndex = direction === "up" ? index - 1 : index + 1;
+      if (nextIndex >= 0 && nextIndex < state.a4.questions.length) {
+        ["questions", "questionIds", "questionPurposes", "questionFocuses", "questionClaims"].forEach((key) => {
+          [state.a4[key][index], state.a4[key][nextIndex]] = [state.a4[key][nextIndex], state.a4[key][index]];
+        });
+        syncInstrumentationRows();
+        markContentEdit();
+        saveState();
+        renderStage();
+      }
+    }
+    if (target.dataset.addGroupMember !== undefined) {
+      state.submission.groupMembers.push(normalizeGroupPerson({}, "member"));
+      markContentEdit();
+      saveState();
+      renderStage();
+      syncStudentDetailsFields();
+    }
+    if (target.dataset.removeGroupMember !== undefined) {
+      const index = Number(target.dataset.removeGroupMember);
+      const person = state.submission.groupMembers[index];
+      const hasSavedWork = person && [person.name, person.initialReadiness, person.confidence, person.readinessChange].some((item) => String(item || "").trim());
+      if (hasSavedWork && !confirm("This group member has saved information or reflections. Remove this member and their entries?")) return;
+      state.submission.groupMembers.splice(index, 1);
+      markContentEdit();
+      saveState();
+      renderStage();
+      syncStudentDetailsFields();
+    }
+    if (target.dataset.downloadConsentDocs !== undefined) generateConsentDocxDrafts();
+    if (target.dataset.downloadUpdateBackup !== undefined) exportJson();
+    if (target.dataset.showWhatsNew !== undefined) {
+      const notes = els.updateNotice?.querySelector(".update-notes");
+      if (notes) notes.hidden = !notes.hidden;
     }
     if (target.dataset.restoreCheckpoint) restoreCheckpoint(target.dataset.restoreCheckpoint);
   });
@@ -3368,9 +4006,15 @@ function attachEvents() {
   });
 }
 
+function instrumentRowHasAnswers(row = {}) {
+  return ["claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"]
+    .some((key) => String(row[key] || "").trim());
+}
+
 attachEvents();
 render();
 showWelcomeIfNeeded();
+checkForUpdates();
 saveState();
 setInterval(saveState, 30000);
 setInterval(tickActiveTime, 15000);
