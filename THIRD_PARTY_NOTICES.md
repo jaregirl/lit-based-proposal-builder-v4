@@ -18,6 +18,8 @@ The ERB document-preparation templates are draft working forms based on the supp
 
 Methodological, ethical, and educational sources named in the app remain the works of their respective authors and publishers. Their inclusion as conceptual foundations does not grant redistribution rights to the underlying publications.
 
+The Team Contribution Record is informed conceptually by Brookhart's guidance on grading group work and by CATME's published research on self- and peer evaluation. The app does not reproduce CATME's copyrighted instrument, behavioral anchors, scoring method, or exceptional-condition classifications. See the CATME research and citations page in About & Sources for the cited website and journal articles.
+
 ## Developer Attribution
 
 The app was developed by J. Arawiran with coding assistance from OpenAI Codex. A definitive software license will be selected after institutional ownership is clarified.

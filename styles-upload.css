@@ -373,6 +373,85 @@ button.compact {
   margin: 3px 0;
 }
 
+.team-contribution-panel {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfa;
+}
+
+.team-contribution-panel > summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+.team-contribution-content {
+  display: grid;
+  gap: 14px;
+  padding: 0 16px 16px;
+}
+
+.confidential-label {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 7px;
+  border: 1px solid #d9b56b;
+  border-radius: 4px;
+  color: #76520d;
+  background: #fff8e7;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.privacy-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: #eef7f5;
+}
+
+.contribution-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.contribution-card h4 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+}
+
+.contribution-behaviors {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+}
+
+.contribution-behaviors legend {
+  padding: 0 4px;
+  font-weight: 700;
+}
+
+.contribution-print-card {
+  margin-top: 18px;
+  break-inside: avoid;
+}
+
+.contribution-appendix {
+  break-before: page;
+}
+
+.contribution-print-card table {
+  font-size: 9pt;
+}
+
 .guided-step {
   border: 1px solid var(--line);
   border-radius: 8px;

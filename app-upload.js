@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const APP_VERSION = "v4.6.0 - Pilot";
-const SCHEMA_VERSION = "4.6.0";
+const APP_VERSION = "v4.7.0 - Group Accountability Pilot";
+const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
 const MAX_CHECKPOINTS = 5;
@@ -14,6 +14,21 @@ const SRQ_LIMITS = {
 };
 const PQF_REFERENCE = "PQF-NCC Resolution 2026-02";
 const PQF_NOTE = "This is a formative guide, not official PQF certification. Verify current PQF issuances through official institutional or government sources.";
+const CONTRIBUTION_LEVELS = [
+  ["", "Choose a contribution level"],
+  ["insufficient", "Not enough information to assess"],
+  ["none", "No observable contribution"],
+  ["limited", "Limited contribution"],
+  ["agreed", "Completed agreed responsibility"],
+  ["substantial", "Substantial contribution"]
+];
+const CONTRIBUTION_BEHAVIORS = [
+  ["contributedWork", "Contributed work"],
+  ["keptOnTrack", "Kept the team on track"],
+  ["supportedQuality", "Supported quality"],
+  ["interactedConstructively", "Interacted constructively"],
+  ["appliedKnowledge", "Applied relevant knowledge or skill"]
+];
 const degreeLevels = {
   shs: { label: "SHS / Basic Education Research", pqf: "PQF Level 3", short: "Level 3" },
   bachelor: { label: "Bachelor's degree", pqf: "PQF Level 6", short: "Level 6" },
@@ -343,10 +358,16 @@ const defaultData = {
     ]
   },
   readiness: {},
+  teamContributions: {},
   submission: {
     degreeLevel: "master",
     workArrangement: "individual",
     adviserName: "",
+    studentId: "",
+    studentName: "",
+    personalGroupReflection: "",
+    personalDeclaration: false,
+    sourceCopyHistory: [],
     groupName: "",
     groupLeader: { id: "", name: "", initialReadiness: "", confidence: "", readinessChange: "" },
     groupMembers: []
@@ -472,12 +493,22 @@ function normalizeState(nextState) {
   normalized.instrumentation = { ...clone(defaultData.instrumentation), ...(nextState.instrumentation || {}) };
   normalized.terms = { ...clone(defaultData.terms), ...(nextState.terms || {}) };
   normalized.outline = { ...clone(defaultData.outline), ...(nextState.outline || {}) };
+  normalized.teamContributions = normalizeContributionRecords(nextState.teamContributions || {});
   normalized.submission = { ...clone(defaultData.submission), ...(nextState.submission || {}) };
   if (!normalized.submission.degreeLevel) normalized.submission.degreeLevel = "master";
   if (!normalized.submission.workArrangement) normalized.submission.workArrangement = "individual";
   normalized.submission.groupLeader = normalizeGroupPerson(normalized.submission.groupLeader, "leader");
   if (!Array.isArray(normalized.submission.groupMembers)) normalized.submission.groupMembers = [];
   normalized.submission.groupMembers = normalized.submission.groupMembers.map((person) => normalizeGroupPerson(person, "member"));
+  if (!Array.isArray(normalized.submission.sourceCopyHistory)) normalized.submission.sourceCopyHistory = [];
+  if (normalized.submission.workArrangement === "group" && !normalized.submission.studentId) {
+    const previousOwner = normalized.submission.groupLeader;
+    normalized.submission.studentId = previousOwner.id;
+    normalized.submission.studentName = normalized.submission.studentName || previousOwner.name;
+    normalized.submission.initialReadiness = normalized.submission.initialReadiness || previousOwner.initialReadiness || "";
+    normalized.submission.confidence = normalized.submission.confidence || previousOwner.confidence || "";
+    normalized.submission.readinessChange = normalized.submission.readinessChange || previousOwner.readinessChange || "";
+  }
   if (!Array.isArray(normalized.a2.patterns)) normalized.a2.patterns = clone(defaultData.a2.patterns);
   if (!Array.isArray(normalized.a3.gaps)) normalized.a3.gaps = clone(defaultData.a3.gaps);
   if (!Array.isArray(normalized.a4.questions)) normalized.a4.questions = ["", "", ""];
@@ -545,12 +576,104 @@ function migrateMethodologySelection(methodology) {
 
 function normalizeGroupPerson(person = {}, role = "member") {
   return {
+    ...person,
     id: person.id || createStableId(role),
     name: person.name || "",
     initialReadiness: person.initialReadiness || "",
     confidence: person.confidence || "",
     readinessChange: person.readinessChange || ""
   };
+}
+
+function normalizeContributionAssessment(assessment = {}) {
+  return {
+    level: assessment.level || "",
+    behaviors: Array.isArray(assessment.behaviors) ? assessment.behaviors.filter((item) => CONTRIBUTION_BEHAVIORS.some(([key]) => key === item)) : [],
+    evidence: assessment.evidence || "",
+    context: assessment.context || ""
+  };
+}
+
+function normalizeContributionRecords(records = {}) {
+  return Object.fromEntries(Object.entries(records).map(([stageId, record]) => [stageId, {
+    stageId,
+    rosterSnapshot: Array.isArray(record?.rosterSnapshot) ? record.rosterSnapshot.map((person) => ({
+      id: person.id || createStableId("roster"),
+      name: person.name || "",
+      role: person.role || "member"
+    })) : [],
+    assessments: Object.fromEntries(Object.entries(record?.assessments || {}).map(([personId, assessment]) => [personId, normalizeContributionAssessment(assessment)])),
+    updatedAt: record?.updatedAt || ""
+  }]));
+}
+
+function isAcademicStage(stageId) {
+  return stages.some((stage) => stage.id === stageId) && !["details", "submission"].includes(stageId);
+}
+
+function groupRoster() {
+  if (state.submission.workArrangement !== "group") return [];
+  return [
+    { ...state.submission.groupLeader, role: "leader" },
+    ...state.submission.groupMembers.map((person) => ({ ...person, role: "member" }))
+  ].filter((person) => person.id);
+}
+
+function contributionRecord(stageId) {
+  if (!state.teamContributions[stageId]) {
+    state.teamContributions[stageId] = { stageId, rosterSnapshot: [], assessments: {}, updatedAt: "" };
+  }
+  const record = state.teamContributions[stageId];
+  const roster = groupRoster();
+  const known = new Set(record.rosterSnapshot.map((person) => person.id));
+  roster.forEach((person) => {
+    if (!known.has(person.id)) record.rosterSnapshot.push({ id: person.id, name: person.name || "", role: person.role });
+    if (!record.assessments[person.id]) record.assessments[person.id] = normalizeContributionAssessment();
+  });
+  record.updatedAt = record.updatedAt || new Date().toISOString();
+  return record;
+}
+
+function contributionAssessmentMissing(assessment = {}) {
+  const missing = [];
+  if (!assessment.level) missing.push("contribution level");
+  if (["none", "substantial"].includes(assessment.level) && !String(assessment.evidence || "").trim()) missing.push("factual evidence for the selected level");
+  return missing;
+}
+
+function renderTeamContributionRecord(stageId) {
+  if (!isAcademicStage(stageId) || state.submission.workArrangement !== "group") return "";
+  const record = contributionRecord(stageId);
+  const ownerId = state.submission.studentId;
+  const roster = record.rosterSnapshot;
+  const card = (person, index) => {
+    const assessment = record.assessments[person.id] || normalizeContributionAssessment();
+    const isSelf = person.id === ownerId;
+    const prefix = `contribution-${stageId}-${person.id}`;
+    return `<section class="contribution-card">
+      <h4>${isSelf ? "Your contribution" : `Group member: ${escapeHtml(person.name || `Member ${index + 1}`)}`}</h4>
+      <label for="${prefix}-level">Contribution level</label>
+      <select id="${prefix}-level" data-contribution-stage="${escapeHtml(stageId)}" data-contribution-person="${escapeHtml(person.id)}" data-contribution-key="level">
+        ${CONTRIBUTION_LEVELS.map(([key, label]) => `<option value="${escapeHtml(key)}" ${assessment.level === key ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+      </select>
+      <fieldset class="contribution-behaviors">
+        <legend>Observable contributions</legend>
+        ${CONTRIBUTION_BEHAVIORS.map(([key, label]) => `<label><input type="checkbox" data-contribution-stage="${escapeHtml(stageId)}" data-contribution-person="${escapeHtml(person.id)}" data-contribution-behavior="${escapeHtml(key)}" ${assessment.behaviors.includes(key) ? "checked" : ""}> ${escapeHtml(label)}</label>`).join("")}
+      </fieldset>
+      <label for="${prefix}-evidence">Brief factual evidence</label>
+      <textarea id="${prefix}-evidence" data-contribution-stage="${escapeHtml(stageId)}" data-contribution-person="${escapeHtml(person.id)}" data-contribution-key="evidence" placeholder="Describe observable actions or submitted work for this part.">${escapeHtml(assessment.evidence)}</textarea>
+      <label for="${prefix}-context">Context or concern <span class="hint">(optional)</span></label>
+      <textarea id="${prefix}-context" data-contribution-stage="${escapeHtml(stageId)}" data-contribution-person="${escapeHtml(person.id)}" data-contribution-key="context" placeholder="Add context without inferring motives or personality.">${escapeHtml(assessment.context)}</textarea>
+    </section>`;
+  };
+  return `<details class="team-contribution-panel">
+    <summary>Confidential Team Contribution Record <span class="confidential-label">For Adviser Review Only</span></summary>
+    <div class="team-contribution-content">
+      <p class="hint">Complete this record for ${escapeHtml(stages.find((stage) => stage.id === stageId)?.code || stageId)}. The app stores the responses but does not score, rank, interpret, or adjust grades.</p>
+      <p class="privacy-note">Use “Not enough information to assess” when appropriate. Describe observable behavior, submitted work, or evidence rather than motives.</p>
+      ${roster.length ? roster.map(card).join("") : `<p class="hint">Add the group roster in Student Details first.</p>`}
+    </div>
+  </details>`;
 }
 
 function normalizeTermRow(row = {}) {
@@ -757,6 +880,7 @@ function render() {
   syncStudentDetailsFields();
   updateStudentDetailsButtonVisibility();
   updateUploadButtonLabel();
+  updateMemberCopyButtonVisibility();
   updateDashboard();
   renderMigrationNotice();
   renderStageFeedback();
@@ -882,22 +1006,34 @@ function updateUploadButtonLabel() {
   button.disabled = false;
 }
 
+function updateMemberCopyButtonVisibility() {
+  const button = document.getElementById("memberCopyBtn");
+  if (!button) return;
+  const memberCopyStages = ["a1", "a2", "a3", "a4", "framework", "methodology", "ethics", "instrumentation", "terms", "outline", "researchLevel"];
+  button.hidden = state.submission.workArrangement !== "group" || !memberCopyStages.includes(state.currentStage);
+}
+
 function renderStage() {
   const id = state.currentStage;
-  if (id === "a1") return renderA1();
-  if (id === "details") return renderStudentDetailsStage();
-  if (id === "a2") return renderA2();
-  if (id === "a3") return renderA3();
-  if (id === "a4") return renderA4();
-  if (id === "framework") return renderFramework();
-  if (id === "researchLevel") return renderResearchLevel();
-  if (id === "methodology") return renderMethodology();
-  if (id === "ethics") return renderEthics();
-  if (id === "instrumentation") return renderInstrumentation();
-  if (id === "terms") return renderTerms();
-  if (id === "outline") return renderOutline();
-  if (id === "readiness") return renderReadiness();
-  return renderSubmission();
+  let result;
+  if (id === "a1") result = renderA1();
+  else if (id === "details") result = renderStudentDetailsStage();
+  else if (id === "a2") result = renderA2();
+  else if (id === "a3") result = renderA3();
+  else if (id === "a4") result = renderA4();
+  else if (id === "framework") result = renderFramework();
+  else if (id === "researchLevel") result = renderResearchLevel();
+  else if (id === "methodology") result = renderMethodology();
+  else if (id === "ethics") result = renderEthics();
+  else if (id === "instrumentation") result = renderInstrumentation();
+  else if (id === "terms") result = renderTerms();
+  else if (id === "outline") result = renderOutline();
+  else if (id === "readiness") result = renderReadiness();
+  else result = renderSubmission();
+  if (isAcademicStage(id) && state.submission.workArrangement === "group") {
+    els.stageForm.insertAdjacentHTML("beforeend", renderTeamContributionRecord(id));
+  }
+  return result;
 }
 
 function renderFields(section, fields) {
@@ -967,11 +1103,12 @@ function renderStudentDetailsForm(prefix = "") {
           <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="individual" ${group ? "" : "checked"}> Individual</label>
           <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="group" ${group ? "checked" : ""}> Group</label>
         </div>
-        <p class="hint">For group work, every person records a separate readiness reflection. Estimated active work is shared app-session activity, not an individual contribution measure.</p>
+        <p class="hint">For group work, each student keeps a personal copy. The proposal may be shared, but the reflection, declaration, and confidential contribution records belong only to the student completing this copy.</p>
       </fieldset>
       ${commonFields.map(([key, label, hint]) => studentDetailField(prefix, key, label, hint)).join("")}
     </div>
     ${group ? renderGroupDetails(prefix) : renderIndividualDetails(prefix)}
+    ${renderPersonalDeclaration(prefix)}
   `;
 }
 
@@ -1002,6 +1139,8 @@ function renderIndividualDetails(prefix) {
 
 function renderGroupDetails(prefix) {
   const groupNameId = `${prefix}groupName`;
+  const reflectionId = `${prefix}personalGroupReflection`;
+  const roster = groupRoster();
   return `
     <section class="group-details">
       <div class="field">
@@ -1013,6 +1152,22 @@ function renderGroupDetails(prefix) {
         ${state.submission.groupMembers.map((person, index) => groupPersonCard(person, "member", index, prefix)).join("")}
       </div>
       <button type="button" class="ghost" data-add-group-member>Add Group Member</button>
+      <div class="field full copy-owner-field">
+        <div class="field-label"><label for="${prefix}studentId">Student completing this copy</label>${helpControl(`${prefix}studentId-help`, "Student completing this copy", "Choose the student whose personal reflection, declaration, activity record, and confidential contribution record belong in this copy.")}</div>
+        <select id="${prefix}studentId" data-copy-owner aria-describedby="${prefix}studentId-help">
+          <option value="">Choose a group member</option>
+          ${roster.map((person) => `<option value="${escapeHtml(person.id)}" ${state.submission.studentId === person.id ? "selected" : ""}>${escapeHtml(person.name || (person.role === "leader" ? "Unnamed group leader" : "Unnamed group member"))}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field full">
+        <div class="field-label"><label for="${reflectionId}">Personal Group-Work Reflection</label>${helpControl(`${reflectionId}-help`, "Personal Group-Work Reflection", "In one reflection, explain what you learned, what you personally contributed, and how working with the group influenced your research thinking.")}</div>
+        <textarea id="${reflectionId}" data-section="submission" data-key="personalGroupReflection" aria-describedby="${reflectionId}-help">${escapeHtml(state.submission.personalGroupReflection || "")}</textarea>
+      </div>
+      <section class="source-copy-summary">
+        <h3>Personal and Member Copies</h3>
+        <p class="hint">A member copy includes the shared proposal and roster, but removes your reflection, declaration, checkpoints, app feedback, and all confidential contribution records.</p>
+        <button type="button" class="ghost" data-open-member-copy>Create Copy for Another Group Member</button>
+      </section>
     </section>`;
 }
 
@@ -1026,20 +1181,68 @@ function groupPersonCard(person, role, index, prefix, open = false) {
           <label>${label} Name</label>
           <input data-group-person-role="${role}" data-group-person-index="${index}" data-group-person-key="name" value="${escapeHtml(person.name)}">
         </div>
-        ${groupReflectionField(person, role, index, "initialReadiness", "Initial Readiness Reflection")}
-        ${groupReflectionField(person, role, index, "confidence", "Final Readiness Reflection")}
-        ${groupReflectionField(person, role, index, "readinessChange", "What Changed and Why?")}
       </div>
       ${role === "member" ? `<button type="button" class="danger ghost" data-remove-group-member="${index}">Remove Member</button>` : ""}
     </details>`;
 }
 
-function groupReflectionField(person, role, index, key, label) {
-  return `
-    <div class="field full">
-      <label>${label}</label>
-      <textarea data-group-person-role="${role}" data-group-person-index="${index}" data-group-person-key="${key}">${escapeHtml(person[key] || "")}</textarea>
-    </div>`;
+function renderPersonalDeclaration(prefix = "") {
+  const id = `${prefix}personalDeclaration`;
+  return `<section class="personal-declaration">
+    <label for="${id}"><input id="${id}" type="checkbox" data-personal-declaration ${state.submission.personalDeclaration ? "checked" : ""}> I declare that this personal copy identifies me as the student completing it and that my reflection and confidential contribution record are my own entries.</label>
+    <p class="hint">This declaration is required before printing a submission. It does not claim that one student completed all group work.</p>
+  </section>`;
+}
+
+function openMemberCopyDialog() {
+  const dialog = document.getElementById("memberCopyDialog");
+  const form = document.getElementById("memberCopyForm");
+  if (!dialog || !form) return;
+  const ownerId = state.submission.studentId;
+  const options = groupRoster().filter((person) => person.id !== ownerId).map((person) => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.name || "Unnamed group member")}</option>`).join("");
+  form.innerHTML = `<p>Shared proposal content will be included. The source student's identity, reflection, declaration, checkpoints, app feedback, and confidential contribution records will not be copied.</p>
+    <h3>Included</h3><p>Proposal responses, group roster, course, and adviser details.</p>
+    <h3>Not included</h3><p>Personal reflection, declaration, activity history, checkpoints, self-assessment, peer assessments, and comments.</p>
+    <label for="copyRecipient">Receiving group member</label>
+    <select id="copyRecipient"><option value="">Choose a member</option>${options}</select>
+    <label class="checkbox-line"><input type="checkbox" id="includeSourceRecord" checked> Include a read-only Source Copy Record</label>
+    <p class="privacy-note">The source record shows provenance only. It is not evidence of the entire group's work.</p>`;
+  dialog.showModal();
+}
+
+function createMemberCopy(memberId, includeSourceRecord = true) {
+  const recipient = groupRoster().find((person) => person.id === memberId);
+  if (!recipient) {
+    alert("Choose a receiving group member first.");
+    return;
+  }
+  const copy = clone(state);
+  const sourceRecord = {
+    sourceStudent: state.submission.studentName || "Unnamed student",
+    exportedAt: new Date().toISOString(),
+    workStartedAt: state.engagement.workStartedAt || "",
+    lastEditedAt: state.engagement.lastEditedAt || "",
+    estimatedActiveMs: state.engagement.activeMs || 0,
+    appVersion: APP_VERSION,
+    note: "Source activity is provenance only and is not interpreted as total group work."
+  };
+  copy.submission.studentId = recipient.id;
+  copy.submission.studentName = recipient.name || "";
+  copy.submission.personalGroupReflection = "";
+  copy.submission.personalDeclaration = false;
+  copy.submission.sourceCopyHistory = includeSourceRecord ? [...(copy.submission.sourceCopyHistory || []), sourceRecord] : [...(copy.submission.sourceCopyHistory || [])];
+  copy.submission.groupLeader = normalizeGroupPerson({ ...copy.submission.groupLeader, initialReadiness: "", confidence: "", readinessChange: "" }, "leader");
+  copy.submission.groupMembers = copy.submission.groupMembers.map((person) => normalizeGroupPerson({ ...person, initialReadiness: "", confidence: "", readinessChange: "" }, "member"));
+  copy.engagement = clone(defaultData.engagement);
+  copy.teamContributions = {};
+  const backup = { backupFormat: "lit-based-proposal-builder", appVersion: APP_VERSION, schemaVersion: SCHEMA_VERSION, state: normalizeState(copy), checkpoints: [] };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `proposal-builder-member-copy-${(recipient.name || "member").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "member"}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  alert(`A clean member copy for ${recipient.name || "the selected member"} was created. Download it, then use Restore Backup on that student's device.`);
 }
 
 function renderA1() {
@@ -1808,8 +2011,9 @@ function renderSubmission() {
     </section>
     ${state.submission.workArrangement === "group" ? `
       <section class="output-box">
-        <h3>Group Readiness Reflections</h3>
-        <div class="generated-text">Every group member must complete an initial reflection, final reflection, and explanation of what changed before the clean final PDF can be generated.</div>
+        <h3>Personal Group-Work Reflection</h3>
+        <div class="generated-text">This reflection belongs to the student completing this copy and explains what the student learned, contributed, and experienced while working with the group.</div>
+        <p>${escapeHtml(state.submission.personalGroupReflection || "No personal group-work reflection has been entered yet.")}</p>
         <button type="button" data-stage="details">Review Group Reflections</button>
       </section>` : `
       <section class="output-box">
@@ -2946,6 +3150,7 @@ function submissionIdentityHtml() {
   const members = state.submission.groupMembers.map((person) => person.name).filter(Boolean);
   return `<strong>Work Arrangement:</strong> Group<br>
     ${state.submission.groupName ? `<strong>Group Name:</strong> ${escapeHtml(state.submission.groupName)}<br>` : ""}
+    <strong>Student completing this copy:</strong> ${escapeHtml(state.submission.studentName || "________________________")}<br>
     <strong>Group Leader:</strong> ${escapeHtml(state.submission.groupLeader.name)}<br>
     <strong>Group Members:</strong> ${escapeHtml(members.join(", ") || "None listed")}`;
 }
@@ -2957,14 +3162,34 @@ function readinessReflectionsHtml() {
       <h3>Final Readiness Reflection</h3><p>${escapeHtml(value("submission.confidence"))}</p>
       <h3>What Changed and Why</h3><p>${escapeHtml(value("submission.readinessChange"))}</p>`;
   }
-  const people = [state.submission.groupLeader, ...state.submission.groupMembers];
-  return `<h2>Individual Readiness Reflections</h2>${people.map((person, index) => `
-    <section class="reflection-entry">
-      <h3>${index === 0 ? "Group Leader" : `Group Member ${index}`}: ${escapeHtml(person.name)}</h3>
-      <p><strong>Initial:</strong> ${escapeHtml(person.initialReadiness)}</p>
-      <p><strong>Final:</strong> ${escapeHtml(person.confidence)}</p>
-      <p><strong>What Changed and Why:</strong> ${escapeHtml(person.readinessChange)}</p>
-    </section>`).join("")}`;
+  return `<h2>Personal Group-Work Reflection</h2>
+    <p><strong>Student completing this copy:</strong> ${escapeHtml(state.submission.studentName || "")}</p>
+    <p>${escapeHtml(state.submission.personalGroupReflection || "")}</p>`;
+}
+
+function contributionAppendixHtml(stageIds) {
+  if (state.submission.workArrangement !== "group") return "";
+  const ids = stageIds.filter(isAcademicStage);
+  if (!ids.length) return "";
+  return `<section class="contribution-appendix major-section">
+    <h2>Confidential Team Contribution Records</h2>
+    <p><strong>For Adviser Review Only.</strong> These are original, nonvalidated developmental records. The app does not score, rank, interpret, or adjust grades.</p>
+    ${ids.map((stageId) => {
+      const stage = stages.find((item) => item.id === stageId);
+      const record = state.teamContributions[stageId];
+      if (!record) return `<section class="contribution-print-card"><h3>${escapeHtml(stage.code)} - ${escapeHtml(stage.title)}</h3><p>No contribution record was entered.</p></section>`;
+      const rows = record.rosterSnapshot.map((person) => {
+        const assessment = record.assessments[person.id] || {};
+        const level = CONTRIBUTION_LEVELS.find(([key]) => key === assessment.level)?.[1] || "Not entered";
+        const behaviors = (assessment.behaviors || []).map((key) => CONTRIBUTION_BEHAVIORS.find(([name]) => name === key)?.[1]).filter(Boolean).join(", ");
+        return `<tr><td>${escapeHtml(person.name || "Unnamed member")}</td><td>${escapeHtml(level)}</td><td>${escapeHtml(behaviors || "None selected")}</td><td>${escapeHtml(assessment.evidence || "")}</td><td>${escapeHtml(assessment.context || "")}</td></tr>`;
+      }).join("");
+      return `<section class="contribution-print-card"><h3>${escapeHtml(stage.code)} - ${escapeHtml(stage.title)}</h3>
+        <table><thead><tr><th>Person assessed</th><th>Contribution level</th><th>Observable contributions</th><th>Factual evidence</th><th>Context or concern</th></tr></thead><tbody>${rows}</tbody></table>
+        ${adviserReviewBlock(stage)}</section>`;
+    }).join("")}
+    <p class="hint">Adviser analysis, synthesis, interpretation, and grading judgment are outside the app.</p>
+  </section>`;
 }
 
 function adviserReviewBlock(stage) {
@@ -3098,6 +3323,7 @@ function buildSubmissionHtml() {
     <h2>Chapter 1 Template Alignment</h2>
     <div class="chapter-template">${outlineHtml()}</div>
     ${finalAdviserReviewRecordHtml()}
+    ${contributionAppendixHtml(stages.filter((stage) => isAcademicStage(stage.id)).map((stage) => stage.id))}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
     ${escapeHtml(APP_CREDIT)}<br>
     Printed by ${escapeHtml(printedBy)} on ${escapeHtml(formatTimestamp(generatedAt))}.</p></footer>
@@ -3131,7 +3357,7 @@ function buildProgressPdfHtml(stageId, scope) {
     <strong>Date:</strong> ${escapeHtml(value("submission.submissionDate"))}<br>
     <strong>Research Level / Use Context:</strong> ${escapeHtml(degree.label)} (${escapeHtml(degree.pqf)})</p>
     ${workRecordHtml()}
-    ${selectedStages.map((stage) => `${progressStageHtml(stage.id)}${adviserReviewBlock(stage)}`).join("")}
+    ${selectedStages.map((stage) => `${progressStageHtml(stage.id)}${contributionAppendixHtml([stage.id])}${adviserReviewBlock(stage)}`).join("")}
     <footer><p>Generated by Lit-Based Proposal Builder (${escapeHtml(APP_VERSION)})<br>
     Printed by ${escapeHtml(state.submission.workArrangement === "group" ? (state.submission.groupLeader.name || state.submission.groupName || "__________") : (value("submission.studentName") || "__________"))} on ${escapeHtml(formatTimestamp(generatedAt))}.<br>
     The app provides developmental guidance and alignment checks. Its outputs do not constitute adviser, panel, or institutional approval.</p></footer>
@@ -3227,6 +3453,11 @@ function previewProgressPdf() {
 
 function printProgressPdf() {
   const { stageId, scope } = progressPdfSelection();
+  const missing = progressSubmissionMissingItems(stageId, scope);
+  if (missing.length) {
+    alert(`This progress submission is locked until the personal declaration and contribution record are complete.\n\nMissing:\n${missing.slice(0, 10).map((item) => `- ${item}`).join("\n")}`);
+    return;
+  }
   const printTarget = document.getElementById("printSubmission");
   printTarget.innerHTML = buildProgressPdfHtml(stageId, scope);
   document.body.classList.add("printing-submission");
@@ -3261,6 +3492,11 @@ function previewCurrentOutput() {
 
 function printActivePreview() {
   if (activePreviewMode === "progress" && activeProgressPrint) {
+    const missing = progressSubmissionMissingItems(activeProgressPrint.stageId, activeProgressPrint.scope);
+    if (missing.length) {
+      alert(`This progress submission is locked until the personal declaration and contribution record are complete.\n\nMissing:\n${missing.slice(0, 10).map((item) => `- ${item}`).join("\n")}`);
+      return;
+    }
     const printTarget = document.getElementById("printSubmission");
     printTarget.innerHTML = buildProgressPdfHtml(activeProgressPrint.stageId, activeProgressPrint.scope);
     document.body.classList.add("printing-submission");
@@ -3282,17 +3518,14 @@ function finalSubmissionMissingItems() {
   };
 
   requireValue("submission.adviserName", "Adviser name");
+  if (!state.submission.personalDeclaration) missing.push("Personal copy declaration");
   if (state.submission.workArrangement === "group") {
-    const people = [state.submission.groupLeader, ...state.submission.groupMembers];
     if (!state.submission.groupLeader.name) missing.push("Group leader name");
     if (!state.submission.groupMembers.length) missing.push("At least one group member");
-    people.forEach((person, index) => {
-      const label = index === 0 ? "Group leader" : `Group member ${index}`;
-      if (!person.name) missing.push(`${label}: name`);
-      if (!person.initialReadiness) missing.push(`${label}: initial readiness reflection`);
-      if (!person.confidence) missing.push(`${label}: final readiness reflection`);
-      if (!person.readinessChange) missing.push(`${label}: what changed and why`);
-    });
+    if (!state.submission.studentId) missing.push("Student completing this copy");
+    if (!state.submission.studentName) missing.push("Student completing this copy: name");
+    requireValue("submission.personalGroupReflection", "Personal group-work reflection");
+    missing.push(...contributionMissingForStages(stages.filter((stage) => isAcademicStage(stage.id)).map((stage) => stage.id)));
   } else {
     requireValue("submission.studentName", "Student name");
     requireValue("submission.initialReadiness", "Initial readiness reflection");
@@ -3383,6 +3616,35 @@ function finalSubmissionMissingItems() {
     requireValue("submission.readinessChange", "What changed and why");
   }
 
+  return missing;
+}
+
+function contributionMissingForStages(stageIds = []) {
+  if (state.submission.workArrangement !== "group") return [];
+  const missing = [];
+  const roster = groupRoster();
+  stageIds.filter(isAcademicStage).forEach((stageId) => {
+    const stage = stages.find((item) => item.id === stageId);
+    const record = state.teamContributions[stageId];
+    if (!record) {
+      missing.push(`${stage.code}: confidential Team Contribution Record`);
+      return;
+    }
+    roster.forEach((person) => {
+      const issues = contributionAssessmentMissing(record.assessments?.[person.id]);
+      issues.forEach((issue) => missing.push(`${stage.code}: ${person.name || "Unnamed member"} - ${issue}`));
+    });
+  });
+  return missing;
+}
+
+function progressSubmissionMissingItems(stageId, scope) {
+  if (state.submission.workArrangement !== "group") return [];
+  const selectedStages = progressStageList(stageId, scope).map((stage) => stage.id);
+  const missing = [];
+  if (!state.submission.personalDeclaration) missing.push("Personal copy declaration");
+  if (!state.submission.studentId || !state.submission.studentName) missing.push("Student completing this copy");
+  missing.push(...contributionMissingForStages(selectedStages));
   return missing;
 }
 
@@ -3698,6 +3960,16 @@ function attachEvents() {
   document.addEventListener("input", (event) => {
     const target = event.target;
     markInteraction();
+    if (target.dataset.contributionStage && target.dataset.contributionKey) {
+      const record = contributionRecord(target.dataset.contributionStage);
+      const assessment = record.assessments[target.dataset.contributionPerson] || normalizeContributionAssessment();
+      assessment[target.dataset.contributionKey] = target.value;
+      record.assessments[target.dataset.contributionPerson] = assessment;
+      record.updatedAt = new Date().toISOString();
+      markContentEdit();
+      saveState();
+      return;
+    }
     if (target.dataset.appFeedback) {
       saveAppFeedbackField(target.dataset.appFeedback, target.value);
       return;
@@ -3708,6 +3980,7 @@ function attachEvents() {
         : state.submission.groupMembers[Number(target.dataset.groupPersonIndex)];
       if (person) {
         person[target.dataset.groupPersonKey] = target.value;
+        if (target.dataset.groupPersonKey === "name" && person.id === state.submission.studentId) state.submission.studentName = target.value;
         markContentEdit();
         saveState();
       }
@@ -3759,6 +4032,27 @@ function attachEvents() {
   document.addEventListener("change", (event) => {
     const target = event.target;
     markInteraction();
+    if (target.dataset.contributionStage && target.dataset.contributionKey) {
+      const record = contributionRecord(target.dataset.contributionStage);
+      const assessment = record.assessments[target.dataset.contributionPerson] || normalizeContributionAssessment();
+      assessment[target.dataset.contributionKey] = target.value;
+      record.assessments[target.dataset.contributionPerson] = assessment;
+      record.updatedAt = new Date().toISOString();
+      markContentEdit();
+      saveState();
+      return;
+    }
+    if (target.dataset.contributionStage && target.dataset.contributionBehavior) {
+      const record = contributionRecord(target.dataset.contributionStage);
+      const assessment = record.assessments[target.dataset.contributionPerson] || normalizeContributionAssessment();
+      const behavior = target.dataset.contributionBehavior;
+      assessment.behaviors = target.checked ? [...new Set([...assessment.behaviors, behavior])] : assessment.behaviors.filter((item) => item !== behavior);
+      record.assessments[target.dataset.contributionPerson] = assessment;
+      record.updatedAt = new Date().toISOString();
+      markContentEdit();
+      saveState();
+      return;
+    }
     if (target.dataset.appFeedback) {
       saveAppFeedbackField(target.dataset.appFeedback, target.value);
       return;
@@ -3769,6 +4063,17 @@ function attachEvents() {
         state.submission.groupLeader.name = state.submission.studentName;
         state.submission.groupLeader.initialReadiness = state.submission.initialReadiness || "";
       }
+      markContentEdit();
+      saveState();
+      renderStage();
+      syncStudentDetailsFields();
+      updateMemberCopyButtonVisibility();
+      return;
+    }
+    if (target.dataset.copyOwner !== undefined) {
+      state.submission.studentId = target.value;
+      const owner = groupRoster().find((person) => person.id === target.value);
+      state.submission.studentName = owner?.name || "";
       markContentEdit();
       saveState();
       renderStage();
@@ -3895,13 +4200,20 @@ function attachEvents() {
     if (target.dataset.removeGroupMember !== undefined) {
       const index = Number(target.dataset.removeGroupMember);
       const person = state.submission.groupMembers[index];
-      const hasSavedWork = person && [person.name, person.initialReadiness, person.confidence, person.readinessChange].some((item) => String(item || "").trim());
+      const hasContributionWork = person && Object.values(state.teamContributions || {}).some((record) => record.assessments?.[person.id] && Object.values(record.assessments[person.id]).some((item) => Array.isArray(item) ? item.length : String(item || "").trim()));
+      const hasSavedWork = person && ([person.name, person.initialReadiness, person.confidence, person.readinessChange].some((item) => String(item || "").trim()) || hasContributionWork);
       if (hasSavedWork && !confirm("This group member has saved information or reflections. Remove this member and their entries?")) return;
       state.submission.groupMembers.splice(index, 1);
       markContentEdit();
       saveState();
       renderStage();
       syncStudentDetailsFields();
+    }
+    if (target.dataset.openMemberCopy !== undefined) openMemberCopyDialog();
+    if (target.dataset.cancelMemberCopy !== undefined) document.getElementById("memberCopyDialog")?.close();
+    if (target.dataset.createMemberCopy !== undefined) {
+      createMemberCopy(document.getElementById("copyRecipient")?.value || "", document.getElementById("includeSourceRecord")?.checked !== false);
+      document.getElementById("memberCopyDialog")?.close();
     }
     if (target.dataset.downloadConsentDocs !== undefined) generateConsentDocxDrafts();
     if (target.dataset.downloadUpdateBackup !== undefined) exportJson();

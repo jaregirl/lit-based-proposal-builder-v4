@@ -2,7 +2,7 @@
 
 The Lit-Based Proposal Builder is a browser-based guided academic thinking tool developed by J. Arawiran. It helps novice researchers move from literature patterns to a gap, problem, questions, framework, methodology, ethics, instrumentation, and proposal-ready outputs.
 
-## v4.6.0 Pilot
+## v4.7.0 Group Accountability Pilot
 
 This pilot adds:
 
@@ -15,6 +15,10 @@ This pilot adds:
 - forward restoration of older backups;
 - local update notifications, checkpoints, active-work estimates, and anonymous app feedback;
 - progress, readiness, and academically clean final outputs.
+- personal member copies that strip confidential source-student records;
+- confidential, adviser-only Team Contribution Records for each submitted academic part;
+- source-copy provenance without interpreting activity as total group work;
+- Brookhart and CATME citation notes as conceptual influences only.
 
 ## Run Locally
 
@@ -45,6 +49,8 @@ node tools/pilot-smoke-test.js
 The test covers responsive layouts, old-backup migration, group work, stable SRQ/instrument linkage, methodology cascading, ERB draft download, and update-check behavior.
 
 The tokenized DOCX files are structurally checked by `tools/build_erb_templates.py`. Visual rendering still requires Microsoft Word or LibreOffice.
+
+The Team Contribution Record is original and nonvalidated. It does not reproduce CATME's instrument, behavioral anchors, scoring method, or exceptional-condition classifications. Advisers perform all analysis and interpretation.
 
 ## Attribution and Rights
 

@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lit-Based Proposal Builder v4.6.0 Pilot</title>
+    <title>Lit-Based Proposal Builder v4.7.0 Group Accountability Pilot</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260714-v460-pilot" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260714-v470-group-accountability" />
   </head>
   <body>
     <div class="app-shell">
@@ -101,6 +101,7 @@
           <button class="ghost" id="historyBtn" type="button">Draft History</button>
           <button id="summaryBtn" type="button">Generate Proposal Summary</button>
           <button id="previewBtn" type="button">Preview Submission</button>
+          <button class="ghost" id="memberCopyBtn" type="button" data-open-member-copy hidden>Create Copy for Another Group Member</button>
           <button class="ghost" id="aboutBtn" type="button">About & Sources</button>
           <button class="primary" id="nextBtn" type="button">Next</button>
         </footer>
@@ -164,7 +165,7 @@
 
         <h3>How to Cite This App</h3>
         <p>Ordinary student use does not require citation. When the app, its workflow, or its scaffolds are discussed in a paper or presentation, an optional citation is:</p>
-        <p>Arawiran, J. (2026). <em>Lit-Based Proposal Builder</em> (Version 4.6.0) [Computer software].</p>
+        <p>Arawiran, J. (2026). <em>Lit-Based Proposal Builder</em> (Version 4.7.0) [Computer software].</p>
         <p>Reproduced or presented scaffolds and instructional materials should credit J. Arawiran. Adaptation or redistribution requires permission while institutional ownership is being clarified.</p>
 
         <h3>Third-Party and Institutional Materials</h3>
@@ -206,7 +207,12 @@
           <li>Creswell, J. W., & Creswell, J. D. (2023). <em>Research Design: Qualitative, Quantitative, and Mixed Methods Approaches.</em></li>
           <li>PHREB. (2022). <em>National Ethical Guidelines for Health and Health-Related Research.</em></li>
           <li>Schwartz, M. A. (2008). The Importance of Stupidity in Scientific Research. <em>Journal of Cell Science, 121</em>, 1771.</li>
+          <li>Brookhart, S. M. (2013). Guidance for grading group work. <em>ASCD Educational Leadership.</em></li>
+          <li>CATME. (n.d.). <em>Research and citations for CATME Peer Evaluation.</em> <a href="https://info.catme.org/instructor/history-research/research/" target="_blank" rel="noopener">CATME.org</a>.</li>
+          <li>Ohland, M. W., et al. (2012). The comprehensive assessment of team member effectiveness: Development of a behaviorally anchored rating scale for self and peer evaluation. <em>Academy of Management Learning & Education, 11</em>(4), 609-630.</li>
         </ul>
+        <h3>Team Contribution Record</h3>
+        <p>The Team Contribution Record is an original, nonvalidated developmental record informed by literature on individual learning, group-process evidence, and self- and peer evaluation. It does not reproduce the CATME instrument, behavioral anchors, scoring method, or exceptional-condition classifications. Advisers, not the app, analyze and interpret the records.</p>
 
         <h3>Use Reminder</h3>
         <p>Students should treat all generated content as a working draft. Final research decisions, methodological choices, ethical considerations, proposal requirements, and formatting requirements should be reviewed with the adviser, instructor, program head, dean, or other authorized academic personnel.</p>
@@ -221,6 +227,18 @@
       <section class="details-panel">
         <div id="studentDetailsDialogForm"></div>
       </section>
+    </dialog>
+
+    <dialog id="memberCopyDialog" class="compact-dialog">
+      <div class="dialog-header">
+        <h2>Create Copy for Another Group Member</h2>
+        <button class="ghost" type="button" data-cancel-member-copy>Close</button>
+      </div>
+      <section id="memberCopyForm" class="about-content"></section>
+      <div class="dialog-actions">
+        <button class="ghost" type="button" data-cancel-member-copy>Cancel</button>
+        <button class="primary" type="button" data-create-member-copy>Create Member Copy</button>
+      </div>
     </dialog>
 
     <dialog id="uploadDialog">
@@ -241,6 +259,6 @@
 
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260714-v460-pilot"></script>
+    <script src="app-upload.js?v=20260714-v470-group-accountability"></script>
   </body>
 </html>
