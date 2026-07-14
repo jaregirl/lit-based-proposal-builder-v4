@@ -1,16 +1,15 @@
 {
-  "version": "4.7.0",
+  "version": "4.8.1",
   "schemaVersion": "4.7.0",
   "releaseDate": "2026-07-14",
-  "title": "v4.7.0 Group Accountability Pilot",
+  "title": "v4.8.1 Navigation and UI Consistency Patch",
   "url": "./",
   "notes": [
-    "Individual and group work with separate member reflections",
-    "Stable SRQ-to-instrumentation links",
-    "Progressive research-design guidance",
-    "Adviser review records in PDFs",
-    "Local ERB consent-document draft preparation",
-    "Personal group copies and confidential Team Contribution Records",
-    "Member-copy sanitization and adviser-only contribution appendices"
+    "Each major journey phase now opens a clickable subpart menu",
+    "Required A2 and A3 pattern categories can no longer be deleted",
+    "Additional pattern, gap, and definition rows remain available",
+    "A3 gap fields stay inside a responsive editing card",
+    "Header save and active-time information is more compact",
+    "Version attribution is consistent across the app and generated outputs"
   ]
 }

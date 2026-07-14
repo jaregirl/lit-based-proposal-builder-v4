@@ -3,90 +3,63 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lit-Based Proposal Builder v4.7.0 Group Accountability Pilot</title>
+    <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260714-v470-group-accountability" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260714-v481-ui-consistency" />
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Proposal builder progress">
-        <div class="brand">
+      <header class="journey-header">
+        <div class="brand journey-brand">
+          <img src="favicon.svg" alt="" width="34" height="34" />
           <div>
             <h1>Lit-Based Proposal Builder</h1>
-            <p>From literature to proposal</p>
             <p class="app-version" id="appVersion">Version loading...</p>
-            <p class="app-credit" id="appCredit">Developed by J. Arawiran with assistance from OpenAI Codex.</p>
+            <p class="app-credit visually-hidden" id="appCredit">Developed by J. Arawiran with assistance from OpenAI Codex.</p>
           </div>
         </div>
 
-        <section class="dashboard" aria-label="Dashboard">
-          <div class="dashboard-row">
-            <span>Completion</span>
-            <strong id="completionText">0%</strong>
-          </div>
-          <div class="meter" aria-hidden="true"><span id="completionBar"></span></div>
-          <div class="dashboard-grid">
-            <div>
-              <span>Alignment</span>
-              <strong id="alignmentScore">0</strong>
-            </div>
-            <div>
-              <span>Stage</span>
-              <strong id="currentStage">A1</strong>
-            </div>
-          </div>
-          <div class="dashboard-row active-work-row">
-            <span>Estimated active work</span>
-            <strong id="activeWorkText">Not started</strong>
-          </div>
-        </section>
+        <nav class="phase-journey" id="phaseJourney" aria-label="Proposal journey phases"></nav>
+        <div class="phase-menu" id="phaseMenu" role="menu" hidden></div>
 
-        <nav class="stage-nav" id="stageNav" aria-label="Stages"></nav>
-
-        <section class="side-panel">
-          <h2>Outstanding Issues</h2>
-          <ul id="issueList">
-            <li>Start with A1 to begin checking alignment.</li>
-          </ul>
-        </section>
-      </aside>
+        <div class="journey-utilities" aria-label="App status and utilities">
+          <span class="status-summary" aria-label="Local save and active work status">
+            <span class="save-state" id="autosaveStatus">Saved</span>
+            <span class="status-separator" aria-hidden="true">&middot;</span>
+            <span class="active-time" id="activeWorkText">Not started</span>
+          </span>
+          <button class="icon-text-button" id="statusBtn" type="button">Status</button>
+          <button class="icon-text-button" id="toolsBtn" type="button">Tools</button>
+        </div>
+      </header>
 
       <main class="workspace">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Guided academic thinking tool</p>
-            <h2 id="stageTitle">Info - Student Details</h2>
-          </div>
-          <div class="top-actions">
-            <button class="ghost" id="studentDetailsBtn" type="button">Student Details</button>
-            <button class="ghost" id="uploadFormsBtn" type="button">Upload A1 Form</button>
-            <button class="ghost" id="importBtn" type="button">Restore Backup</button>
-            <button class="ghost" id="exportBtn" type="button">Download Backup</button>
-            <button class="danger" id="resetBtn" type="button">Reset</button>
+        <header class="stage-context-bar">
+          <p id="stageBreadcrumb">Foundations · Student Details</p>
+          <div class="stage-context-actions">
+            <span id="stageTaskCounter">Task 1 of 4</span>
+            <button class="ghost compact" id="allStepsBtn" type="button">All Steps</button>
           </div>
         </header>
 
-        <section class="support-note" aria-live="polite">
+        <section class="stage-intro" aria-labelledby="stageTitle">
+          <p class="eyebrow" id="taskEyebrow">Before you begin</p>
+          <h2 id="stageTitle">Tell us about this research work.</h2>
+          <p class="stage-support" id="taskSupport">These details identify your submission and help the app tailor its guidance.</p>
+        </section>
+
+        <section class="support-note focus-support" aria-live="polite">
           <strong>This is a working draft.</strong>
           Research ideas become clearer through refinement. It is okay if this changes later.
         </section>
 
         <section class="update-notice" id="updateNotice" hidden aria-live="polite"></section>
-
         <section class="migration-note" id="migrationNotice" hidden></section>
 
-        <form id="stageForm" class="stage-form"></form>
-
-        <section class="checker-panel" aria-label="Feedback">
-          <div class="checker-head">
-            <h3>Check My Work</h3>
-            <button id="checkBtn" type="button">Run Check</button>
-          </div>
-          <div id="feedback" class="feedback">
-            Add your working ideas, then run a check for alignment suggestions.
-          </div>
-          <p class="hint">Developmental guidance only. Research decisions still require scholarly justification and adviser review.</p>
-        </section>
+        <div class="focus-layout">
+          <form id="stageForm" class="stage-form"></form>
+          <aside class="task-rail" id="taskRail" aria-label="Tasks in this stage"></aside>
+        </div>
 
         <details class="app-feedback-panel">
           <summary>Share Feedback About This Step</summary>
@@ -95,18 +68,82 @@
           <button class="ghost compact" id="downloadFeedbackBtn" type="button">Download App Feedback Report</button>
         </details>
 
-        <footer class="footer-actions">
+        <footer class="footer-actions focused-actions">
           <button class="ghost" id="backBtn" type="button">Back</button>
-          <button id="saveBtn" type="button">Save Draft</button>
+          <button class="text-action" id="skipBtn" type="button">Skip for now</button>
+          <button class="ghost" id="allTasksBtn" type="button">All Tasks</button>
+          <span class="footer-save-state" aria-hidden="true">Saved locally</span>
+          <button class="primary" id="nextBtn" type="button">Continue</button>
+        </footer>
+      </main>
+    </div>
+
+    <dialog id="allStepsDialog" class="journey-dialog">
+      <div class="dialog-header">
+        <div><p class="eyebrow">Proposal journey</p><h2>All Steps</h2></div>
+        <button class="ghost" id="closeAllStepsBtn" type="button">Close</button>
+      </div>
+      <nav class="stage-nav" id="stageNav" aria-label="Stages"></nav>
+    </dialog>
+
+    <dialog id="allTasksDialog" class="journey-dialog">
+      <div class="dialog-header">
+        <div><p class="eyebrow">Current stage</p><h2 id="allTasksTitle">All Tasks</h2></div>
+        <button class="ghost" id="closeAllTasksBtn" type="button">Close</button>
+      </div>
+      <div class="all-task-list" id="allTaskList"></div>
+    </dialog>
+
+    <dialog id="statusDialog" class="journey-dialog status-dialog">
+      <div class="dialog-header">
+        <div><p class="eyebrow">Progress and guidance</p><h2>Status</h2></div>
+        <button class="ghost" id="closeStatusBtn" type="button">Close</button>
+      </div>
+      <section class="dashboard" aria-label="Dashboard">
+        <div class="dashboard-row"><span>Completion</span><strong id="completionText">0%</strong></div>
+        <div class="meter" aria-hidden="true"><span id="completionBar"></span></div>
+        <div class="dashboard-grid">
+          <div><span>Alignment</span><strong id="alignmentScore">0</strong></div>
+          <div><span>Stage</span><strong id="currentStage">Info</strong></div>
+        </div>
+        <div class="dashboard-row status-active-work"><span>Estimated active work</span><strong id="statusActiveWorkText">Not started</strong></div>
+      </section>
+      <section class="side-panel">
+        <h2>Outstanding Issues</h2>
+        <ul id="issueList"><li>Start with A1 to begin checking alignment.</li></ul>
+      </section>
+      <section class="checker-panel" aria-label="Feedback">
+        <div class="checker-head"><h3>Check My Work</h3><button id="checkBtn" type="button">Run Check</button></div>
+        <div id="feedback" class="feedback">Add your working ideas, then run a check for alignment suggestions.</div>
+        <p class="hint">Developmental guidance only. Research decisions still require scholarly justification and adviser review.</p>
+      </section>
+    </dialog>
+
+    <dialog id="toolsDialog" class="journey-dialog tools-dialog">
+      <div class="dialog-header">
+        <div><p class="eyebrow">Draft and submission utilities</p><h2>Tools</h2></div>
+        <button class="ghost" id="closeToolsBtn" type="button">Close</button>
+      </div>
+      <div class="tool-groups">
+        <section><h3>Draft</h3><div class="tool-grid">
+          <button id="saveBtn" type="button">Save Draft Checkpoint</button>
           <button class="ghost" id="historyBtn" type="button">Draft History</button>
+          <button class="ghost" id="studentDetailsBtn" type="button">Student Details</button>
+          <button class="ghost" id="uploadFormsBtn" type="button">Upload A1 Form</button>
+        </div></section>
+        <section><h3>Backup</h3><div class="tool-grid">
+          <button class="ghost" id="importBtn" type="button">Restore Backup</button>
+          <button class="ghost" id="exportBtn" type="button">Download Backup</button>
+        </div></section>
+        <section><h3>Review and output</h3><div class="tool-grid">
           <button id="summaryBtn" type="button">Generate Proposal Summary</button>
           <button id="previewBtn" type="button">Preview Submission</button>
           <button class="ghost" id="memberCopyBtn" type="button" data-open-member-copy hidden>Create Copy for Another Group Member</button>
           <button class="ghost" id="aboutBtn" type="button">About & Sources</button>
-          <button class="primary" id="nextBtn" type="button">Next</button>
-        </footer>
-      </main>
-    </div>
+        </div></section>
+        <section class="danger-zone"><h3>Reset</h3><button class="danger" id="resetBtn" type="button">Reset This Draft</button></section>
+      </div>
+    </dialog>
 
     <dialog id="previewDialog">
       <div class="dialog-header">
@@ -165,7 +202,7 @@
 
         <h3>How to Cite This App</h3>
         <p>Ordinary student use does not require citation. When the app, its workflow, or its scaffolds are discussed in a paper or presentation, an optional citation is:</p>
-        <p>Arawiran, J. (2026). <em>Lit-Based Proposal Builder</em> (Version 4.7.0) [Computer software].</p>
+        <p>Arawiran, J. (2026). <em>Lit-Based Proposal Builder</em> (Version <span id="appCitationVersion">loading...</span>) [Computer software].</p>
         <p>Reproduced or presented scaffolds and instructional materials should credit J. Arawiran. Adaptation or redistribution requires permission while institutional ownership is being clarified.</p>
 
         <h3>Third-Party and Institutional Materials</h3>
@@ -259,6 +296,6 @@
 
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260714-v470-group-accountability"></script>
+    <script src="app-upload.js?v=20260714-v481-ui-consistency"></script>
   </body>
 </html>

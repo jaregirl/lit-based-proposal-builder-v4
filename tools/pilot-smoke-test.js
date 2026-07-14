@@ -7,6 +7,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function goToStage(page, stageId) {
+  await page.locator(`[data-stage="${stageId}"]`).first().evaluate((element) => element.click());
+  await page.waitForTimeout(50);
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -23,16 +28,18 @@ function assert(condition, message) {
   }, storageKey);
   await page.reload({ waitUntil: "networkidle" });
 
-  assert(await page.getByText("Before You Begin: Privacy and Local Saving").isVisible(), "Privacy notice is not visible in Student Details.");
+  await goToStage(page, "details");
+  assert(await page.getByText("Before You Begin: Privacy and Local Saving").count() === 1, "Privacy notice is missing from Student Details.");
   await page.locator('#stageForm input[data-work-arrangement][value="group"]').check();
+  await page.locator('.task-rail [data-focus-task="1"]').click();
   await page.locator('#stageForm [data-group-person-role="leader"][data-group-person-key="name"]').fill("Group Leader");
   await page.getByRole("button", { name: "Add Group Member" }).click();
   assert(await page.locator("#stageForm .group-person-card").count() === 2, "Group member card was not added.");
   await page.locator("#stageForm .group-person-card summary").nth(1).click();
   await page.locator('#stageForm [data-group-person-role="member"][data-group-person-key="name"]').fill("Member One");
 
-  await page.locator('[data-stage="a4"]').click();
-  await page.getByText("7. Break the central question into specific research questions").click();
+  await goToStage(page, "a4");
+  await page.locator('.task-rail [data-focus-task="6"]').click();
   const questionInputs = page.locator('[data-array="a4.questions"]');
   await questionInputs.nth(0).fill("What is the level of assessment practice?");
   await page.locator(".question-card summary").nth(1).click();
@@ -42,25 +49,28 @@ function assert(condition, message) {
   await page.locator('[data-question-purpose="0"]').selectOption("describe");
   await page.locator('[data-question-purpose="1"]').selectOption("exploreExperience");
   await page.locator('[data-question-purpose="2"]').selectOption("compare");
-  await page.locator('[data-stage="instrumentation"]').click();
+  await goToStage(page, "instrumentation");
   assert(await page.locator(".instrumentation-row").count() === 3, "Instrumentation did not create exactly one card per SRQ.");
   assert(await page.getByRole("button", { name: "Add Instrument Row" }).count() === 0, "Add Instrument Row is still present.");
+  await page.locator('.task-rail [data-focus-task="3"]').click();
   await page.locator('[data-table="instrumentation"][data-index="0"][data-key="instrument"]').fill("Survey questionnaire");
-  await page.locator('[data-stage="a4"]').click();
-  await page.getByText("7. Break the central question into specific research questions").click();
+  await goToStage(page, "a4");
+  await page.locator('.task-rail [data-focus-task="6"]').click();
   await questionInputs.nth(0).fill("What is the reported level of assessment practice?");
   await page.locator('[data-move-question="0:down"]').click();
-  await page.locator('[data-stage="instrumentation"]').click();
+  await goToStage(page, "instrumentation");
   assert(await page.locator('[data-table="instrumentation"][data-index="1"][data-key="instrument"]').inputValue() === "Survey questionnaire", "Instrumentation answer detached after SRQ wording edit or reorder.");
 
-  await page.locator('[data-stage="methodology"]').click();
+  await goToStage(page, "methodology");
   await page.locator('[data-methodology-selection="approach"]').selectOption("mixed");
+  await page.locator('.task-rail [data-focus-task="1"]').click();
   assert(await page.locator('[data-methodology-selection="design"] option').count() === 6, "Mixed-methods designs did not cascade.");
   await page.locator('[data-methodology-selection="design"]').selectOption("explanatorySequential");
   assert(await page.getByText("Requirements and assumptions").isVisible(), "Design-specific guidance is missing.");
-  assert(await page.getByText("Mixed Methods Integration").isVisible(), "Mixed-methods integration fields are missing.");
+  assert(await page.getByText("Mixed Methods Integration").count() === 1, "Mixed-methods integration fields are missing.");
 
-  await page.locator('[data-stage="ethics"]').click();
+  await goToStage(page, "ethics");
+  await page.locator('.task-rail [data-focus-task="5"]').click();
   await page.locator(".consent-preparation summary").click();
   await page.locator('select[data-ethics-document="humanParticipants"]').selectOption("yes");
   await page.locator(".consent-preparation summary").click();
@@ -74,7 +84,7 @@ function assert(condition, message) {
 
   await page.screenshot({ path: "qa/v460-desktop.png", fullPage: true });
   await page.setViewportSize({ width: 768, height: 1024 });
-  await page.locator('[data-stage="details"]').click();
+  await goToStage(page, "details");
   await page.screenshot({ path: "qa/v460-portrait.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: "qa/v460-mobile.png", fullPage: true });
@@ -83,16 +93,25 @@ function assert(condition, message) {
     if (dialog.type() === "prompt") await dialog.accept("Pilot checkpoint");
     else await dialog.accept();
   });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await goToStage(page, "details");
+  await page.locator('.task-rail [data-focus-task="2"]').click();
   const adviserInput = page.locator('#stageForm [data-section="submission"][data-key="adviserName"]');
   await adviserInput.fill("Checkpoint Baseline");
-  await page.getByRole("button", { name: "Save Draft" }).click();
+  const saveCheckpoint = async () => {
+    await page.locator("#toolsBtn").click();
+    await page.getByRole("button", { name: "Save Draft Checkpoint" }).click();
+    await page.locator("#closeToolsBtn").click();
+  };
+  await saveCheckpoint();
   for (let index = 1; index < 5; index += 1) {
     await adviserInput.fill(`Checkpoint ${index}`);
-    await page.getByRole("button", { name: "Save Draft" }).click();
+    await saveCheckpoint();
   }
   const storedCheckpoints = await page.evaluate((key) => JSON.parse(localStorage.getItem(`${key}:checkpoints`)), storageKey);
   assert(storedCheckpoints.length === 5, "Save Draft did not retain exactly five restorable checkpoints.");
   await adviserInput.fill("Unsaved checkpoint state");
+  await page.locator("#toolsBtn").click();
   await page.getByRole("button", { name: "Draft History" }).click();
   await page.locator("[data-restore-checkpoint]").last().click();
   assert(await adviserInput.inputValue() === "Checkpoint Baseline", "Checkpoint restoration did not recover the selected academic state.");
@@ -166,7 +185,7 @@ function assert(condition, message) {
     migrationPage.on("pageerror", (error) => pageErrors.push(error.message));
     await migrationPage.goto(baseUrl, { waitUntil: "networkidle" });
     const migrated = await migrationPage.evaluate((key) => JSON.parse(localStorage.getItem(key)), storageKey);
-    assert(migrated.meta.schemaVersion === "4.6.0", `${fixture.label} backup did not migrate to schema 4.6.0.`);
+    assert(migrated.meta.schemaVersion === "4.7.0", `${fixture.label} backup did not migrate to schema 4.7.0.`);
     assert(migrated.submission.workArrangement === "individual", `${fixture.label} backup did not default to Individual Work.`);
     assert(migrated.submission.studentName === "Legacy Student", `${fixture.label} student name was overwritten.`);
     assert(migrated.methodology.approach === "quantitative" && migrated.methodology.design === "correlational", `${fixture.label} methodology design was not preserved.`);
@@ -196,7 +215,7 @@ function assert(condition, message) {
   }
 
   assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
-  console.log("v4.6.0 smoke test passed");
+  console.log("v4 workflow smoke test passed");
   await browser.close();
 })().catch((error) => {
   console.error(error.stack || error);

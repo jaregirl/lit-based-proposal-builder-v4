@@ -1,8 +1,10 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const APP_VERSION = "v4.7.0 - Group Accountability Pilot";
+const RELEASE_VERSION = "4.8.1";
+const APP_VERSION = `v${RELEASE_VERSION} - Navigation and UI Consistency Patch`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
+const UI_STATE_KEY = `${STORAGE_KEY}:ui:v4.8`;
 const MAX_CHECKPOINTS = 5;
 const IDLE_MS = 120000;
 const APP_CREDIT = "Developed by J. Arawiran with assistance from OpenAI Codex, GPT-5-based coding assistant, June 2026.";
@@ -14,6 +16,7 @@ const SRQ_LIMITS = {
 };
 const PQF_REFERENCE = "PQF-NCC Resolution 2026-02";
 const PQF_NOTE = "This is a formative guide, not official PQF certification. Verify current PQF issuances through official institutional or government sources.";
+const STANDARD_PATTERN_TYPES = ["Context", "Method", "Theory", "Evidence", "Practice", "Population", "Definition"];
 const CONTRIBUTION_LEVELS = [
   ["", "Choose a contribution level"],
   ["insufficient", "Not enough information to assess"],
@@ -119,6 +122,7 @@ let pendingUploadByStage = { a1: null, a2: null, a3: null };
 let pdfjsModule = null;
 let activePreviewMode = "final";
 let activeProgressPrint = null;
+let openPhaseMenuId = "";
 
 const stages = [
   { id: "details", code: "Info", title: "Student Details" },
@@ -136,6 +140,30 @@ const stages = [
   { id: "readiness", code: "R", title: "Proposal Readiness Check" },
   { id: "submission", code: "PDF", title: "PDF Submission Generation" }
 ];
+
+const journeyPhases = [
+  { id: "foundations", label: "Foundations", stages: ["details", "a1", "a2", "a3", "a4"] },
+  { id: "studyDesign", label: "Study Design", stages: ["framework", "methodology", "ethics", "instrumentation"] },
+  { id: "proposalPreparation", label: "Proposal Preparation", stages: ["terms", "outline"] },
+  { id: "readinessSubmission", label: "Readiness & Submission", stages: ["researchLevel", "readiness", "submission"] }
+];
+
+const focusedStageCopy = {
+  details: { eyebrow: "Before you begin", title: "Tell us about this research work.", support: "These details identify your submission and help the app tailor its guidance." },
+  a1: { eyebrow: "Begin with a working idea", title: "Build a clear core construct.", support: "Move from an initial topic to the one construct that will anchor the literature review." },
+  a2: { eyebrow: "Look across the literature", title: "Map the patterns that repeat across studies.", support: "Work across articles rather than summarizing one study at a time." },
+  a3: { eyebrow: "Turn patterns into gaps", title: "Identify what the literature leaves less visible.", support: "Follow the reasoning chain from what studies show to what cannot yet be understood." },
+  a4: { eyebrow: "Move from gap to questions", title: "Build a literature-based problem and aligned questions.", support: "Carry the A3 gap forward, then unpack one broad question into answerable parts." },
+  framework: { eyebrow: "Find possible explanations", title: "Find and test frameworks that genuinely help.", support: "Compare literature-supported candidates before selecting and explaining their role." },
+  methodology: { eyebrow: "Choose how the study will build evidence", title: "Design a method that can answer the questions.", support: "Start with the broad evidence approach, then make each methodological choice explicit." },
+  ethics: { eyebrow: "Plan safeguards as part of the design", title: "Protect participants, data, and relationships.", support: "Work from participant type and risk toward the safeguards and permissions that may apply." },
+  instrumentation: { eyebrow: "Plan how each question will be answered", title: "Build a complete question-to-evidence chain.", support: "For each SRQ, connect the intended claim to evidence, source, instrument, and analysis." },
+  terms: { eyebrow: "Define terms as they are used in this study", title: "Write precise operational definitions.", support: "Define one important term at a time and connect it to how the study will identify or measure it." },
+  outline: { eyebrow: "Assemble the proposal from your work", title: "Review the proposal structure.", support: "The app has placed your work into expected sections. Review the structure without treating it as a finished manuscript." },
+  researchLevel: { eyebrow: "Show the reasoning behind the proposal", title: "Explain the degree-level evidence in your decisions.", support: "Use your own words to show coherence, judgment, alternatives, contribution, and independence." },
+  readiness: { eyebrow: "Review the proposal before sharing it", title: "Strengthen the first important alignment issue.", support: "Review one evidence-based warning at a time, then return directly to the part that needs attention." },
+  submission: { eyebrow: "Prepare a copy for review", title: "Choose what you would like to prepare.", support: "Select a progress copy, cumulative submission, or clean final proposal." }
+};
 
 const fieldSets = {
   a1: [
@@ -394,6 +422,7 @@ const ethicsChecks = [
 let state = normalizeState(loadState());
 let checkpoints = loadCheckpoints();
 let appFeedback = loadAppFeedback();
+let uiState = loadUiState();
 let lastInteractionAt = Date.now();
 let lastActiveTickAt = Date.now();
 
@@ -420,10 +449,57 @@ const els = {
   checkpointList: document.getElementById("checkpointList"),
   stageFeedbackForm: document.getElementById("stageFeedbackForm")
   ,updateNotice: document.getElementById("updateNotice")
+  ,phaseJourney: document.getElementById("phaseJourney")
+  ,stageBreadcrumb: document.getElementById("stageBreadcrumb")
+  ,stageTaskCounter: document.getElementById("stageTaskCounter")
+  ,taskEyebrow: document.getElementById("taskEyebrow")
+  ,taskSupport: document.getElementById("taskSupport")
+  ,taskRail: document.getElementById("taskRail")
+  ,allTaskList: document.getElementById("allTaskList")
+  ,allTasksTitle: document.getElementById("allTasksTitle")
+  ,autosaveStatus: document.getElementById("autosaveStatus")
+  ,statusActiveWorkText: document.getElementById("statusActiveWorkText")
+  ,phaseMenu: document.getElementById("phaseMenu")
+  ,appCitationVersion: document.getElementById("appCitationVersion")
 };
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function loadUiState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(UI_STATE_KEY) || "{}");
+    return {
+      tasks: saved.tasks && typeof saved.tasks === "object" ? saved.tasks : {},
+      showAll: saved.showAll && typeof saved.showAll === "object" ? saved.showAll : {}
+    };
+  } catch {
+    return { tasks: {}, showAll: {} };
+  }
+}
+
+function saveUiState() {
+  try {
+    localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState));
+  } catch {
+    // UI position is expendable; proposal data remains the source of truth.
+  }
+}
+
+function activeJourneyPhase(stageId = state.currentStage) {
+  return journeyPhases.find((phase) => phase.stages.includes(stageId)) || journeyPhases[0];
+}
+
+function activeTaskIndex(stageId = state.currentStage, taskCount = Number.POSITIVE_INFINITY) {
+  const stored = Number(uiState.tasks[stageId] || 0);
+  return Math.max(0, Math.min(Number.isFinite(taskCount) ? taskCount - 1 : stored, stored));
+}
+
+function setActiveTask(stageId, index, taskCount) {
+  uiState.tasks[stageId] = Math.max(0, Math.min(Math.max(0, taskCount - 1), Number(index) || 0));
+  uiState.showAll[stageId] = false;
+  saveUiState();
 }
 
 function createStableId(prefix = "item") {
@@ -464,6 +540,18 @@ function inferSourceAppVersion(nextState) {
   if (nextState.frameworkFinder?.candidateFrameworks || nextState.frameworkFinder?.frameworkSource) return "v4.5.4 draft";
   if (nextState.researchLevel || nextState.submission?.degreeLevel) return "v4.5.3 or earlier v4 draft";
   return "Earlier v4 draft";
+}
+
+function normalizeStandardRows(rows, section) {
+  const normalizedRows = (Array.isArray(rows) ? rows : []).map((row) => ({
+    ...emptyRowFor(section),
+    ...(row || {})
+  }));
+  STANDARD_PATTERN_TYPES.forEach((type) => {
+    const exists = normalizedRows.some((row) => String(row.type || "").trim().toLowerCase() === type.toLowerCase());
+    if (!exists) normalizedRows.push({ ...emptyRowFor(section), type });
+  });
+  return normalizedRows;
 }
 
 function normalizeState(nextState) {
@@ -509,8 +597,8 @@ function normalizeState(nextState) {
     normalized.submission.confidence = normalized.submission.confidence || previousOwner.confidence || "";
     normalized.submission.readinessChange = normalized.submission.readinessChange || previousOwner.readinessChange || "";
   }
-  if (!Array.isArray(normalized.a2.patterns)) normalized.a2.patterns = clone(defaultData.a2.patterns);
-  if (!Array.isArray(normalized.a3.gaps)) normalized.a3.gaps = clone(defaultData.a3.gaps);
+  normalized.a2.patterns = normalizeStandardRows(normalized.a2.patterns, "a2Patterns");
+  normalized.a3.gaps = normalizeStandardRows(normalized.a3.gaps, "a3Gaps");
   if (!Array.isArray(normalized.a4.questions)) normalized.a4.questions = ["", "", ""];
   if (!Array.isArray(normalized.a4.questionIds)) normalized.a4.questionIds = [];
   normalized.a4.questionIds = normalized.a4.questions.map((_, index) => normalized.a4.questionIds[index] || createStableId("srq"));
@@ -855,26 +943,131 @@ function draftHelp(section, scaffold) {
 }
 
 function renderNav() {
-  els.stageNav.innerHTML = stages.map((stage) => {
-    const done = stageCompletion(stage.id) > 0.55 ? "done" : "";
-    const active = state.currentStage === stage.id ? "active" : "";
-    const index = stages.findIndex((item) => item.id === stage.id);
-    return `
-      <button class="stage-tab ${active}" type="button" data-stage="${stage.id}" title="Step ${index + 1}: ${stage.title}">
-        <span class="stage-code">${stage.code}</span>
-        <span class="stage-label"><small>Step ${index + 1}</small>${stage.title}</span>
-        <span class="status-dot ${done}" aria-hidden="true"></span>
-      </button>
-    `;
+  els.stageNav.innerHTML = journeyPhases.map((phase) => `
+    <section class="stage-group">
+      <h3>${escapeHtml(phase.label)}</h3>
+      ${phase.stages.map((stageId) => {
+        const stage = stages.find((item) => item.id === stageId);
+        const done = stageCompletion(stage.id) > 0.55 ? "done" : "";
+        const active = state.currentStage === stage.id ? "active" : "";
+        const index = stages.findIndex((item) => item.id === stage.id);
+        return `<button class="stage-tab ${active}" type="button" data-stage="${stage.id}" title="Step ${index + 1}: ${stage.title}">
+          <span class="stage-code">${stage.code}</span>
+          <span class="stage-label"><small>Step ${index + 1}</small>${stage.title}</span>
+          <span class="status-dot ${done}" aria-hidden="true"></span>
+        </button>`;
+      }).join("")}
+    </section>`).join("");
+}
+
+function renderPhaseJourney() {
+  if (!els.phaseJourney) return;
+  const active = activeJourneyPhase();
+  els.phaseJourney.innerHTML = journeyPhases.map((phase, index) => {
+    const completed = phase.stages.every((stageId) => stageCompletion(stageId) > 0.55);
+    const expanded = openPhaseMenuId === phase.id;
+    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-expanded="${expanded}" aria-controls="phaseMenu">
+      <span class="phase-number">${completed ? "&#10003;" : index + 1}</span>
+      <span>${escapeHtml(phase.label)}</span>
+    </button>`;
   }).join("");
+}
+
+function renderPhaseMenu() {
+  if (!els.phaseMenu) return;
+  const phase = journeyPhases.find((item) => item.id === openPhaseMenuId);
+  if (!phase) {
+    els.phaseMenu.hidden = true;
+    els.phaseMenu.innerHTML = "";
+    return;
+  }
+  els.phaseMenu.innerHTML = `<div class="phase-menu-heading">${escapeHtml(phase.label)}</div>${phase.stages.map((stageId) => {
+    const stage = stages.find((item) => item.id === stageId);
+    const stageIndex = stages.findIndex((item) => item.id === stageId);
+    const active = state.currentStage === stageId;
+    const completed = stageCompletion(stageId) > 0.55;
+    return `<button type="button" class="phase-menu-item ${active ? "active" : ""}" role="menuitem" data-stage="${stageId}" ${active ? 'aria-current="step"' : ""}>
+      <span class="phase-menu-code">${escapeHtml(stage.code)}</span>
+      <span class="phase-menu-copy"><small>Step ${stageIndex + 1}</small><strong>${escapeHtml(stage.title)}</strong></span>
+      <span class="phase-menu-status ${completed ? "done" : ""}" aria-label="${completed ? "Started or completed" : "Not yet started"}"></span>
+    </button>`;
+  }).join("")}`;
+  els.phaseMenu.hidden = false;
+  requestAnimationFrame(positionPhaseMenu);
+}
+
+function positionPhaseMenu() {
+  if (!openPhaseMenuId || !els.phaseMenu || els.phaseMenu.hidden) return;
+  const trigger = els.phaseJourney?.querySelector(`[data-phase="${openPhaseMenuId}"]`);
+  if (!trigger) return;
+  const rect = trigger.getBoundingClientRect();
+  const width = Math.min(330, Math.max(260, window.innerWidth - 24));
+  const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+  els.phaseMenu.style.width = `${width}px`;
+  els.phaseMenu.style.left = `${left}px`;
+  els.phaseMenu.style.top = `${Math.min(window.innerHeight - 12, rect.bottom + 8)}px`;
+}
+
+function closePhaseMenu({ restoreFocus = false } = {}) {
+  const previousId = openPhaseMenuId;
+  openPhaseMenuId = "";
+  if (els.phaseMenu) {
+    els.phaseMenu.hidden = true;
+    els.phaseMenu.innerHTML = "";
+  }
+  els.phaseJourney?.querySelectorAll("[data-phase]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+  if (restoreFocus && previousId) els.phaseJourney?.querySelector(`[data-phase="${previousId}"]`)?.focus();
+}
+
+function togglePhaseMenu(phaseId) {
+  if (openPhaseMenuId === phaseId) {
+    closePhaseMenu();
+    return;
+  }
+  openPhaseMenuId = phaseId;
+  renderPhaseJourney();
+  renderPhaseMenu();
+}
+
+function handlePhaseMenuKeydown(event) {
+  const phaseTrigger = event.target.closest?.("[data-phase]");
+  if (phaseTrigger && event.key === "ArrowDown") {
+    event.preventDefault();
+    openPhaseMenuId = phaseTrigger.dataset.phase;
+    renderPhaseJourney();
+    renderPhaseMenu();
+    els.phaseMenu?.querySelector(".phase-menu-item")?.focus();
+    return;
+  }
+  if (!openPhaseMenuId) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closePhaseMenu({ restoreFocus: true });
+    return;
+  }
+  if (!event.target.closest?.("#phaseMenu")) return;
+  const items = Array.from(els.phaseMenu.querySelectorAll(".phase-menu-item"));
+  const index = items.indexOf(document.activeElement);
+  if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+    event.preventDefault();
+    let nextIndex = index;
+    if (event.key === "ArrowDown") nextIndex = (index + 1 + items.length) % items.length;
+    if (event.key === "ArrowUp") nextIndex = (index - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    items[nextIndex]?.focus();
+  }
 }
 
 function render() {
   const stage = stages[currentIndex()];
+  document.title = `Lit-Based Proposal Builder v${RELEASE_VERSION}`;
   if (els.appVersion) els.appVersion.textContent = APP_VERSION;
   if (els.appCredit) els.appCredit.textContent = APP_CREDIT;
-  els.stageTitle.textContent = `${stage.code} - ${stage.title}`;
+  if (els.appCitationVersion) els.appCitationVersion.textContent = RELEASE_VERSION;
   els.currentStage.textContent = stage.code;
+  renderPhaseJourney();
+  renderPhaseMenu();
   renderNav();
   renderStage();
   syncStudentDetailsFields();
@@ -884,6 +1077,7 @@ function render() {
   updateDashboard();
   renderMigrationNotice();
   renderStageFeedback();
+  if (els.autosaveStatus) els.autosaveStatus.textContent = "Saved";
 }
 
 function renderMigrationNotice() {
@@ -922,7 +1116,7 @@ async function checkForUpdates() {
     const response = await fetch(`version.json?checked=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) return;
     const release = await response.json();
-    if (!release.version || !isNewerVersion(release.version, APP_VERSION)) return;
+    if (!release.version || !isNewerVersion(release.version, RELEASE_VERSION)) return;
     const notes = Array.isArray(release.notes) ? release.notes : [];
     els.updateNotice.hidden = false;
     els.updateNotice.innerHTML = `<div><strong>A newer version (${escapeHtml(release.version)}) is available.</strong><p>Your current draft will not reload or update automatically. Download a backup first.</p></div><div class="inline-actions"><button type="button" class="ghost compact" data-show-whats-new>What's New</button><button type="button" class="ghost compact" data-download-update-backup>Download Backup</button><a class="button-link compact" href="${escapeHtml(release.url || "./")}" target="_blank" rel="noopener">Open New Version</a></div><div class="update-notes" hidden>${notes.length ? `<ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : "<p>No release notes were provided.</p>"}</div>`;
@@ -977,8 +1171,14 @@ function renderCheckpointHistory() {
 }
 
 function updateActiveTimeDisplay() {
-  if (!els.activeWorkText) return;
-  els.activeWorkText.textContent = state.engagement.workStartedAt ? formatActiveTime(state.engagement.activeMs) : "Not started";
+  const fullText = state.engagement.workStartedAt ? formatActiveTime(state.engagement.activeMs) : "Not started";
+  if (els.activeWorkText) {
+    const totalMinutes = Math.max(0, Math.round(Number(state.engagement.activeMs || 0) / 60000));
+    if (!state.engagement.workStartedAt) els.activeWorkText.textContent = "Not started";
+    else if (totalMinutes < 60) els.activeWorkText.textContent = `${Math.max(1, totalMinutes)} min active`;
+    else els.activeWorkText.textContent = `${Math.floor(totalMinutes / 60)} hr ${totalMinutes % 60} min active`;
+  }
+  if (els.statusActiveWorkText) els.statusActiveWorkText.textContent = fullText;
 }
 
 function updateStudentDetailsButtonVisibility() {
@@ -1033,7 +1233,213 @@ function renderStage() {
   if (isAcademicStage(id) && state.submission.workArrangement === "group") {
     els.stageForm.insertAdjacentHTML("beforeend", renderTeamContributionRecord(id));
   }
+  applyFocusedStageLayout(id);
   return result;
+}
+
+function uniqueNodes(nodes = []) {
+  return [...new Set(nodes.filter(Boolean))];
+}
+
+function focusWrapper(node) {
+  if (!node) return null;
+  if (node.matches?.("button")) return node;
+  if (node.matches?.(".field, fieldset, .guided-step, .question-card, .table-row, .output-box, .checker-panel, .consent-preparation, .personal-declaration, .group-details, .source-copy-summary")) return node;
+  return node.closest?.(".field, fieldset, .guided-step, .question-card, label, .table-row, .output-box, .checker-panel, .consent-preparation, .personal-declaration, .source-copy-summary, .group-details") || node;
+}
+
+function taskNodes(selectors = [], root = els.stageForm) {
+  return uniqueNodes(selectors.flatMap((selector) => Array.from(root.querySelectorAll(selector)).map(focusWrapper)));
+}
+
+function fieldTask(section, key, label, title, support) {
+  return {
+    label,
+    title: title || label,
+    support: support || "Complete this part in your own words. You can revise it as the study becomes clearer.",
+    items: taskNodes([`[data-section="${section}"][data-key="${key}"]`])
+  };
+}
+
+function tableTask(section, index, label, title, support) {
+  const control = els.stageForm.querySelector(`[data-table="${section}"][data-index="${index}"]`);
+  const row = control?.closest(".table-row");
+  return {
+    label,
+    title,
+    support,
+    roots: row ? [row] : [],
+    items: row ? [row] : []
+  };
+}
+
+function buildFocusedTasks(stageId) {
+  const standardSupport = "Use the scaffold when needed, then write the answer in your own words.";
+  if (stageId === "details") {
+    const groupDetails = els.stageForm.querySelector(".group-details");
+    return [
+      { label: "Research context", title: "What kind of research work is this?", support: "Choose the degree or use context and whether this is individual or group work.", items: taskNodes(["[data-section=\"submission\"][data-key=\"degreeLevel\"]", "[data-work-arrangement]"]) },
+      { label: "Student or group", title: "Who owns this copy?", support: "Identify the student completing this copy. For group work, add the shared roster first.", roots: groupDetails ? [groupDetails] : [], items: taskNodes(["[data-section=\"submission\"][data-key=\"studentName\"]", "[data-section=\"submission\"][data-key=\"groupName\"]", "[data-group-person-key]", "[data-copy-owner]", "[data-add-group-member]", ".source-copy-summary"]) },
+      { label: "Course and adviser", title: "Where will this work be reviewed?", support: "Add the adviser, course, section, and required date.", items: taskNodes(["[data-section=\"submission\"][data-key=\"adviserName\"]", "[data-section=\"submission\"][data-key=\"course\"]", "[data-section=\"submission\"][data-key=\"section\"]", "[data-section=\"submission\"][data-key=\"submissionDate\"]"]) },
+      { label: "Reflection and declaration", title: "What is your starting point?", support: "Record one personal reflection, then confirm that this copy and its confidential entries belong to you.", roots: groupDetails ? [groupDetails] : [], items: taskNodes(["[data-section=\"submission\"][data-key=\"initialReadiness\"]", "[data-section=\"submission\"][data-key=\"personalGroupReflection\"]", "[data-personal-declaration]"]) }
+    ];
+  }
+  if (stageId === "a1") {
+    return fieldSets.a1.map(([key, label, support], index) => fieldTask("a1", key, `A1.${index + 1}`, label, support));
+  }
+  if (stageId === "a2") {
+    const rows = state.a2.patterns.map((row, index) => tableTask("a2Patterns", index, row.type || `Pattern ${index + 1}`, `What pattern appears across the studies?`, tableScaffolds.a2Patterns.notice));
+    rows.push(fieldTask("a2", "synthesis", "Synthesis", "What do these patterns show together?", "Write a short synthesis across the mapped patterns, including what is well studied and what remains less developed."));
+    return rows;
+  }
+  if (stageId === "a3") {
+    const rows = state.a3.gaps.map((row, index) => tableTask("a3Gaps", index, row.type || `Gap chain ${index + 1}`, `Follow the ${row.type || "selected"} pattern to a defensible gap.`, "Move from what studies repeatedly show to what becomes less visible and what this prevents us from understanding."));
+    rows.push(
+      fieldTask("a3", "strongestGap", "Select", "Which gap is strongest?", "Choose the gap that is specific, consequential, researchable, and best supported by the mapped literature."),
+      fieldTask("a3", "weakestGap", "Compare", "Which gap is weakest?", "Identify a weaker gap so you can compare the reasoning rather than accepting the first idea."),
+      fieldTask("a3", "selectionReason", "Justify", "Why is the selected gap stronger?", "Explain why the chosen gap is more useful and defensible than the alternative."),
+      fieldTask("a3", "finalGap", "Carry forward", "What final gap will guide A4?", "State the gap clearly enough that a research problem and questions can emerge from it.")
+    );
+    return rows;
+  }
+  if (stageId === "a4") {
+    return Array.from(els.stageForm.querySelectorAll(".guided-step")).map((item, index) => ({
+      label: `A4.${index + 1}`,
+      title: item.querySelector("summary")?.textContent.replace(/^\d+\.\s*/, "") || `A4 task ${index + 1}`,
+      support: "Complete this reasoning step before moving to the next part of the question structure.",
+      roots: [item], items: [item]
+    }));
+  }
+  if (stageId === "framework") {
+    return [
+      { label: "Find", title: "What possible frameworks appear in the literature?", support: "Return to A2 and list literature-supported candidates before committing to one.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"pathway\"]", "[data-section=\"frameworkFinder\"][data-key=\"literatureSignals\"]"]) },
+      { label: "Compare", title: "How do the candidates differ?", support: "Compare what each candidate explains, its source, and its limits.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"candidateFrameworks\"]", "[data-section=\"frameworkFinder\"][data-key=\"frameworkSource\"]"]) },
+      { label: "Select", title: "Which framework or combination fits best?", support: "Select only what is needed and explain why the alternatives fit less well.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"selectionReason\"]", "[data-section=\"framework\"][data-key=\"theoryModel\"]"]) },
+      { label: "Test", title: "Does the framework perform real work in the study?", support: "Test its connection to the problem, questions, design, evidence, analysis, and interpretation.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"withoutFramework\"]", "[data-section=\"frameworkFinder\"][data-key=\"methodFit\"]", "[data-section=\"framework\"][data-key=\"problemConnection\"]", "[data-section=\"framework\"][data-key=\"questionConnection\"]", "[data-section=\"framework\"][data-key=\"instrumentConnection\"]"]) },
+      { label: "Explain", title: "What distinct role does each framework perform?", support: "Explain the role, combination logic, and conceptual boundaries in language an adviser can review.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"frameworkRoles\"]", "[data-section=\"frameworkFinder\"][data-key=\"combinationReason\"]", "[data-section=\"framework\"][data-key=\"scopeBoundaries\"]"]) }
+    ];
+  }
+  if (stageId === "methodology") {
+    return [
+      { label: "Evidence approach", title: "What broad evidence approach can answer the questions?", support: "Compare quantitative, qualitative, and mixed methods using the A4 purposes, claims, and evidence needs.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"rqTypes\"]", "[data-section=\"methodology\"][data-key=\"dataNeeded\"]", "[data-section=\"methodology\"][data-key=\"purpose\"]", "[data-methodology-selection=\"approach\"]", ".methodology-recommendation"]) },
+      { label: "Design", title: "Which design within that approach may fit?", support: "Review requirements, assumptions, an alternative, and why the selected design fits better.", items: taskNodes(["[data-methodology-selection=\"design\"]", "[data-methodology-action]", "[data-section=\"methodology\"][data-key=\"designJustification\"]", ".design-guidance"]) },
+      { label: "Participants and sources", title: "Who or what can provide the evidence?", support: "Keep participants separate from documents, artifacts, records, observations, and other evidence sources.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"participants\"]", "[data-section=\"methodology\"][data-key=\"evidenceSources\"]"]) },
+      { label: "Sampling", title: "How will participants or evidence sources be selected?", support: "Choose a defensible selection process that fits the design and the intended claims.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"sampling\"]"]) },
+      { label: "Environment and boundaries", title: "Where and within what boundaries will the study occur?", support: "Define the research environment, period, inclusion and exclusion decisions, and practical delimitations.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"locale\"]", "[data-section=\"methodology\"][data-key=\"studyPeriod\"]", "[data-section=\"methodology\"][data-key=\"operationalDelimitations\"]"]) },
+      { label: "Collection and analysis", title: "How will the evidence be collected and analyzed?", support: "Sequence the collection procedure and name the analysis that will produce the intended claim for each question.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"collection\"]", "[data-section=\"methodology\"][data-key=\"analysis\"]", "[data-section=\"mixedMethods\"]"]) }
+    ];
+  }
+  if (stageId === "ethics") {
+    const ethicsChecklist = els.stageForm.querySelector("[data-ethics-check]")?.closest(".field");
+    return [
+      { label: "Participants", title: "Who may need additional protection?", support: "Identify minors, vulnerable groups, power relationships, and cultural or language considerations.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"participantAge\"]", "[data-section=\"ethics\"][data-key=\"powerIssue\"]", "[data-section=\"ethics\"][data-key=\"cultureLanguage\"]"]) },
+      { label: "Consent", title: "How will participation remain voluntary and informed?", support: "Explain consent, right to withdraw, assent when applicable, and how coercion will be prevented.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"consentPlan\"]"]) },
+      { label: "Privacy and data", title: "How will private information be protected?", support: "Plan confidentiality or anonymity, access, storage, retention, disposal, recording, and any AI-tool use.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"dataPrivacy\"]", "[data-section=\"ethics\"][data-key=\"storagePlan\"]", "[data-section=\"ethics\"][data-key=\"recordingAiUse\"]"]) },
+      { label: "Permissions", title: "What permissions and review may be required?", support: "Identify institutional permission and adviser or ERB review needed before recruitment or data collection.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"permissions\"]"]) },
+      { label: "Safeguards", title: "Which safeguards apply to this study?", support: "Select applicable safeguards and revise the draft Ethical Considerations section in future tense.", roots: ethicsChecklist ? [ethicsChecklist] : [], items: taskNodes(["[data-ethics-check]", "[data-section=\"ethics\"][data-key=\"draft\"]"]) },
+      { label: "Consent documents", title: "Which consent, permission, or assent drafts may be needed?", support: "Use this preparation area only after the participant and permission decisions are clear. All outputs remain drafts for adviser and ERB review.", items: taskNodes([".consent-preparation"]) }
+    ];
+  }
+  if (stageId === "instrumentation") {
+    const tasks = [];
+    Array.from(els.stageForm.querySelectorAll(".instrumentation-row")).forEach((row, rowIndex) => {
+      const groups = [
+        ["Claim", ["claimNeeded"]], ["Evidence", ["evidenceNeeded"]], ["Source", ["evidenceSource"]],
+        ["Instrument", ["instrument", "description", "purpose"]], ["Analysis", ["analysis"]], ["Quality and use", ["validation", "implementation"]]
+      ];
+      groups.forEach(([label, keys]) => tasks.push({
+        label: `Q${rowIndex + 1} · ${label}`,
+        title: `${label} for Research Question ${rowIndex + 1}`,
+        support: instrumentationScaffold(keys[0], state.a4.questionPurposes[rowIndex] || ""),
+        roots: [row],
+        context: Array.from(row.querySelectorAll(":scope > .output-box")),
+        items: keys.flatMap((key) => taskNodes([`[data-table=\"instrumentation\"][data-index=\"${rowIndex}\"][data-key=\"${key}\"]`], row))
+      }));
+    });
+    return tasks.length ? tasks : [{ label: "Begin in A4", title: "Add specific research questions first.", support: "Instrumentation cards are created automatically from the SRQs.", items: taskNodes([".empty-state"]) }];
+  }
+  if (stageId === "terms") {
+    const tasks = [];
+    Array.from(els.stageForm.querySelectorAll(".instrumentation-row")).forEach((row, rowIndex) => {
+      [["Term", "term"], ["Conceptual", "conceptual"], ["Operational", "operational"], ["Evidence link", "measured"]].forEach(([label, key]) => tasks.push({
+        label: `Term ${rowIndex + 1} · ${label}`,
+        title: label === "Term" ? `Choose Term ${rowIndex + 1}` : `${label} definition for ${state.terms.rows[rowIndex]?.term || `Term ${rowIndex + 1}`}`,
+        support: tableScaffolds.terms[key], roots: [row], context: Array.from(row.querySelectorAll(":scope > .output-box")),
+        items: taskNodes([`[data-table=\"terms\"][data-index=\"${rowIndex}\"][data-key=\"${key}\"]`], row)
+      }));
+    });
+    return tasks;
+  }
+  if (stageId === "outline") {
+    const sectionTasks = Array.from(els.stageForm.querySelectorAll("[data-outline-section]")).map((item) => ({ label: item.dataset.outlineSection, title: `Review ${item.dataset.outlineSection}`, support: "Check whether the generated structure carries forward the right proposal elements. The outline is not a finished manuscript.", roots: [item], items: [item] }));
+    sectionTasks.push(fieldTask("outline", "notes", "Local reminders", "What local format requirements should remain visible?", "Add only instructor, adviser, department, or institution-specific reminders that affect the outline."));
+    return sectionTasks;
+  }
+  if (stageId === "researchLevel") {
+    return fieldSets.researchLevel.map(([key, label, support], index) => fieldTask("researchLevel", key, `L.${index + 1}`, label, support));
+  }
+  if (stageId === "readiness") {
+    const items = Array.from(els.stageForm.querySelectorAll(".feedback-item"));
+    return items.length ? items.map((item, index) => ({ label: `Review ${index + 1}`, title: item.querySelector("strong")?.textContent || `Alignment review ${index + 1}`, support: "Read what was compared, why the issue matters, and where to revise. Discuss important decisions with your adviser.", roots: [item.closest(".checker-panel")], items: [item] })) : [{ label: "Summary", title: "Review proposal readiness", support: standardSupport, items: taskNodes([".output-box", ".checker-panel"]) }];
+  }
+  if (stageId === "submission") {
+    const boxes = Array.from(els.stageForm.querySelectorAll(":scope > .output-box"));
+    return boxes.map((box, index) => ({ label: ["Choose", "Progress PDF", "Final readiness", "Reflection"][index] || `Submission ${index + 1}`, title: box.querySelector("h3")?.textContent || "Prepare a submission", support: "Choose the output that matches the work you are ready to share for review.", roots: [box], items: [box] }));
+  }
+  return [{ label: "Current task", title: focusedStageCopy[stageId]?.title || "Continue this stage", support: standardSupport, items: Array.from(els.stageForm.children) }];
+}
+
+function applyFocusedStageLayout(stageId) {
+  const tasks = buildFocusedTasks(stageId).filter((task) => task.items?.length || task.roots?.length);
+  const contributionPanel = els.stageForm.querySelector(".team-contribution-panel");
+  if (contributionPanel) tasks.push({
+    label: "Team contribution",
+    title: "Record observable contributions for this part.",
+    support: "Complete the confidential self- and peer-assessment using factual evidence. The adviser, not the app, interprets these records.",
+    roots: [contributionPanel],
+    items: [contributionPanel]
+  });
+  if (!tasks.length) return;
+  uiState.tasks[stageId] = Math.min(Math.max(0, Number(uiState.tasks[stageId] || 0)), tasks.length - 1);
+  const activeIndex = uiState.tasks[stageId];
+  const activeTask = tasks[activeIndex];
+  const allItems = uniqueNodes(tasks.flatMap((task) => task.items || []));
+  const allRoots = uniqueNodes(tasks.flatMap((task) => task.roots || []));
+  allItems.forEach((node) => { node.hidden = true; node.classList.add("focus-task-item"); });
+  allRoots.forEach((node) => { node.hidden = true; node.classList.add("focus-task-root"); });
+  uniqueNodes([...(activeTask.roots || []), ...(activeTask.context || []), ...(activeTask.items || [])]).forEach((node) => { node.hidden = false; });
+  (activeTask.items || []).forEach((node) => node.classList.add("is-current-task"));
+  els.stageForm.querySelectorAll(".guided-step").forEach((item) => { item.open = !item.hidden; });
+  els.stageForm.querySelectorAll(":scope > .output-box, :scope > .table-wrap > h3, :scope > .table-wrap > .hint").forEach((node) => {
+    if (!node.closest(".focus-task-root") && !activeTask.items.includes(node) && !activeTask.context?.includes(node)) node.classList.add("focus-secondary-context");
+  });
+  renderFocusedStageChrome(tasks, activeIndex);
+  saveUiState();
+}
+
+function focusedCollectionAction(stageId) {
+  if (stageId === "a2") return { section: "a2Patterns", label: "+ Add pattern" };
+  if (stageId === "a3") return { section: "a3Gaps", label: "+ Add gap row" };
+  if (stageId === "terms") return { section: "terms", label: "+ Add term" };
+  return null;
+}
+
+function renderFocusedStageChrome(tasks, activeIndex) {
+  const stage = stages[currentIndex()];
+  const phase = activeJourneyPhase();
+  const copy = focusedStageCopy[stage.id] || {};
+  const task = tasks[activeIndex];
+  els.stageBreadcrumb.textContent = `${phase.label} · ${stage.title}`;
+  els.stageTaskCounter.textContent = `Task ${activeIndex + 1} of ${tasks.length}`;
+  els.taskEyebrow.textContent = task.label || copy.eyebrow || "Current task";
+  els.stageTitle.textContent = task.title || copy.title || stage.title;
+  els.taskSupport.textContent = task.support || copy.support || "Complete this task, then continue.";
+  const collectionAction = focusedCollectionAction(stage.id);
+  els.taskRail.innerHTML = `<div class="task-rail-heading"><span>${escapeHtml(stage.code)}</span><strong>${escapeHtml(stage.title)}</strong></div>${tasks.map((item, index) => `<button type="button" class="task-rail-item ${index === activeIndex ? "active" : ""}" data-focus-task="${index}"><span>${index + 1}</span><span>${escapeHtml(item.label || `Task ${index + 1}`)}</span></button>`).join("")}${collectionAction ? `<button type="button" class="task-rail-add" data-add-row="${collectionAction.section}">${collectionAction.label}</button>` : ""}`;
+  els.allTasksTitle.textContent = stage.title;
+  els.allTaskList.innerHTML = tasks.map((item, index) => `<button type="button" class="all-task-item ${index === activeIndex ? "active" : ""}" data-focus-task="${index}"><span class="task-number">${index + 1}</span><span><strong>${escapeHtml(item.label || `Task ${index + 1}`)}</strong><small>${escapeHtml(item.title || "")}</small></span></button>`).join("");
+  document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
+  document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
 }
 
 function renderFields(section, fields) {
@@ -1619,7 +2025,7 @@ function termRow(index) {
         <h3>Draft Definition Preview</h3>
         <div class="generated-text" data-term-preview="${index}">${escapeHtml(termDefinitionPreview(row))}</div>
       </section>
-      <button class="row-remove" type="button" data-remove-row="terms:${index}">X</button>
+      <button class="row-remove" type="button" data-remove-row="terms:${index}" aria-label="Remove this term">Remove term</button>
     </div>
   `;
 }
@@ -1942,11 +2348,12 @@ function instrumentationScaffold(key, purposeKey) {
 }
 
 function renderOutline() {
+  const outlineSections = buildOutline().split(/\n(?=Chapter\s+[123]:|Appendices)/i).filter((section) => section.trim());
   els.stageForm.innerHTML = `
-    <section class="output-box">
-      <h3>Proposal Outline</h3>
-      <div class="generated-text">${escapeHtml(buildOutline())}</div>
-    </section>
+    ${outlineSections.map((section, index) => {
+      const heading = section.match(/^(Chapter\s+[123]:[^\n]*|Appendices)/i)?.[1] || `Outline Part ${index + 1}`;
+      return `<section class="output-box" data-outline-section="${escapeHtml(heading)}"><h3>${escapeHtml(heading)}</h3><div class="generated-text">${escapeHtml(section)}</div></section>`;
+    }).join("")}
     <section class="field">
       <div class="field-label">
         <label for="outline-notes">Instructor notes or local format reminders</label>
@@ -2027,9 +2434,18 @@ function renderSubmission() {
 
 function tableRow(section, index, keys, labels) {
   const row = getTableRows(section)[index];
+  const protectedRow = isProtectedStandardRow(section, index);
   return `
-    <div class="table-row ${section}-row" style="--cols:${keys.length}">
-      ${keys.map((key, keyIndex) => `
+    <div class="table-row ${section}-row ${protectedRow ? "protected-standard-row" : "additional-row"}" style="--cols:${keys.length}">
+      ${keys.map((key, keyIndex) => protectedRow && key === "type" ? `
+        <div class="protected-pattern-field">
+          <span class="field-label">
+            <span>${labels[keyIndex]}</span>
+            ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], tableScaffolds[section]?.[key] || "Add a clear, study-specific detail.")}
+          </span>
+          <strong class="protected-pattern-value">${escapeHtml(row[key] || "")}</strong>
+          <small>Required template category</small>
+        </div>` : `
         <label>
           <span class="field-label">
             <span>${labels[keyIndex]}</span>
@@ -2038,7 +2454,7 @@ function tableRow(section, index, keys, labels) {
           <textarea data-table="${section}" data-index="${index}" data-key="${key}" aria-describedby="${section}-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
         </label>
       `).join("")}
-      <button class="row-remove" type="button" data-remove-row="${section}:${index}">X</button>
+      ${protectedRow ? "" : `<button class="row-remove" type="button" data-remove-row="${section}:${index}" aria-label="Remove this additional row">Remove extra row</button>`}
     </div>
   `;
 }
@@ -2055,6 +2471,27 @@ function emptyRowFor(section) {
   if (section === "a3Gaps") return { type: "", show: "", emphasized: "", lessVisible: "", limits: "", gap: "" };
   if (section === "terms") return { term: "", conceptual: "", operational: "", measured: "" };
   return { questionId: "", rq: "", claimNeeded: "", evidenceNeeded: "", evidenceSource: "", instrument: "", analysis: "", description: "", purpose: "", validation: "", implementation: "" };
+}
+
+function canonicalPatternType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return STANDARD_PATTERN_TYPES.find((type) => type.toLowerCase() === normalized) || "";
+}
+
+function isProtectedStandardRow(section, index) {
+  if (!["a2Patterns", "a3Gaps"].includes(section)) return false;
+  const rows = getTableRows(section);
+  const canonical = canonicalPatternType(rows[index]?.type);
+  if (!canonical) return false;
+  return rows.findIndex((row) => canonicalPatternType(row.type) === canonical) === Number(index);
+}
+
+function rowHasSavedWork(row = {}) {
+  return Object.values(row).some((value) => String(value || "").trim());
+}
+
+function addedRowTaskIndex(section, rowIndex) {
+  return section === "terms" ? rowIndex * 4 : rowIndex;
 }
 
 function buildTopic() {
@@ -4123,12 +4560,27 @@ function attachEvents() {
 
   document.addEventListener("click", (event) => {
     markInteraction();
+    if (openPhaseMenuId && !event.target.closest?.("#phaseMenu") && !event.target.closest?.("[data-phase]")) closePhaseMenu();
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.focusTask !== undefined) {
+      const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
+      setActiveTask(state.currentStage, Number(target.dataset.focusTask), tasks.length);
+      document.getElementById("allTasksDialog")?.close();
+      renderStage();
+      return;
+    }
+    if (target.dataset.phase) {
+      togglePhaseMenu(target.dataset.phase);
+      return;
+    }
     if (target.dataset.stage) {
       state.currentStage = target.dataset.stage;
       saveState();
+      closePhaseMenu();
+      document.getElementById("allStepsDialog")?.close();
       render();
+      return;
     }
     if (target.dataset.progressPreview !== undefined) {
       previewProgressPdf();
@@ -4137,18 +4589,33 @@ function attachEvents() {
       printProgressPdf();
     }
     if (target.dataset.addRow) {
-      getTableRows(target.dataset.addRow).push(emptyRowFor(target.dataset.addRow));
+      const section = target.dataset.addRow;
+      const rows = getTableRows(section);
+      rows.push(emptyRowFor(section));
+      const stageId = section === "a2Patterns" ? "a2" : section === "a3Gaps" ? "a3" : "terms";
+      uiState.tasks[stageId] = addedRowTaskIndex(section, rows.length - 1);
+      uiState.showAll[stageId] = false;
+      saveUiState();
       markContentEdit();
       saveState();
       renderStage();
+      requestAnimationFrame(() => els.stageForm.querySelector(`[data-table="${section}"][data-index="${rows.length - 1}"]`)?.focus());
+      return;
     }
     if (target.dataset.removeRow) {
       const [section, index] = target.dataset.removeRow.split(":");
       const rows = getTableRows(section);
-      rows.splice(Number(index), 1);
+      const rowIndex = Number(index);
+      if (isProtectedStandardRow(section, rowIndex)) return;
+      if (rowHasSavedWork(rows[rowIndex]) && !confirm("This additional row contains saved work. Remove it?")) return;
+      rows.splice(rowIndex, 1);
+      const stageId = section === "a2Patterns" ? "a2" : section === "a3Gaps" ? "a3" : "terms";
+      uiState.tasks[stageId] = addedRowTaskIndex(section, Math.max(0, rowIndex - 1));
+      saveUiState();
       markContentEdit();
       saveState();
       renderStage();
+      return;
     }
     if (target.dataset.addQuestion !== undefined) {
       if (state.a4.questions.length < SRQ_LIMITS.maximum) {
@@ -4225,6 +4692,13 @@ function attachEvents() {
   });
 
   document.getElementById("backBtn").addEventListener("click", () => {
+    const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
+    const taskIndex = activeTaskIndex(state.currentStage, tasks.length);
+    if (taskIndex > 0) {
+      setActiveTask(state.currentStage, taskIndex - 1, tasks.length);
+      renderStage();
+      return;
+    }
     const next = Math.max(0, currentIndex() - 1);
     state.currentStage = stages[next].id;
     saveState();
@@ -4232,11 +4706,34 @@ function attachEvents() {
   });
 
   document.getElementById("nextBtn").addEventListener("click", () => {
+    const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
+    const taskIndex = activeTaskIndex(state.currentStage, tasks.length);
+    if (taskIndex < tasks.length - 1) {
+      setActiveTask(state.currentStage, taskIndex + 1, tasks.length);
+      renderStage();
+      return;
+    }
     const next = Math.min(stages.length - 1, currentIndex() + 1);
     state.currentStage = stages[next].id;
     saveState();
     render();
   });
+
+  document.getElementById("skipBtn").addEventListener("click", () => document.getElementById("nextBtn").click());
+  document.addEventListener("keydown", handlePhaseMenuKeydown);
+  window.addEventListener("resize", positionPhaseMenu);
+  window.addEventListener("scroll", positionPhaseMenu, true);
+  document.getElementById("allStepsBtn").addEventListener("click", () => {
+    closePhaseMenu();
+    document.getElementById("allStepsDialog").showModal();
+  });
+  document.getElementById("closeAllStepsBtn").addEventListener("click", () => document.getElementById("allStepsDialog").close());
+  document.getElementById("allTasksBtn").addEventListener("click", () => document.getElementById("allTasksDialog").showModal());
+  document.getElementById("closeAllTasksBtn").addEventListener("click", () => document.getElementById("allTasksDialog").close());
+  document.getElementById("statusBtn").addEventListener("click", () => document.getElementById("statusDialog").showModal());
+  document.getElementById("closeStatusBtn").addEventListener("click", () => document.getElementById("statusDialog").close());
+  document.getElementById("toolsBtn").addEventListener("click", () => document.getElementById("toolsDialog").showModal());
+  document.getElementById("closeToolsBtn").addEventListener("click", () => document.getElementById("toolsDialog").close());
 
   document.getElementById("saveBtn").addEventListener("click", () => {
     const label = prompt("Optional checkpoint label (for example: Before adviser consultation)", "");

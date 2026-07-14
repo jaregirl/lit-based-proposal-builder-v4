@@ -2,9 +2,19 @@
 
 The Lit-Based Proposal Builder is a browser-based guided academic thinking tool developed by J. Arawiran. It helps novice researchers move from literature patterns to a gap, problem, questions, framework, methodology, ethics, instrumentation, and proposal-ready outputs.
 
-## v4.7.0 Group Accountability Pilot
+## v4.8.1 Navigation and UI Consistency Patch
 
-This pilot adds:
+This release reorganizes the complete v4 proposal workflow into a quieter, task-focused learning interface while preserving the v4.7 proposal schema and outputs.
+
+- four visible phases: Foundations, Study Design, Proposal Preparation, and Readiness & Submission;
+- one meaningful research task at a time;
+- task-first Back and Continue navigation;
+- All Tasks and All Steps views for direct access;
+- compact Status and Tools dialogs;
+- responsive desktop, portrait, and mobile layouts;
+- no change to the proposal-data schema, backup format, progress PDFs, final PDFs, ERB drafts, or group-accountability records.
+
+The preserved v4.7 capabilities include:
 
 - individual and group work with per-person readiness reflections;
 - adviser information and review records;
