@@ -9,6 +9,7 @@
     "Required A2 and A3 pattern categories can no longer be deleted",
     "Additional pattern, gap, and definition rows remain available",
     "A3 gap fields stay inside a responsive editing card",
+    "Mobile screens keep the task count and All Tasks chooser visible so every field remains discoverable",
     "Header save and active-time information is more compact",
     "Version attribution is consistent across the app and generated outputs"
   ]

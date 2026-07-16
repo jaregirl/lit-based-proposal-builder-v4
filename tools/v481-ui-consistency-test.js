@@ -101,6 +101,16 @@ async function openStage(page, phaseId, stageId) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(250);
+  assert(await page.locator("#stageTaskCounter").isVisible(), "Mobile task counter is hidden, making later fields appear missing.");
+  assert(await page.locator("#allTasksBtn").isVisible(), "Mobile All Tasks control is hidden.");
+  await page.locator("#allTasksBtn").click();
+  assert(await page.locator("#allTaskList .all-task-item").count() > 1, "Mobile task chooser does not list the stage fields.");
+  const taskDialogRect = await page.locator("#allTasksDialog").evaluate((dialog) => {
+    const rect = dialog.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, width: window.innerWidth };
+  });
+  assert(taskDialogRect.left >= 0 && taskDialogRect.right <= taskDialogRect.width + 1, "Mobile task chooser escapes the viewport.");
+  await page.locator("#closeAllTasksBtn").click();
   await page.locator('[data-phase="foundations"]').click();
   const menuRect = await page.locator("#phaseMenu").evaluate((menu) => {
     const rect = menu.getBoundingClientRect();
@@ -109,6 +119,13 @@ async function openStage(page, phaseId, stageId) {
   assert(menuRect.left >= 0 && menuRect.right <= menuRect.width + 1, "Mobile phase menu escapes the viewport.");
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "Mobile layout has horizontal overflow.");
   await page.screenshot({ path: `${outputDir}/v481-mobile-menu.png`, fullPage: true });
+
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.waitForTimeout(100);
+  assert(await page.locator("#stageTaskCounter").isVisible(), "360px task counter is hidden.");
+  assert(await page.locator("#allTasksBtn").isVisible(), "360px All Tasks control is hidden.");
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "360px layout has horizontal overflow.");
 
   await openStage(page, "proposalPreparation", "terms");
   assert(await page.locator('#stageForm [data-add-row="terms"]').isVisible(), "Mobile Add Term control is missing.");

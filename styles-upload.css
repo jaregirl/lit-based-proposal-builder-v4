@@ -2123,15 +2123,18 @@ dialog::backdrop {
 
   .stage-context-bar {
     align-items: flex-start;
+    flex-wrap: wrap;
     font-size: 0.72rem;
   }
 
   .stage-context-actions {
     gap: 6px;
+    margin-left: auto;
   }
 
   .stage-context-actions #stageTaskCounter {
-    display: none;
+    display: inline;
+    white-space: nowrap;
   }
 
   .stage-intro .eyebrow {
@@ -2166,9 +2169,14 @@ dialog::backdrop {
   }
 
   .focused-actions #skipBtn,
-  .focused-actions #allTasksBtn,
   .focused-actions .footer-save-state {
     display: none;
+  }
+
+  .focused-actions #allTasksBtn {
+    display: inline-flex;
+    min-width: 0;
+    justify-content: center;
   }
 
   .focused-actions #nextBtn {
