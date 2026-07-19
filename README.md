@@ -64,6 +64,10 @@ The Team Contribution Record is original and nonvalidated. It does not reproduce
 
 ## Attribution and Rights
 
-Ordinary student use does not require citation. A suggested citation is available inside the app. Reproducing or presenting the instructional scaffolds requires attribution to J. Arawiran. Adaptation or redistribution requires permission while institutional ownership is being clarified.
+Original app design and instructional scaffolds &copy; 2026 J. Arawiran, subject to applicable institutional policies. Third-party software and institutional materials remain the property of their respective owners.
+
+Ordinary student, teacher, research, and other noncommercial educational use of the app is permitted. A suggested citation is available inside the app. When the app, its workflow, or its scaffolds are reproduced or presented, J. Arawiran should be credited.
+
+Commercial use, paid redistribution, inclusion in fee-based products or services, or commercial adaptation requires prior written permission from the applicable rights holder. This is an interim rights notice while institutional ownership is being clarified; it is not a definitive software license.
 
 See `THIRD_PARTY_NOTICES.md` for third-party and HNU template notices. No definitive proprietary license is asserted in this pilot.
