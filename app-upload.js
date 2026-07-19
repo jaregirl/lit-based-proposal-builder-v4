@@ -8,7 +8,7 @@ const UI_STATE_KEY = `${STORAGE_KEY}:ui:v4.8`;
 const MAX_CHECKPOINTS = 5;
 const IDLE_MS = 120000;
 const APP_CREDIT = "Developed by J. Arawiran with assistance from OpenAI Codex, GPT-5-based coding assistant, June 2026.";
-const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.0`;
+const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.8.1-rights`;
 const SRQ_LIMITS = {
   minimum: 2,
   preferredMaximum: 5,
