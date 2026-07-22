@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.1";
-const APP_VERSION = `v${RELEASE_VERSION} - Navigation and UI Consistency Patch`;
+const RELEASE_VERSION = "4.8.2";
+const APP_VERSION = `v${RELEASE_VERSION} - Offline Access Patch`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -8,7 +8,7 @@ const UI_STATE_KEY = `${STORAGE_KEY}:ui:v4.8`;
 const MAX_CHECKPOINTS = 5;
 const IDLE_MS = 120000;
 const APP_CREDIT = "Developed by J. Arawiran with assistance from OpenAI Codex, GPT-5-based coding assistant, June 2026.";
-const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.8.1-rights`;
+const WELCOME_KEY = `${STORAGE_KEY}:welcome:v4.8.2-offline`;
 const SRQ_LIMITS = {
   minimum: 2,
   preferredMaximum: 5,
@@ -4824,6 +4824,13 @@ attachEvents();
 render();
 showWelcomeIfNeeded();
 checkForUpdates();
+if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      // Offline caching is an enhancement; registration failure must not interrupt work.
+    });
+  });
+}
 saveState();
 setInterval(saveState, 30000);
 setInterval(tickActiveTime, 15000);

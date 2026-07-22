@@ -3,9 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2f766b" />
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260716-v481-mobile-tasks" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260722-v482-offline" />
   </head>
   <body>
     <div class="app-shell">
@@ -174,7 +176,7 @@
       <section class="about-content">
         <h2>Before You Begin</h2>
         <p><strong>Your work is saved locally in your own browser.</strong> The app does not send your answers to the developer, instructor, or a cloud server.</p>
-        <p>When online, the app checks only its same-site version file for updates. No proposal answer is included in that request, and the app continues normally when offline.</p>
+        <p>After one successful online visit, supported browsers keep the app available for offline use on this device. When online, the app checks only its same-site version file for updates. No proposal answer is included in that request, and the app continues normally when offline.</p>
         <p>The app autosaves the latest work. <strong>Save Draft</strong> creates a restorable checkpoint. Use <strong>Download Backup</strong> before changing devices, clearing browser data, or updating the app.</p>
         <p><strong>Lit-Based Proposal Builder</strong> was developed by J. Arawiran with assistance from OpenAI Codex, a GPT-5-based coding assistant (June 2026).</p>
         <p>This is a guided academic thinking tool. It supports proposal drafting, but it does not replace adviser feedback, instructor requirements, department policies, institutional guidelines, or official ethics review processes.</p>
@@ -302,6 +304,6 @@
 
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260714-v481-ui-consistency"></script>
+    <script src="app-upload.js?v=20260722-v482-offline"></script>
   </body>
 </html>
