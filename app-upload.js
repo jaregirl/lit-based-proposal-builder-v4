@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.2";
-const APP_VERSION = `v${RELEASE_VERSION} - Offline Access Patch`;
+const RELEASE_VERSION = "4.8.3";
+const APP_VERSION = `v${RELEASE_VERSION} - Pattern Guidance Patch`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -280,6 +280,25 @@ const tableScaffolds = {
     measured: "Explain how this term will be measured, observed, identified, coded, or represented in an instrument."
   }
 };
+
+const patternTypeGuidance = {
+  Context: "Context pattern: Look for the settings where studies are usually conducted, such as countries, regions, school levels, institutions, subjects, or online environments. Ask which settings receive the most and least attention.",
+  Method: "Method pattern: Look for research designs, sampling approaches, instruments, data-collection procedures, or analysis methods that studies repeatedly use or rarely use.",
+  Theory: "Theory pattern: Look for theories, models, or conceptual frameworks repeatedly used to explain the construct, relationships, or findings.",
+  Evidence: "Evidence pattern: Look for findings, results, conclusions, agreements, contradictions, or outcomes that recur across several studies.",
+  Practice: "Practice pattern: Look for interventions, strategies, programs, procedures, or real-world applications that studies implement, recommend, or leave underdeveloped.",
+  Population: "Population pattern: Look for the people or groups studied most often and those less represented. This concerns participants, while Context concerns the setting where research occurs.",
+  Definition: "Definition pattern: Look for how authors repeatedly define, conceptualize, operationalize, measure, or distinguish the core construct. Note important differences in meaning across studies."
+};
+
+function patternTypeHelp(section, row = {}) {
+  const category = canonicalPatternType(row.type);
+  if (!category) return tableScaffolds[section]?.type || "Choose the pattern category that best describes what repeats across the studies.";
+  const meaning = patternTypeGuidance[category];
+  return section === "a3Gaps"
+    ? `${meaning} Carry this category from A2, then identify what its repeated emphasis makes less visible.`
+    : meaning;
+}
 
 const defaultData = {
   currentStage: "details",
@@ -2441,7 +2460,7 @@ function tableRow(section, index, keys, labels) {
         <div class="protected-pattern-field">
           <span class="field-label">
             <span>${labels[keyIndex]}</span>
-            ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], tableScaffolds[section]?.[key] || "Add a clear, study-specific detail.")}
+            ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], key === "type" ? patternTypeHelp(section, row) : (tableScaffolds[section]?.[key] || "Add a clear, study-specific detail."))}
           </span>
           <strong class="protected-pattern-value">${escapeHtml(row[key] || "")}</strong>
           <small>Required template category</small>
@@ -2449,7 +2468,7 @@ function tableRow(section, index, keys, labels) {
         <label>
           <span class="field-label">
             <span>${labels[keyIndex]}</span>
-            ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], tableScaffolds[section]?.[key] || "Add a clear, study-specific detail.")}
+            ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], key === "type" ? patternTypeHelp(section, row) : (tableScaffolds[section]?.[key] || "Add a clear, study-specific detail."))}
           </span>
           <textarea data-table="${section}" data-index="${index}" data-key="${key}" aria-describedby="${section}-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
         </label>

@@ -1,13 +1,13 @@
 {
-  "version": "4.8.2",
+  "version": "4.8.3",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-07-22",
-  "title": "v4.8.2 Offline Access Patch",
+  "releaseDate": "2026-07-28",
+  "title": "v4.8.3 Pattern Guidance Patch",
   "url": "./",
   "notes": [
-    "The app can reopen offline after one successful online visit in a supported browser",
-    "Core app files, local PDF support, and ERB draft templates are cached on the device",
-    "The optional update check continues to fail silently when internet access is unavailable",
-    "Proposal answers remain in browser storage and are not included in update requests"
+    "Each A2 pattern category now has a category-specific explanation in its question-mark guidance",
+    "The guidance distinguishes settings and contexts from participant populations",
+    "The same category meanings carry forward into A3 gap development",
+    "Offline access and local-only proposal storage remain unchanged"
   ]
 }

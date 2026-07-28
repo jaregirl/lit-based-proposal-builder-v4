@@ -2,6 +2,10 @@
 
 The Lit-Based Proposal Builder is a browser-based guided academic thinking tool developed by J. Arawiran. It helps novice researchers move from literature patterns to a gap, problem, questions, framework, methodology, ethics, instrumentation, and proposal-ready outputs.
 
+## v4.8.3 Pattern Guidance Patch
+
+The Pattern Type guidance now explains Context, Method, Theory, Evidence, Practice, Population, and Definition separately in A2 and carries those meanings into A3. The explanations help beginners distinguish the research setting from the participant population and identify what kind of repetition to look for across studies.
+
 ## v4.8.2 Offline Access Patch
 
 After one successful online visit through GitHub Pages, supported browsers cache the app shell, bundled PDF support, and ERB draft templates so the builder can reopen without an internet connection. The same-site `version.json` update request is optional and fails silently while offline. Proposal answers remain in local browser storage.
