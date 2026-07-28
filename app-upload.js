@@ -4583,8 +4583,8 @@ function attachEvents() {
     const target = event.target.closest("button");
     if (!target) return;
     if (target.dataset.focusTask !== undefined) {
-      const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
-      setActiveTask(state.currentStage, Number(target.dataset.focusTask), tasks.length);
+      const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+      setActiveTask(state.currentStage, Number(target.dataset.focusTask), taskCount);
       document.getElementById("allTasksDialog")?.close();
       renderStage();
       return;
@@ -4711,10 +4711,10 @@ function attachEvents() {
   });
 
   document.getElementById("backBtn").addEventListener("click", () => {
-    const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
-    const taskIndex = activeTaskIndex(state.currentStage, tasks.length);
+    const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+    const taskIndex = activeTaskIndex(state.currentStage, taskCount);
     if (taskIndex > 0) {
-      setActiveTask(state.currentStage, taskIndex - 1, tasks.length);
+      setActiveTask(state.currentStage, taskIndex - 1, taskCount);
       renderStage();
       return;
     }
@@ -4725,10 +4725,10 @@ function attachEvents() {
   });
 
   document.getElementById("nextBtn").addEventListener("click", () => {
-    const tasks = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length);
-    const taskIndex = activeTaskIndex(state.currentStage, tasks.length);
-    if (taskIndex < tasks.length - 1) {
-      setActiveTask(state.currentStage, taskIndex + 1, tasks.length);
+    const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+    const taskIndex = activeTaskIndex(state.currentStage, taskCount);
+    if (taskIndex < taskCount - 1) {
+      setActiveTask(state.currentStage, taskIndex + 1, taskCount);
       renderStage();
       return;
     }
