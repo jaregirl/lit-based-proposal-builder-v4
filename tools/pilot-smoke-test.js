@@ -24,7 +24,7 @@ async function goToStage(page, stageId) {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.evaluate((key) => {
     localStorage.clear();
-    localStorage.setItem(`${key}:welcome:v4.0`, "true");
+    localStorage.setItem(`${key}:welcome:v4.8.2-offline`, "true");
   }, storageKey);
   await page.reload({ waitUntil: "networkidle" });
 
@@ -171,7 +171,7 @@ async function goToStage(page, stageId) {
   for (const fixture of migrationFixtures) {
     const migrationContext = await browser.newContext({ viewport: { width: 1200, height: 800 } });
     await migrationContext.addInitScript(({ key, old }) => {
-      localStorage.setItem(`${key}:welcome:v4.0`, "true");
+      localStorage.setItem(`${key}:welcome:v4.8.2-offline`, "true");
       localStorage.setItem(key, JSON.stringify(old));
     }, { key: storageKey, old: {
       meta: fixture.schemaVersion ? { schemaVersion: fixture.schemaVersion, appVersion: fixture.label } : undefined,
@@ -200,7 +200,7 @@ async function goToStage(page, stageId) {
   ];
   for (const updateCase of updateCases) {
     const updateContext = await browser.newContext({ viewport: { width: 1200, height: 800 } });
-    await updateContext.addInitScript((key) => localStorage.setItem(`${key}:welcome:v4.0`, "true"), storageKey);
+    await updateContext.addInitScript((key) => localStorage.setItem(`${key}:welcome:v4.8.2-offline`, "true"), storageKey);
     await updateContext.route("**/version.json?**", async (route) => {
       if (updateCase.mode === "abort") return route.abort("internetdisconnected");
       if (updateCase.mode === "text") return route.fulfill({ status: 200, contentType: "application/json", body: updateCase.body });

@@ -1,6 +1,6 @@
 const { chromium } = require("playwright");
 
-const baseUrl = process.env.BASE_URL || "http://127.0.0.1:4182/index.html?v=v481-ui-test";
+const baseUrl = process.env.BASE_URL || "http://127.0.0.1:4182/index.html?v=v484-example-test";
 const outputDir = process.env.QA_DIR || "qa";
 
 function assert(condition, message) {
@@ -28,13 +28,13 @@ async function openStage(page, phaseId, stageId) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
     localStorage.clear();
-    localStorage.setItem("proposalBuilderA4DraftUploadVersion:welcome:v4.0", "seen");
+    localStorage.setItem("proposalBuilderA4DraftUploadVersion:welcome:v4.8.2-offline", "seen");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(300);
 
-  assert((await page.locator("#appVersion").innerText()).includes("v4.8.1"), "Header version is not v4.8.1.");
-  assert((await page.locator("#appCitationVersion").innerText()) === "4.8.1", "About citation version is not v4.8.1.");
+  assert((await page.locator("#appVersion").innerText()).includes("v4.8.4"), "Header version is not v4.8.4.");
+  assert((await page.locator("#appCitationVersion").innerText()) === "4.8.4", "About citation version is not v4.8.4.");
   assert(await page.locator(".status-summary").isVisible(), "Compact header status is missing.");
 
   const foundations = page.locator('[data-phase="foundations"]');
@@ -68,6 +68,17 @@ async function openStage(page, phaseId, stageId) {
   assert(await page.locator(".a2Patterns-row.protected-standard-row").count() === 7, "A2 standard rows are not protected.");
   assert(await page.locator('.a2Patterns-row [data-key="type"]').count() === 0, "A2 standard pattern types remain editable.");
   assert(await page.locator('.a2Patterns-row [data-remove-row]').count() === 0, "A2 standard rows still have removal controls.");
+  assert(await page.locator('button[data-example-stage="a2"]').count() === 8, "A2 task-specific example controls are incomplete.");
+  const contextAnswer = page.locator('.a2Patterns-row:not([hidden]) textarea[data-key="notice"]');
+  await contextAnswer.fill("My mapped response must remain unchanged.");
+  const contextExample = page.locator('.a2Patterns-row:not([hidden]) button[data-example-type="Context"]');
+  await contextExample.click();
+  assert(await page.locator("#exampleDialog").isVisible(), "A2 example dialog did not open.");
+  assert(await page.getByText("Illustrative synthesized example", { exact: true }).isVisible(), "Example origin label is missing.");
+  assert(await page.getByText(/Do not copy it or cite it as a research finding/).isVisible(), "Example warning is missing.");
+  await page.getByRole("button", { name: "Return to my answer" }).click();
+  assert(await contextAnswer.inputValue() === "My mapped response must remain unchanged.", "Opening the example changed the student's response.");
+  assert(await contextExample.evaluate((button) => document.activeElement === button), "Focus did not return to the example control.");
   assert(await page.locator('#taskRail [data-add-row="a2Patterns"]').isVisible(), "Desktop Add Pattern control is missing.");
   await page.locator('#taskRail [data-add-row="a2Patterns"]').click();
   assert(await page.locator(".a2Patterns-row").count() === 8, "Add Pattern did not create a row.");
@@ -78,6 +89,17 @@ async function openStage(page, phaseId, stageId) {
 
   await openStage(page, "foundations", "a3");
   assert(await page.locator(".a3Gaps-row.protected-standard-row").count() === 7, "A3 standard rows are not protected.");
+  assert(await page.locator('button[data-example-stage="a3"]').count() === 9, "A3 example controls are incomplete.");
+  await page.locator('#taskRail .task-rail-item', { hasText: "Compare gaps" }).click();
+  assert(await page.locator("[data-gap-decision]").count() === 7, "Gap comparison choices are incomplete.");
+  await page.locator("[data-gap-route]").selectOption("synthesis");
+  await page.locator('[data-gap-decision="Context"]').selectOption("related");
+  await page.locator('[data-gap-decision="Theory"]').selectOption("related");
+  await page.locator('[data-synthesis-check="sameIssue"]').check();
+  await page.locator('[data-synthesis-check="supported"]').check();
+  await page.locator('[data-synthesis-check="manageable"]').check();
+  assert(await page.getByText(/Synthesis is warranted by your three checks/).isVisible(), "Synthesis readiness did not appear.");
+  await page.locator("#taskRail .task-rail-item").first().click();
   const containment = await page.locator(".a3Gaps-row:not([hidden])").evaluate((row) => {
     const gap = row.querySelector('[data-key="gap"]');
     const rowRect = row.getBoundingClientRect();
@@ -149,7 +171,7 @@ async function openStage(page, phaseId, stageId) {
   await migrationPage.close();
 
   assert(pageErrors.length === 0, `Page errors: ${pageErrors.join(" | ")}`);
-  console.log(JSON.stringify({ status: "passed", phaseMenus: 4, protectedA2: 7, protectedA3: 7, migrationChecks: 3, screenshots: 3 }, null, 2));
+  console.log(JSON.stringify({ status: "passed", version: "4.8.4", protectedA2: 7, protectedA3: 7, exampleControls: 17, migrationChecks: 3, screenshots: 3 }, null, 2));
   await browser.close();
 })().catch((error) => {
   console.error(error.stack || error.message);

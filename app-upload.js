@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.3";
-const APP_VERSION = `v${RELEASE_VERSION} - Pattern Guidance Patch`;
+const RELEASE_VERSION = "4.8.4";
+const APP_VERSION = `v${RELEASE_VERSION} - Example Guidance`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -333,7 +333,10 @@ const defaultData = {
     strongestGap: "",
     weakestGap: "",
     selectionReason: "",
-    finalGap: ""
+    finalGap: "",
+    gapDecisions: Object.fromEntries(STANDARD_PATTERN_TYPES.map((type) => [type, ""])),
+    finalGapMode: "single",
+    synthesisChecks: { sameIssue: false, supported: false, manageable: false }
   },
   a4: {
     questions: ["", "", ""],
@@ -480,6 +483,9 @@ const els = {
   ,statusActiveWorkText: document.getElementById("statusActiveWorkText")
   ,phaseMenu: document.getElementById("phaseMenu")
   ,appCitationVersion: document.getElementById("appCitationVersion")
+  ,exampleDialog: document.getElementById("exampleDialog")
+  ,exampleDialogTitle: document.getElementById("exampleDialogTitle")
+  ,exampleDialogBody: document.getElementById("exampleDialogBody")
 };
 
 function clone(value) {
@@ -588,6 +594,8 @@ function normalizeState(nextState) {
   normalized.a1 = { ...clone(defaultData.a1), ...(nextState.a1 || {}) };
   normalized.a2 = { ...clone(defaultData.a2), ...(nextState.a2 || {}) };
   normalized.a3 = { ...clone(defaultData.a3), ...(nextState.a3 || {}) };
+  normalized.a3.gapDecisions = { ...clone(defaultData.a3.gapDecisions), ...(nextState.a3?.gapDecisions || {}) };
+  normalized.a3.synthesisChecks = { ...clone(defaultData.a3.synthesisChecks), ...(nextState.a3?.synthesisChecks || {}) };
   normalized.a4 = { ...clone(defaultData.a4), ...(nextState.a4 || {}) };
   normalized.framework = { ...clone(defaultData.framework), ...(nextState.framework || {}) };
   normalized.frameworkFinder = { ...clone(defaultData.frameworkFinder), ...(nextState.frameworkFinder || {}) };
@@ -957,6 +965,53 @@ function helpControl(id, label, text) {
   `;
 }
 
+function exampleControl(stage, type, label = "View example") {
+  return `<button class="ghost compact example-control" type="button" data-example-stage="${escapeHtml(stage)}" data-example-type="${escapeHtml(type)}">${escapeHtml(label)}</button>`;
+}
+
+function exampleNoticeHtml() {
+  const examples = globalThis.PROPOSAL_EXAMPLES;
+  return `<div class="example-origin"><span class="example-badge">${escapeHtml(examples.origin)}</span><span>Demonstration topic: ${escapeHtml(examples.topic)}</span></div>
+    <div class="example-warning" role="note"><strong>Use reminder.</strong> ${escapeHtml(examples.notice)}</div>`;
+}
+
+function openExampleDialog(stage, type, trigger) {
+  const examples = globalThis.PROPOSAL_EXAMPLES;
+  if (!examples || !els.exampleDialog) return;
+  let body = "";
+  if (stage === "a2" && type === "synthesis") {
+    els.exampleDialogTitle.textContent = "Example: A2 short synthesis";
+    body = `${exampleNoticeHtml()}<section class="example-section"><h3>Completed model</h3><blockquote class="example-model">${escapeHtml(examples.a2Synthesis)}</blockquote></section>
+      <details class="example-details"><summary>Why this example works</summary><ul><li>It compares patterns instead of summarizing articles one by one.</li><li>It distinguishes recurring emphases from less developed areas.</li><li>It points toward A3 without claiming a final gap too early.</li></ul></details>`;
+  } else if (stage === "a2" && examples.a2[type]) {
+    const item = examples.a2[type];
+    els.exampleDialogTitle.textContent = `Example: ${type} pattern`;
+    body = `${exampleNoticeHtml()}<section class="example-section"><h3>Completed model</h3><blockquote class="example-model">${escapeHtml(item.answer)}</blockquote></section>
+      <details class="example-details"><summary>Why this example works</summary><ul>${item.why.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></details>
+      <section class="example-section"><h3>Use this structure</h3><p class="example-frame">${escapeHtml(item.frame)}</p></section>
+      <section class="example-section"><h3>Check your own answer</h3><ul>${item.checks.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul><p class="example-source-prompt">${escapeHtml(examples.sourcePrompt)}</p></section>`;
+  } else if (stage === "a3" && examples.a3[type]) {
+    const item = examples.a3[type];
+    els.exampleDialogTitle.textContent = `Example: ${type} pattern to gap`;
+    const steps = [["1. Repeated finding", item.show], ["2. Emphasis", item.emphasized], ["3. Less visible", item.lessVisible], ["4. Limitation", item.limits], ["5. Refined gap", item.gap]];
+    body = `${exampleNoticeHtml()}<ol class="example-reasoning">${steps.map(([label, value]) => `<li><strong>${escapeHtml(label)}</strong><p>${escapeHtml(value)}</p></li>`).join("")}</ol>
+      ${type === "Definition" ? '<div class="example-caution"><strong>Definition caution:</strong> Differing definitions form a defensible gap only when they affect measurement, comparison, or interpretation.</div>' : ""}
+      ${type === "Population" ? '<div class="example-caution"><strong>Scope caution:</strong> Choose one justified subgroup comparison rather than investigating every possible difference.</div>' : ""}
+      <details class="example-details"><summary>Check the reasoning chain</summary><ul><li>Every step stays connected to the same mapped pattern.</li><li>The limitation explains what cannot yet be understood.</li><li>The refined gap is supportable and manageable for one study.</li></ul></details>`;
+  } else if (stage === "a3" && type === "compare") {
+    els.exampleDialogTitle.textContent = "Example: compare and group possible gaps";
+    body = `${exampleNoticeHtml()}<section class="example-section"><h3>Worked comparison</h3><p><strong>Related candidates:</strong> Context, Theory, Evidence, and Practice concern how assessment literacy moves from individual knowledge into situated practicum action.</p><p><strong>Supporting justification:</strong> Method explains why stronger evidence is needed but need not become a separate substantive gap.</p><p><strong>Conditional candidates:</strong> Population belongs only if one subgroup comparison is central and manageable. Definition is a measurement guardrail unless definitional misalignment is the main problem.</p></section>
+      <section class="example-section"><h3>Three tests before combining</h3><ol><li>The candidates concern the same unresolved issue.</li><li>Every part is supported by the mapped literature.</li><li>The combined issue remains manageable for one study.</li></ol></section>`;
+  } else if (stage === "a3" && type === "synthesis") {
+    const single = state.a3.finalGapMode !== "synthesis";
+    els.exampleDialogTitle.textContent = single ? "Example: retain one strong gap" : "Example: synthesized final gap";
+    body = `${exampleNoticeHtml()}<section class="example-section"><h3>${single ? "Valid single-gap route" : "Synthesized final-gap model"}</h3><blockquote class="example-model">${escapeHtml(single ? examples.singleGap : examples.synthesis)}</blockquote></section>`;
+  } else return;
+  els.exampleDialogBody.innerHTML = body;
+  els.exampleDialog._returnFocusElement = trigger || null;
+  els.exampleDialog.showModal();
+}
+
 function draftHelp(section, scaffold) {
   return section === "submission" ? scaffold : `${scaffold} This is a working draft, and you can refine it later.`;
 }
@@ -1313,6 +1368,7 @@ function buildFocusedTasks(stageId) {
   }
   if (stageId === "a3") {
     const rows = state.a3.gaps.map((row, index) => tableTask("a3Gaps", index, row.type || `Gap chain ${index + 1}`, `Follow the ${row.type || "selected"} pattern to a defensible gap.`, "Move from what studies repeatedly show to what becomes less visible and what this prevents us from understanding."));
+    rows.push({ label: "Compare gaps", title: "Which possible gaps concern the same unresolved issue?", support: "Classify the candidates. Combine them only when the mapped literature supports one common and manageable issue.", items: taskNodes(["[data-gap-comparison]"]) });
     rows.push(
       fieldTask("a3", "strongestGap", "Select", "Which gap is strongest?", "Choose the gap that is specific, consequential, researchable, and best supported by the mapped literature."),
       fieldTask("a3", "weakestGap", "Compare", "Which gap is weakest?", "Identify a weaker gap so you can compare the reasoning rather than accepting the first idea."),
@@ -1681,6 +1737,20 @@ function renderA1() {
   `;
 }
 
+function renderGapComparison() {
+  const decisions = state.a3.gapDecisions;
+  const checks = state.a3.synthesisChecks;
+  const synthesisSelected = state.a3.finalGapMode === "synthesis";
+  const allChecksPass = checks.sameIssue && checks.supported && checks.manageable;
+  const related = STANDARD_PATTERN_TYPES.filter((type) => decisions[type] === "related");
+  return `<section class="gap-comparison" data-gap-comparison aria-labelledby="gap-comparison-title">
+    <div class="section-heading"><div><h3 id="gap-comparison-title">Compare possible gaps before choosing the final gap</h3><p class="hint">The seven lenses do not have to become seven final gaps. Retain one strong gap or synthesize only genuinely related candidates.</p></div>${exampleControl("a3", "compare", "View comparison example")}</div>
+    <div class="gap-choice-list">${STANDARD_PATTERN_TYPES.map((type) => `<label class="gap-choice-row"><span><strong>${escapeHtml(type)}</strong><small>${escapeHtml(globalThis.PROPOSAL_EXAMPLES.a3[type].gap)}</small></span><select data-gap-decision="${escapeHtml(type)}" aria-label="Decision for ${escapeHtml(type)} gap"><option value="" ${!decisions[type] ? "selected" : ""}>Choose a decision</option><option value="retain" ${decisions[type] === "retain" ? "selected" : ""}>Retain as a candidate</option><option value="related" ${decisions[type] === "related" ? "selected" : ""}>Related to another candidate</option><option value="support" ${decisions[type] === "support" ? "selected" : ""}>Use as supporting justification</option><option value="exclude" ${decisions[type] === "exclude" ? "selected" : ""}>Do not carry forward</option></select></label>`).join("")}</div>
+    <div class="gap-route"><label for="a3-final-gap-mode">How will you form the final gap?</label><select id="a3-final-gap-mode" data-gap-route><option value="single" ${!synthesisSelected ? "selected" : ""}>Retain one strong gap</option><option value="synthesis" ${synthesisSelected ? "selected" : ""}>Synthesize genuinely related gaps</option></select></div>
+    ${synthesisSelected ? `<fieldset class="synthesis-checks"><legend>Before combining ${related.length ? escapeHtml(related.join(", ")) : "candidate gaps"}</legend><label><input type="checkbox" data-synthesis-check="sameIssue" ${checks.sameIssue ? "checked" : ""}> They concern the same unresolved issue.</label><label><input type="checkbox" data-synthesis-check="supported" ${checks.supported ? "checked" : ""}> Every part is supported by my mapped literature.</label><label><input type="checkbox" data-synthesis-check="manageable" ${checks.manageable ? "checked" : ""}> The combined issue remains manageable for one study.</label></fieldset><div class="synthesis-readiness ${allChecksPass ? "ready" : "caution"}" role="status">${allChecksPass ? "Synthesis is warranted by your three checks. Write one integrated gap around the common unresolved issue." : "Do not combine the candidates yet. Confirm all three conditions or use the single-gap route."}</div>` : '<div class="synthesis-readiness ready" role="status">A single strong gap is a valid final choice when synthesis is not warranted.</div>'}
+  </section>`;
+}
+
 function renderA2() {
   els.stageForm.innerHTML = `
     <section class="table-wrap">
@@ -1694,10 +1764,7 @@ function renderA2() {
       <button type="button" data-add-row="a2Patterns">Add Pattern</button>
     </section>
     <section class="field">
-      <div class="field-label">
-        <label for="a2-synthesis">Short synthesis</label>
-        ${helpControl("a2-synthesis-help", "Short synthesis", "Write 5-7 sentences: What seems heavily studied? What approaches dominate? What keeps recurring? What feels less developed?")}
-      </div>
+      <div class="field-heading"><div class="field-label"><label for="a2-synthesis">Short synthesis</label>${helpControl("a2-synthesis-help", "Short synthesis", "Write 5-7 sentences: What seems heavily studied? What approaches dominate? What keeps recurring? What feels less developed?")}</div>${exampleControl("a2", "synthesis")}</div>
       <textarea id="a2-synthesis" data-section="a2" data-key="synthesis" aria-describedby="a2-synthesis-help">${escapeHtml(value("a2.synthesis"))}</textarea>
     </section>
   `;
@@ -1715,6 +1782,7 @@ function renderA3() {
       </div>
       <button type="button" data-add-row="a3Gaps">Add Gap Row</button>
     </section>
+    ${renderGapComparison()}
     <div class="field-grid">
       <div class="field">
         <div class="field-label">
@@ -1738,10 +1806,7 @@ function renderA3() {
         <textarea id="a3-selectionReason" data-section="a3" data-key="selectionReason" aria-describedby="a3-selectionReason-help">${escapeHtml(value("a3.selectionReason"))}</textarea>
       </div>
       <div class="field">
-        <div class="field-label">
-          <label for="a3-finalGap">Final gap to carry forward</label>
-          ${helpControl("a3-finalGap-help", "Final gap to carry forward", "State what remains insufficiently understood and why that limitation exists.")}
-        </div>
+        <div class="field-heading"><div class="field-label"><label for="a3-finalGap">Final gap to carry forward</label>${helpControl("a3-finalGap-help", "Final gap to carry forward", "State what remains insufficiently understood and why that limitation exists.")}</div>${exampleControl("a3", "synthesis", state.a3.finalGapMode === "synthesis" ? "View synthesis example" : "View single-gap example")}</div>
         <textarea id="a3-finalGap" data-section="a3" data-key="finalGap" aria-describedby="a3-finalGap-help">${escapeHtml(value("a3.finalGap"))}</textarea>
       </div>
     </div>
@@ -2454,8 +2519,11 @@ function renderSubmission() {
 function tableRow(section, index, keys, labels) {
   const row = getTableRows(section)[index];
   const protectedRow = isProtectedStandardRow(section, index);
+  const exampleStage = section === "a2Patterns" ? "a2" : section === "a3Gaps" ? "a3" : "";
+  const exampleType = canonicalPatternType(row.type);
   return `
     <div class="table-row ${section}-row ${protectedRow ? "protected-standard-row" : "additional-row"}" style="--cols:${keys.length}">
+      ${exampleStage && exampleType ? `<div class="row-example-action"><strong>${escapeHtml(exampleType)} lens</strong>${exampleControl(exampleStage, exampleType)}</div>` : ""}
       ${keys.map((key, keyIndex) => protectedRow && key === "type" ? `
         <div class="protected-pattern-field">
           <span class="field-label">
@@ -2470,7 +2538,7 @@ function tableRow(section, index, keys, labels) {
             <span>${labels[keyIndex]}</span>
             ${helpControl(`${section}-${index}-${key}-help`, labels[keyIndex], key === "type" ? patternTypeHelp(section, row) : (tableScaffolds[section]?.[key] || "Add a clear, study-specific detail."))}
           </span>
-          <textarea data-table="${section}" data-index="${index}" data-key="${key}" aria-describedby="${section}-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
+          <textarea data-table="${section}" data-index="${index}" data-key="${key}" aria-describedby="${section}-${index}-${key}-help" placeholder="${escapeHtml(section === "a2Patterns" && ["authors", "years"].includes(key) ? globalThis.PROPOSAL_EXAMPLES.sourcePrompt : "")}">${escapeHtml(row[key] || "")}</textarea>
         </label>
       `).join("")}
       ${protectedRow ? "" : `<button class="row-remove" type="button" data-remove-row="${section}:${index}" aria-label="Remove this additional row">Remove extra row</button>`}
@@ -4488,6 +4556,27 @@ function attachEvents() {
   document.addEventListener("change", (event) => {
     const target = event.target;
     markInteraction();
+    if (target.dataset.gapDecision) {
+      state.a3.gapDecisions[target.dataset.gapDecision] = target.value;
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
+    if (target.dataset.gapRoute !== undefined) {
+      state.a3.finalGapMode = target.value === "synthesis" ? "synthesis" : "single";
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
+    if (target.dataset.synthesisCheck) {
+      state.a3.synthesisChecks[target.dataset.synthesisCheck] = target.checked;
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
     if (target.dataset.contributionStage && target.dataset.contributionKey) {
       const record = contributionRecord(target.dataset.contributionStage);
       const assessment = record.assessments[target.dataset.contributionPerson] || normalizeContributionAssessment();
@@ -4582,6 +4671,14 @@ function attachEvents() {
     if (openPhaseMenuId && !event.target.closest?.("#phaseMenu") && !event.target.closest?.("[data-phase]")) closePhaseMenu();
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.exampleStage && target.dataset.exampleType) {
+      openExampleDialog(target.dataset.exampleStage, target.dataset.exampleType, target);
+      return;
+    }
+    if (target.id === "closeExampleDialogBtn" || target.id === "returnFromExampleBtn") {
+      els.exampleDialog?.close();
+      return;
+    }
     if (target.dataset.focusTask !== undefined) {
       const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
       setActiveTask(state.currentStage, Number(target.dataset.focusTask), taskCount);
@@ -4709,6 +4806,14 @@ function attachEvents() {
     }
     if (target.dataset.restoreCheckpoint) restoreCheckpoint(target.dataset.restoreCheckpoint);
   });
+
+  if (els.exampleDialog) {
+    els.exampleDialog.addEventListener("close", () => {
+      const returnTarget = els.exampleDialog._returnFocusElement;
+      if (returnTarget?.isConnected) returnTarget.focus();
+      els.exampleDialog._returnFocusElement = null;
+    });
+  }
 
   document.getElementById("backBtn").addEventListener("click", () => {
     const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;

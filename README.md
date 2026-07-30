@@ -2,6 +2,10 @@
 
 The Lit-Based Proposal Builder is a browser-based guided academic thinking tool developed by J. Arawiran. It helps novice researchers move from literature patterns to a gap, problem, questions, framework, methodology, ethics, instrumentation, and proposal-ready outputs.
 
+## v4.8.4 Example Guidance
+
+Every standard A2 and A3 pattern lens now has a clearly labeled illustrative example. The examples use one coherent assessment-literacy demonstration topic, preserve the student's response, and distinguish instructional models from verified research evidence. A3 now helps students compare possible gaps, retain one strong gap, or synthesize only candidates that concern the same supported and manageable unresolved issue.
+
 ## v4.8.3 Pattern Guidance Patch
 
 The Pattern Type guidance now explains Context, Method, Theory, Evidence, Practice, Population, and Definition separately in A2 and carries those meanings into A3. The explanations help beginners distinguish the research setting from the participant population and identify what kind of repetition to look for across studies.

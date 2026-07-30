@@ -21,7 +21,7 @@ function assert(condition, message) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
     localStorage.clear();
-    localStorage.setItem("proposalBuilderA4DraftUploadVersion:welcome:v4.0", "seen");
+    localStorage.setItem("proposalBuilderA4DraftUploadVersion:welcome:v4.8.2-offline", "seen");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(500);

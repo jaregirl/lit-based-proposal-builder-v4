@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260722-v482-offline" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260730-v484-examples" />
   </head>
   <body>
     <div class="app-shell">
@@ -302,8 +302,21 @@
       </div>
     </dialog>
 
+    <dialog id="exampleDialog" class="example-dialog" aria-labelledby="exampleDialogTitle">
+      <div class="dialog-header">
+        <h2 id="exampleDialogTitle">Illustrative example</h2>
+        <button class="ghost" id="closeExampleDialogBtn" type="button">Close</button>
+      </div>
+      <div class="example-dialog-body" id="exampleDialogBody"></div>
+      <div class="dialog-actions">
+        <p>Use the structure to guide your own evidence-backed response.</p>
+        <button class="primary" id="returnFromExampleBtn" type="button">Return to my answer</button>
+      </div>
+    </dialog>
+
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
-    <script src="app-upload.js?v=20260728-v483-contribution-navigation"></script>
+    <script src="example-guidance.js?v=20260730-v484-examples"></script>
+    <script src="app-upload.js?v=20260730-v484-examples"></script>
   </body>
 </html>
