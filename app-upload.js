@@ -1093,6 +1093,19 @@ function closePhaseMenu({ restoreFocus = false } = {}) {
   if (restoreFocus && previousId) els.phaseJourney?.querySelector(`[data-phase="${previousId}"]`)?.focus();
 }
 
+function activateStage(stageId) {
+  if (!stages.some((stage) => stage.id === stageId)) return;
+  state.currentStage = stageId;
+  // Persist the selected step without refreshing the dashboard first. Older
+  // migrated drafts may contain incomplete records, but that must never block
+  // basic step navigation.
+  saveState(false);
+  closePhaseMenu();
+  const allStepsDialog = document.getElementById("allStepsDialog");
+  if (allStepsDialog?.open) allStepsDialog.close();
+  render();
+}
+
 function togglePhaseMenu(phaseId) {
   if (openPhaseMenuId === phaseId) {
     closePhaseMenu();
@@ -4691,11 +4704,7 @@ function attachEvents() {
       return;
     }
     if (target.dataset.stage) {
-      state.currentStage = target.dataset.stage;
-      saveState();
-      closePhaseMenu();
-      document.getElementById("allStepsDialog")?.close();
-      render();
+      activateStage(target.dataset.stage);
       return;
     }
     if (target.dataset.progressPreview !== undefined) {
@@ -4844,6 +4853,13 @@ function attachEvents() {
   });
 
   document.getElementById("skipBtn").addEventListener("click", () => document.getElementById("nextBtn").click());
+  els.phaseMenu?.addEventListener("click", (event) => {
+    const stageControl = event.target.closest?.("[data-stage]");
+    if (!stageControl) return;
+    event.preventDefault();
+    event.stopPropagation();
+    activateStage(stageControl.dataset.stage);
+  });
   document.addEventListener("keydown", handlePhaseMenuKeydown);
   window.addEventListener("resize", positionPhaseMenu);
   window.addEventListener("scroll", positionPhaseMenu, true);

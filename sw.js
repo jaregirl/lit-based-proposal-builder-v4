@@ -1,10 +1,10 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.4";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-navfix1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20260730-v484-examples",
-  "./example-guidance.js?v=20260730-v484-examples",
-  "./app-upload.js?v=20260730-v484-examples",
+  "./styles-upload.css?v=20260730-v484-navfix1",
+  "./example-guidance.js?v=20260730-v484-navfix1",
+  "./app-upload.js?v=20260730-v484-navfix1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",
