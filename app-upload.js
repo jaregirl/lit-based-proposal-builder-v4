@@ -4569,6 +4569,12 @@ function attachEvents() {
   document.addEventListener("change", (event) => {
     const target = event.target;
     markInteraction();
+    if (target.dataset.personalDeclaration !== undefined) {
+      state.submission.personalDeclaration = target.checked;
+      markContentEdit();
+      saveState();
+      return;
+    }
     if (target.dataset.gapDecision) {
       state.a3.gapDecisions[target.dataset.gapDecision] = target.value;
       markContentEdit();
