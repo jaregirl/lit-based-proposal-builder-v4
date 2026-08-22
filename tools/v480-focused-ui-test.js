@@ -39,7 +39,9 @@ function assert(condition, message) {
   assert(await page.locator("#allTasksDialog").evaluate((dialog) => dialog.open), "All Tasks dialog did not open.");
   await page.locator("#closeAllTasksBtn").click();
   await page.locator("#statusBtn").click();
-  assert(await page.locator("#statusDialog").evaluate((dialog) => dialog.open), "Status dialog did not open.");
+  assert(await page.locator("#statusMenu").isVisible(), "Status menu did not open.");
+  await page.locator('#statusMenu [data-status-action="issues"]').click();
+  assert(await page.locator("#statusDialog").evaluate((dialog) => dialog.open), "All Outstanding Issues did not open.");
   await page.locator("#closeStatusBtn").click();
   await page.locator("#toolsBtn").click();
   assert(await page.locator("#toolsDialog").evaluate((dialog) => dialog.open), "Tools dialog did not open.");

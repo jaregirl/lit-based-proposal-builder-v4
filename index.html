@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260822-v484-clickable-issues" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260822-v484-status-menu" />
   </head>
   <body>
     <div class="app-shell">
@@ -30,8 +30,16 @@
             <span class="status-separator" aria-hidden="true">&middot;</span>
             <span class="active-time" id="activeWorkText">Not started</span>
           </span>
-          <button class="icon-text-button" id="statusBtn" type="button">Status</button>
-          <button class="icon-text-button" id="toolsBtn" type="button">Tools</button>
+          <div class="journey-utility-actions">
+            <div class="status-menu-wrap">
+              <button class="icon-text-button" id="statusBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="statusMenu">Status <span aria-hidden="true">▾</span></button>
+              <div class="status-menu" id="statusMenu" role="menu" hidden>
+                <button type="button" role="menuitem" data-status-action="current">Check Current Step</button>
+                <button type="button" role="menuitem" data-status-action="issues">All Outstanding Issues</button>
+              </div>
+            </div>
+            <button class="icon-text-button" id="toolsBtn" type="button">Tools</button>
+          </div>
         </div>
       </header>
 
@@ -98,10 +106,10 @@
 
     <dialog id="statusDialog" class="journey-dialog status-dialog">
       <div class="dialog-header">
-        <div><p class="eyebrow">Progress and guidance</p><h2>Status</h2></div>
+        <div><p class="eyebrow" id="statusDialogEyebrow">Progress and guidance</p><h2 id="statusDialogTitle">Status</h2></div>
         <button class="ghost" id="closeStatusBtn" type="button">Close</button>
       </div>
-      <section class="dashboard" aria-label="Dashboard">
+      <section class="dashboard" data-status-section="issues" aria-label="Dashboard">
         <div class="dashboard-row"><span>Completion</span><strong id="completionText">0%</strong></div>
         <div class="meter" aria-hidden="true"><span id="completionBar"></span></div>
         <div class="dashboard-grid">
@@ -110,12 +118,12 @@
         </div>
         <div class="dashboard-row status-active-work"><span>Estimated active work</span><strong id="statusActiveWorkText">Not started</strong></div>
       </section>
-      <section class="side-panel">
+      <section class="side-panel" data-status-section="issues">
         <h2>Outstanding Issues</h2>
         <ul id="issueList"><li>Start with A1 to begin checking alignment.</li></ul>
       </section>
-      <section class="checker-panel" aria-label="Feedback">
-        <div class="checker-head"><h3>Check My Work</h3><button id="checkBtn" type="button">Check Current Step</button></div>
+      <section class="checker-panel" data-status-section="current" aria-label="Current step feedback">
+        <div class="checker-head"><h3 id="currentCheckTitle">Current Step Results</h3><button id="checkBtn" type="button">Check Again</button></div>
         <div id="feedback" class="feedback">Add your working ideas, then run a check for alignment suggestions.</div>
         <p class="hint">Developmental guidance only. Research decisions still require scholarly justification and adviser review.</p>
       </section>
@@ -317,6 +325,6 @@
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260813-v484-declarationfix1"></script>
-    <script src="app-upload.js?v=20260822-v484-clickable-issues"></script>
+    <script src="app-upload.js?v=20260822-v484-status-menu"></script>
   </body>
 </html>

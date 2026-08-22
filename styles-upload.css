@@ -1584,10 +1584,9 @@ dialog::backdrop {
 }
 
 .journey-utilities {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -1596,8 +1595,50 @@ dialog::backdrop {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  border-right: 1px solid #d8dddf;
-  padding-right: 10px;
+}
+
+.journey-utility-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-menu-wrap {
+  position: relative;
+}
+
+.status-menu {
+  position: absolute;
+  z-index: 90;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  width: 220px;
+  gap: 4px;
+  border: 1px solid #cbd5d5;
+  border-radius: 7px;
+  padding: 7px;
+  background: #ffffff;
+  box-shadow: 0 16px 38px rgba(24, 38, 42, 0.18);
+}
+
+.status-menu[hidden] {
+  display: none;
+}
+
+.status-menu button {
+  min-height: 42px;
+  border: 0;
+  padding: 8px 10px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+}
+
+.status-menu button:hover,
+.status-menu button:focus-visible {
+  color: var(--accent-dark);
+  background: var(--soft);
 }
 
 .save-state,
@@ -1689,8 +1730,8 @@ dialog::backdrop {
 .stage-intro h2 {
   margin: 0;
   color: #182226;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
-  line-height: 1.12;
+  font-size: clamp(1.65rem, 2.35vw, 2.15rem);
+  line-height: 1.16;
   letter-spacing: 0;
 }
 
@@ -2390,7 +2431,7 @@ dialog::backdrop {
   }
 
   .stage-intro h2 {
-    font-size: clamp(1.55rem, 6vw, 2.2rem);
+    font-size: clamp(1.45rem, 5vw, 1.9rem);
   }
 
   .focused-actions {

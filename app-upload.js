@@ -3802,6 +3802,64 @@ function showFeedback() {
   updateDashboard();
 }
 
+function closeStatusMenu({ restoreFocus = false } = {}) {
+  const menu = document.getElementById("statusMenu");
+  const button = document.getElementById("statusBtn");
+  if (!menu || !button) return;
+  menu.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+  if (restoreFocus) button.focus();
+}
+
+function toggleStatusMenu({ focusFirst = false } = {}) {
+  const menu = document.getElementById("statusMenu");
+  const button = document.getElementById("statusBtn");
+  if (!menu || !button) return;
+  const willOpen = menu.hidden;
+  closePhaseMenu();
+  menu.hidden = !willOpen;
+  button.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen && focusFirst) menu.querySelector('[role="menuitem"]')?.focus();
+}
+
+function handleStatusMenuKeydown(event) {
+  const menu = document.getElementById("statusMenu");
+  if (!menu || menu.hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeStatusMenu({ restoreFocus: true });
+    return;
+  }
+  const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+  const index = items.indexOf(document.activeElement);
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  if (event.key === "Home") items[0]?.focus();
+  else if (event.key === "End") items.at(-1)?.focus();
+  else if (event.key === "ArrowDown") items[(index + 1 + items.length) % items.length]?.focus();
+  else items[(index - 1 + items.length) % items.length]?.focus();
+}
+
+function openStatusDialog(mode) {
+  const dialog = document.getElementById("statusDialog");
+  const title = document.getElementById("statusDialogTitle");
+  const eyebrow = document.getElementById("statusDialogEyebrow");
+  const currentCheckTitle = document.getElementById("currentCheckTitle");
+  const currentStage = stages.find((stage) => stage.id === state.currentStage) || stages[0];
+  const currentMode = mode === "current";
+  closeStatusMenu();
+  dialog.querySelectorAll("[data-status-section]").forEach((section) => {
+    section.hidden = section.dataset.statusSection !== (currentMode ? "current" : "issues");
+  });
+  title.textContent = currentMode ? "Check Current Step" : "All Outstanding Issues";
+  eyebrow.textContent = currentMode ? `${currentStage.code} · ${currentStage.title}` : "Proposal-wide review";
+  if (currentCheckTitle) currentCheckTitle.textContent = `${currentStage.code} · ${currentStage.title}`;
+  if (currentMode) showFeedback();
+  else updateDashboard();
+  dialog._returnFocusElement = document.getElementById("statusBtn");
+  dialog.showModal();
+}
+
 function wordCount(text = "") {
   return String(text).trim().split(/\s+/).filter(Boolean).length;
 }
@@ -4927,6 +4985,7 @@ function attachEvents() {
   document.addEventListener("click", (event) => {
     markInteraction();
     if (openPhaseMenuId && !event.target.closest?.("#phaseMenu") && !event.target.closest?.("[data-phase]")) closePhaseMenu();
+    if (!document.getElementById("statusMenu")?.hidden && !event.target.closest?.("#statusMenu") && !event.target.closest?.("#statusBtn")) closeStatusMenu();
     const target = event.target.closest("button");
     if (!target) return;
     if (target.dataset.exampleStage && target.dataset.exampleType) {
@@ -5110,6 +5169,7 @@ function attachEvents() {
     activateStage(stageControl.dataset.stage);
   });
   document.addEventListener("keydown", handlePhaseMenuKeydown);
+  document.addEventListener("keydown", handleStatusMenuKeydown);
   window.addEventListener("resize", positionPhaseMenu);
   window.addEventListener("scroll", positionPhaseMenu, true);
   document.getElementById("allStepsBtn").addEventListener("click", () => {
@@ -5119,9 +5179,28 @@ function attachEvents() {
   document.getElementById("closeAllStepsBtn").addEventListener("click", () => document.getElementById("allStepsDialog").close());
   document.getElementById("allTasksBtn").addEventListener("click", () => document.getElementById("allTasksDialog").showModal());
   document.getElementById("closeAllTasksBtn").addEventListener("click", () => document.getElementById("allTasksDialog").close());
-  document.getElementById("statusBtn").addEventListener("click", () => document.getElementById("statusDialog").showModal());
+  document.getElementById("statusBtn").addEventListener("click", () => toggleStatusMenu());
+  document.getElementById("statusBtn").addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowDown") return;
+    event.preventDefault();
+    event.stopPropagation();
+    const menu = document.getElementById("statusMenu");
+    if (menu.hidden) toggleStatusMenu({ focusFirst: true });
+    else menu.querySelector('[role="menuitem"]')?.focus();
+  });
+  document.getElementById("statusMenu").addEventListener("click", (event) => {
+    const action = event.target.closest?.("[data-status-action]")?.dataset.statusAction;
+    if (action) openStatusDialog(action);
+  });
   document.getElementById("closeStatusBtn").addEventListener("click", () => document.getElementById("statusDialog").close());
-  document.getElementById("toolsBtn").addEventListener("click", () => document.getElementById("toolsDialog").showModal());
+  document.getElementById("statusDialog").addEventListener("close", () => {
+    const returnTarget = document.getElementById("statusDialog")._returnFocusElement;
+    if (returnTarget?.isConnected) returnTarget.focus();
+  });
+  document.getElementById("toolsBtn").addEventListener("click", () => {
+    closeStatusMenu();
+    document.getElementById("toolsDialog").showModal();
+  });
   document.getElementById("closeToolsBtn").addEventListener("click", () => document.getElementById("toolsDialog").close());
 
   document.getElementById("saveBtn").addEventListener("click", () => {

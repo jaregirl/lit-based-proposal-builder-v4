@@ -24,6 +24,17 @@ function assert(condition, message) {
   });
   await page.reload({ waitUntil: "domcontentloaded" });
 
+  const headerLayout = await page.evaluate(() => {
+    const summary = document.querySelector(".status-summary").getBoundingClientRect();
+    const actions = document.querySelector(".journey-utility-actions").getBoundingClientRect();
+    return {
+      summaryAboveActions: summary.bottom <= actions.top + 2,
+      titleFontSize: Number.parseFloat(getComputedStyle(document.getElementById("stageTitle")).fontSize)
+    };
+  });
+  assert(headerLayout.summaryAboveActions, "Saved time is not above Status and Tools.");
+  assert(headerLayout.titleFontSize <= 35, `Task question is still too large: ${headerLayout.titleFontSize}px.`);
+
   const screenshotRoutes = await page.evaluate(() => [
     "Research Level Readiness: add stronger evidence or narrow the scope for the selected context.",
     "Review coverage: some central-question ideas may not be unpacked by the SRQs.",
@@ -50,8 +61,30 @@ function assert(condition, message) {
     .filter((item) => item.destination.stage === "readiness"));
   assert(unrouted.length === 0, `Some outstanding issues still lead back to Status instead of their work area: ${JSON.stringify(unrouted)}`);
 
+  await page.locator("#statusBtn").focus();
+  await page.keyboard.press("ArrowDown");
+  assert(await page.locator("#statusMenu").isVisible(), "Status menu did not open from the keyboard.");
+  assert(await page.locator('#statusMenu [data-status-action="current"]').evaluate((button) => button === document.activeElement), "Keyboard focus did not move into the Status menu.");
+  await page.keyboard.press("ArrowDown");
+  assert(await page.locator('#statusMenu [data-status-action="issues"]').evaluate((button) => button === document.activeElement), "ArrowDown did not move between Status options.");
+  await page.keyboard.press("Escape");
+  assert(!(await page.locator("#statusMenu").isVisible()), "Escape did not close the Status menu.");
+  assert(await page.locator("#statusBtn").evaluate((button) => button === document.activeElement), "Escape did not return focus to Status.");
+
   await page.locator("#statusBtn").click();
-  assert(await page.locator("#checkBtn").innerText() === "Check Current Step", "The current-step check is still labeled Run Check.");
+  await page.locator('#statusMenu [data-status-action="current"]').click();
+  assert(await page.locator("#statusDialog").evaluate((dialog) => dialog.open), "Check Current Step did not open the Status dialog.");
+  assert(await page.locator("#statusDialogTitle").innerText() === "Check Current Step", "Current-step dialog title is incorrect.");
+  assert(await page.locator('[data-status-section="current"]').isVisible(), "Current-step results are hidden.");
+  assert(!(await page.locator('[data-status-section="issues"]').first().isVisible()), "All-issues content appears in the current-step view.");
+  assert(await page.locator("#checkBtn").innerText() === "Check Again", "Current-step refresh action is unclear.");
+  await page.locator("#closeStatusBtn").click();
+
+  await page.locator("#statusBtn").click();
+  await page.locator('#statusMenu [data-status-action="issues"]').click();
+  assert(await page.locator("#statusDialogTitle").innerText() === "All Outstanding Issues", "All-issues dialog title is incorrect.");
+  assert(await page.locator('[data-status-section="issues"]').first().isVisible(), "All outstanding issues are hidden.");
+  assert(!(await page.locator('[data-status-section="current"]').isVisible()), "Current-step results appear in the all-issues view.");
   const issueButtons = page.locator("#issueList [data-issue-index]");
   assert(await issueButtons.count() > 5, "Status should show the complete outstanding-issue list, not only five items.");
   const a3Issue = issueButtons.filter({ hasText: "Write the final gap clearly." });
@@ -71,7 +104,7 @@ function assert(condition, message) {
   assert(await page.getByText("Needs attention", { exact: true }).count() >= 1, "The marker relies on color without a text label.");
 
   assert(pageErrors.length === 0, `Page errors occurred: ${pageErrors.join(" | ")}`);
-  console.log(JSON.stringify({ status: "passed", screenshotRoutes: 5, clickable: true, keyboard: true, stage: "a3", taskDisclosed: true, focusMoved: true, textAndOutlineMarker: true }, null, 2));
+  console.log(JSON.stringify({ status: "passed", headerStacked: true, smallerQuestion: true, statusMenu: true, screenshotRoutes: 5, clickable: true, keyboard: true, stage: "a3", taskDisclosed: true, focusMoved: true, textAndOutlineMarker: true }, null, 2));
   await browser.close();
 })().catch((error) => {
   console.error(error.stack || error.message);
