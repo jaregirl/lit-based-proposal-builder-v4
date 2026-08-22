@@ -12,6 +12,11 @@ async function goToStage(page, stageId) {
   await page.waitForTimeout(50);
 }
 
+async function selectTask(page, index) {
+  await page.locator("#allTasksBtn").click();
+  await page.locator(`#allTaskList [data-focus-task="${index}"]`).click();
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -31,7 +36,7 @@ async function goToStage(page, stageId) {
   await goToStage(page, "details");
   assert(await page.getByText("Before You Begin: Privacy and Local Saving").count() === 1, "Privacy notice is missing from Student Details.");
   await page.locator('#stageForm input[data-work-arrangement][value="group"]').check();
-  await page.locator('.task-rail [data-focus-task="1"]').click();
+  await selectTask(page, 1);
   await page.locator('#stageForm [data-group-person-role="leader"][data-group-person-key="name"]').fill("Group Leader");
   await page.getByRole("button", { name: "Add Group Member" }).click();
   assert(await page.locator("#stageForm .group-person-card").count() === 2, "Group member card was not added.");
@@ -39,7 +44,7 @@ async function goToStage(page, stageId) {
   await page.locator('#stageForm [data-group-person-role="member"][data-group-person-key="name"]').fill("Member One");
 
   await goToStage(page, "a4");
-  await page.locator('.task-rail [data-focus-task="6"]').click();
+  await selectTask(page, 6);
   const questionInputs = page.locator('[data-array="a4.questions"]');
   await questionInputs.nth(0).fill("What is the level of assessment practice?");
   await page.locator(".question-card summary").nth(1).click();
@@ -52,10 +57,10 @@ async function goToStage(page, stageId) {
   await goToStage(page, "instrumentation");
   assert(await page.locator(".instrumentation-row").count() === 3, "Instrumentation did not create exactly one card per SRQ.");
   assert(await page.getByRole("button", { name: "Add Instrument Row" }).count() === 0, "Add Instrument Row is still present.");
-  await page.locator('.task-rail [data-focus-task="3"]').click();
+  await selectTask(page, 3);
   await page.locator('[data-table="instrumentation"][data-index="0"][data-key="instrument"]').fill("Survey questionnaire");
   await goToStage(page, "a4");
-  await page.locator('.task-rail [data-focus-task="6"]').click();
+  await selectTask(page, 6);
   await questionInputs.nth(0).fill("What is the reported level of assessment practice?");
   await page.locator('[data-move-question="0:down"]').click();
   await goToStage(page, "instrumentation");
@@ -63,14 +68,14 @@ async function goToStage(page, stageId) {
 
   await goToStage(page, "methodology");
   await page.locator('[data-methodology-selection="approach"]').selectOption("mixed");
-  await page.locator('.task-rail [data-focus-task="1"]').click();
+  await selectTask(page, 1);
   assert(await page.locator('[data-methodology-selection="design"] option').count() === 6, "Mixed-methods designs did not cascade.");
   await page.locator('[data-methodology-selection="design"]').selectOption("explanatorySequential");
   assert(await page.getByText("Requirements and assumptions").isVisible(), "Design-specific guidance is missing.");
   assert(await page.getByText("Mixed Methods Integration").count() === 1, "Mixed-methods integration fields are missing.");
 
   await goToStage(page, "ethics");
-  await page.locator('.task-rail [data-focus-task="5"]').click();
+  await selectTask(page, 5);
   await page.locator(".consent-preparation summary").click();
   await page.locator('select[data-ethics-document="humanParticipants"]').selectOption("yes");
   await page.locator(".consent-preparation summary").click();
@@ -95,7 +100,7 @@ async function goToStage(page, stageId) {
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await goToStage(page, "details");
-  await page.locator('.task-rail [data-focus-task="2"]').click();
+  await selectTask(page, 2);
   const adviserInput = page.locator('#stageForm [data-section="submission"][data-key="adviserName"]');
   await adviserInput.fill("Checkpoint Baseline");
   const saveCheckpoint = async () => {

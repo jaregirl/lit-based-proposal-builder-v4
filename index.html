@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260822-v484-status-menu" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260822-v484-declutter3" />
   </head>
   <body>
     <div class="app-shell">
@@ -36,6 +36,7 @@
               <div class="status-menu" id="statusMenu" role="menu" hidden>
                 <button type="button" role="menuitem" data-status-action="current">Check Current Step</button>
                 <button type="button" role="menuitem" data-status-action="issues">All Outstanding Issues</button>
+                <button type="button" role="menuitem" data-status-action="glance">Proposal at a Glance</button>
               </div>
             </div>
             <button class="icon-text-button" id="toolsBtn" type="button">Tools</button>
@@ -68,7 +69,6 @@
 
         <div class="focus-layout">
           <form id="stageForm" class="stage-form"></form>
-          <aside class="task-rail" id="taskRail" aria-label="Tasks in this stage"></aside>
         </div>
 
         <details class="app-feedback-panel">
@@ -81,10 +81,50 @@
         <footer class="footer-actions focused-actions">
           <button class="ghost" id="backBtn" type="button">Back</button>
           <button class="text-action" id="skipBtn" type="button">Skip for now</button>
-          <button class="ghost" id="allTasksBtn" type="button">All Tasks</button>
+          <button class="ghost" id="allTasksBtn" type="button">All Tasks for this step</button>
           <span class="footer-save-state" aria-hidden="true">Saved locally</span>
           <button class="primary" id="nextBtn" type="button">Continue</button>
         </footer>
+
+        <section class="proposal-glance-view" id="proposalGlanceView" aria-labelledby="proposalGlanceTitle" hidden>
+          <header class="proposal-glance-header">
+            <div>
+              <p class="stage-breadcrumb">Status · Proposal at a Glance</p>
+              <h1 id="proposalGlanceTitle" tabindex="-1">Proposal at a Glance</h1>
+              <p>Review how the main parts of your proposal connect. This view uses the responses you entered in the guided steps.</p>
+            </div>
+            <div class="proposal-glance-actions">
+              <button class="ghost" id="closeProposalGlanceBtn" type="button">Back to current task</button>
+              <button class="ghost" id="printProposalGlanceBtn" type="button">Print this view</button>
+            </div>
+          </header>
+          <p class="proposal-glance-notice">This view shows connections for review. It does not determine whether your proposal is academically aligned.</p>
+
+          <section class="proposal-glance-section" aria-labelledby="proposalLogicTitle">
+            <h2 id="proposalLogicTitle">1. Whole-proposal logic</h2>
+            <ol class="proposal-logic" id="proposalLogic"></ol>
+          </section>
+
+          <section class="proposal-glance-section" aria-labelledby="proposalAlignmentTitle">
+            <h2 id="proposalAlignmentTitle">2. Research-question alignment</h2>
+            <div class="proposal-alignment-scroll">
+              <table class="proposal-alignment-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Research question</th>
+                    <th scope="col">Intended claim</th>
+                    <th scope="col">Evidence needed and source</th>
+                    <th scope="col">Instrument or procedure</th>
+                    <th scope="col">Analysis</th>
+                  </tr>
+                </thead>
+                <tbody id="proposalAlignmentBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="proposal-summary-strip" id="proposalSummary" aria-label="Proposal scope and safeguards"></section>
+        </section>
       </main>
     </div>
 
@@ -325,6 +365,6 @@
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260813-v484-declarationfix1"></script>
-    <script src="app-upload.js?v=20260822-v484-status-menu"></script>
+    <script src="app-upload.js?v=20260822-v484-declutter2"></script>
   </body>
 </html>

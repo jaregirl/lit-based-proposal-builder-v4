@@ -1744,7 +1744,7 @@ dialog::backdrop {
 }
 
 .focus-support {
-  max-width: 780px;
+  max-width: 1180px;
   border: 0;
   border-left: 3px solid #5a9288;
   border-radius: 0 6px 6px 0;
@@ -1755,10 +1755,7 @@ dialog::backdrop {
 }
 
 .focus-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 250px;
-  gap: 28px;
-  align-items: start;
+  display: block;
 }
 
 .stage-form {
@@ -1802,7 +1799,7 @@ dialog::backdrop {
 
 .stage-form .focus-task-item.is-current-task {
   width: 100%;
-  max-width: 780px;
+  max-width: 1180px;
   grid-column: 1 / -1;
 }
 
@@ -1933,7 +1930,10 @@ dialog::backdrop {
 }
 
 .stage-form > .table-wrap > button[data-add-row] {
-  display: none;
+  display: inline-flex;
+  min-height: 38px;
+  margin-top: 12px;
+  align-items: center;
 }
 
 .stage-form .table-wrap,
@@ -1947,7 +1947,7 @@ dialog::backdrop {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   min-width: 0;
-  max-width: 780px;
+  max-width: 1180px;
   padding: clamp(18px, 3vw, 26px);
 }
 
@@ -2025,6 +2025,10 @@ dialog::backdrop {
 
 .focused-actions #nextBtn {
   min-width: 132px;
+}
+
+.all-tasks-compact-label {
+  display: none;
 }
 
 .journey-dialog {
@@ -2113,7 +2117,7 @@ dialog::backdrop {
 }
 
 .app-feedback-panel {
-  max-width: 900px;
+  max-width: 1180px;
 }
 
 .section-heading,
@@ -2365,8 +2369,7 @@ dialog::backdrop {
   }
 
   .focus-layout {
-    grid-template-columns: minmax(0, 1fr) 210px;
-    gap: 20px;
+    display: block;
   }
 }
 
@@ -2567,6 +2570,361 @@ dialog::backdrop {
   }
 }
 
+.workspace.glance-open {
+  width: min(1440px, calc(100% - 40px));
+}
+
+.workspace.glance-open > :not(#proposalGlanceView) {
+  display: none !important;
+}
+
+.proposal-glance-view {
+  display: grid;
+  gap: 26px;
+  width: 100%;
+  padding-bottom: 24px;
+}
+
+.proposal-glance-view[hidden] {
+  display: none;
+}
+
+.proposal-glance-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.proposal-glance-header > div:first-child {
+  max-width: 850px;
+}
+
+.proposal-glance-header .stage-breadcrumb {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.proposal-glance-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.15;
+}
+
+.proposal-glance-header p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.proposal-glance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.proposal-glance-notice {
+  margin: -10px 0 0;
+  border-left: 3px solid #8ba9a3;
+  padding: 10px 14px;
+  color: var(--muted);
+  background: #f7f9f8;
+  line-height: 1.45;
+}
+
+.proposal-glance-section {
+  display: grid;
+  gap: 12px;
+}
+
+.proposal-glance-section h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.proposal-logic {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(145px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 6px;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  list-style: none;
+}
+
+.proposal-logic-card {
+  display: flex;
+  min-height: 205px;
+  flex-direction: column;
+  border: 1px solid #cbd3d5;
+  border-radius: 5px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.proposal-logic-card h3 {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.proposal-logic-card p {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.proposal-source-link {
+  min-height: 30px;
+  margin-top: auto;
+  border: 0;
+  padding: 0;
+  color: var(--accent-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: left;
+  background: transparent;
+}
+
+.proposal-source-link:hover {
+  color: #173c36;
+  text-decoration: underline;
+  background: transparent;
+}
+
+.proposal-not-entered {
+  color: #7b8589;
+  font-style: italic;
+}
+
+.proposal-review-label {
+  display: block;
+  margin: 4px 0 6px;
+  color: #965f13;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.proposal-alignment-scroll {
+  overflow-x: auto;
+  border: 1px solid #cbd3d5;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.proposal-alignment-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.proposal-alignment-table th,
+.proposal-alignment-table td {
+  width: 20%;
+  border-right: 1px solid #d8dddf;
+  border-bottom: 1px solid #d8dddf;
+  padding: 13px 14px;
+  vertical-align: top;
+  text-align: left;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.proposal-alignment-table th:last-child,
+.proposal-alignment-table td:last-child {
+  border-right: 0;
+}
+
+.proposal-alignment-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.proposal-alignment-table th {
+  color: var(--ink);
+  background: #f7f8f7;
+  font-size: 0.82rem;
+}
+
+.proposal-alignment-table p {
+  margin: 0 0 8px;
+}
+
+.proposal-alignment-table .proposal-source-link {
+  display: block;
+  margin-top: 8px;
+}
+
+.proposal-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid #cbd3d5;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.proposal-summary-item {
+  min-width: 0;
+  border-right: 1px solid #d8dddf;
+  padding: 14px 16px;
+}
+
+.proposal-summary-item:last-child {
+  border-right: 0;
+}
+
+.proposal-summary-item h3 {
+  margin: 0 0 7px;
+  font-size: 0.86rem;
+}
+
+.proposal-summary-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1080px) {
+  .proposal-logic {
+    grid-template-columns: repeat(6, minmax(135px, 1fr));
+    gap: 7px;
+  }
+
+  .proposal-logic-card {
+    min-height: 180px;
+    padding: 10px;
+  }
+
+  .proposal-logic-card h3 {
+    font-size: clamp(0.72rem, 1.25vw, 0.84rem);
+  }
+
+  .proposal-logic-card p {
+    font-size: clamp(0.72rem, 1.2vw, 0.84rem);
+    line-height: 1.38;
+  }
+
+  .proposal-logic-card .proposal-source-link {
+    font-size: 0.72rem;
+  }
+
+  .proposal-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proposal-summary-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .proposal-summary-item:nth-child(n + 3) {
+    border-top: 1px solid #d8dddf;
+  }
+}
+
+@media (max-width: 640px) {
+  .all-tasks-full-label {
+    display: none;
+  }
+
+  .all-tasks-compact-label {
+    display: inline;
+  }
+
+  .workspace.glance-open {
+    width: calc(100% - 20px);
+  }
+
+  .proposal-glance-header {
+    display: grid;
+  }
+
+  .proposal-glance-actions {
+    justify-content: flex-start;
+  }
+
+  .proposal-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-logic {
+    grid-template-columns: repeat(6, minmax(220px, 1fr));
+  }
+
+  .proposal-logic-card {
+    min-height: 180px;
+  }
+
+  .proposal-alignment-scroll {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .proposal-alignment-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .proposal-alignment-table thead {
+    display: none;
+  }
+
+  .proposal-alignment-table tbody,
+  .proposal-alignment-table tr,
+  .proposal-alignment-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .proposal-alignment-table tr {
+    overflow: hidden;
+    border: 1px solid #cbd3d5;
+    border-radius: 5px;
+    background: #ffffff;
+  }
+
+  .proposal-alignment-table tr + tr {
+    margin-top: 12px;
+  }
+
+  .proposal-alignment-table td,
+  .proposal-alignment-table td:last-child {
+    border-right: 0;
+    border-bottom: 1px solid #d8dddf;
+    padding: 13px 14px;
+  }
+
+  .proposal-alignment-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .proposal-alignment-table td::before {
+    display: block;
+    margin-bottom: 8px;
+    content: attr(data-label);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .proposal-summary-item,
+  .proposal-summary-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .proposal-summary-item + .proposal-summary-item {
+    border-top: 1px solid #d8dddf;
+  }
+}
+
 @media print {
   body {
     background: #ffffff;
@@ -2592,6 +2950,67 @@ dialog::backdrop {
     width: auto;
     max-height: none;
     box-shadow: none;
+  }
+
+  body.printing-glance .app-shell,
+  body.printing-glance .workspace {
+    display: block !important;
+  }
+
+  body.printing-glance .journey-header,
+  body.printing-glance .workspace > :not(#proposalGlanceView),
+  body.printing-glance .proposal-glance-actions,
+  body.printing-glance .proposal-source-link {
+    display: none !important;
+  }
+
+  body.printing-glance .proposal-glance-view {
+    display: grid !important;
+    gap: 14pt;
+    padding: 0;
+    color: #000000;
+  }
+
+  body.printing-glance .proposal-glance-header h1 {
+    font-size: 20pt;
+  }
+
+  body.printing-glance .proposal-logic {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 5pt;
+    overflow: visible;
+  }
+
+  body.printing-glance .proposal-logic-card {
+    min-height: 0;
+    padding: 6pt;
+    break-inside: avoid;
+  }
+
+  body.printing-glance .proposal-logic-card h3,
+  body.printing-glance .proposal-logic-card p {
+    font-size: 7pt;
+    line-height: 1.25;
+  }
+
+  body.printing-glance .proposal-alignment-scroll {
+    overflow: visible;
+  }
+
+  body.printing-glance .proposal-alignment-table {
+    min-width: 0;
+    font-size: 8pt;
+  }
+
+  body.printing-glance .proposal-alignment-table th,
+  body.printing-glance .proposal-alignment-table td {
+    padding: 5pt;
+    font-size: 8pt;
+  }
+
+  body.printing-glance .proposal-summary-strip {
+    grid-template-columns: repeat(5, 1fr);
+    break-inside: avoid;
   }
 
   body.printing-submission .submission {

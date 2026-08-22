@@ -476,7 +476,7 @@ const els = {
   ,stageTaskCounter: document.getElementById("stageTaskCounter")
   ,taskEyebrow: document.getElementById("taskEyebrow")
   ,taskSupport: document.getElementById("taskSupport")
-  ,taskRail: document.getElementById("taskRail")
+  ,allTasksBtn: document.getElementById("allTasksBtn")
   ,allTaskList: document.getElementById("allTaskList")
   ,allTasksTitle: document.getElementById("allTasksTitle")
   ,autosaveStatus: document.getElementById("autosaveStatus")
@@ -486,6 +486,11 @@ const els = {
   ,exampleDialog: document.getElementById("exampleDialog")
   ,exampleDialogTitle: document.getElementById("exampleDialogTitle")
   ,exampleDialogBody: document.getElementById("exampleDialogBody")
+  ,workspace: document.querySelector(".workspace")
+  ,proposalGlanceView: document.getElementById("proposalGlanceView")
+  ,proposalLogic: document.getElementById("proposalLogic")
+  ,proposalAlignmentBody: document.getElementById("proposalAlignmentBody")
+  ,proposalSummary: document.getElementById("proposalSummary")
 };
 
 function clone(value) {
@@ -637,6 +642,7 @@ function normalizeState(nextState) {
   normalized.a4.questionClaims = normalized.a4.questions.map((_, index) => normalized.a4.questionClaims[index] || "");
   if (!Array.isArray(normalized.instrumentation.rows)) normalized.instrumentation.rows = clone(defaultData.instrumentation.rows);
   normalized.instrumentation.rows = normalized.instrumentation.rows.map(normalizeInstrumentRow);
+  migrateSharedQuestionClaims(normalized);
   if (!Array.isArray(normalized.terms.rows)) {
     const oldTerms = nextState.terms || {};
     normalized.terms.rows = [
@@ -666,6 +672,24 @@ function normalizeInstrumentRow(row = {}) {
     validation: row.validation || "",
     implementation: row.implementation || ""
   };
+}
+
+function migrateSharedQuestionClaims(normalized) {
+  const rows = normalized.instrumentation.rows;
+  const usedRows = new Set();
+  normalized.a4.questions.forEach((question, index) => {
+    const questionId = normalized.a4.questionIds[index];
+    let rowIndex = rows.findIndex((row, candidateIndex) => !usedRows.has(candidateIndex) && row.questionId && row.questionId === questionId);
+    if (rowIndex < 0 && question.trim()) {
+      rowIndex = rows.findIndex((row, candidateIndex) => !usedRows.has(candidateIndex) && row.rq.trim() === question.trim());
+    }
+    if (rowIndex < 0 && rows[index] && !usedRows.has(index)) rowIndex = index;
+    const row = rowIndex >= 0 ? rows[rowIndex] : null;
+    if (row) usedRows.add(rowIndex);
+    const sharedClaim = String(row?.claimNeeded || normalized.a4.questionClaims[index] || "");
+    normalized.a4.questionClaims[index] = sharedClaim;
+    if (row) row.claimNeeded = sharedClaim;
+  });
 }
 
 function migrateMethodologySelection(methodology) {
@@ -1095,6 +1119,7 @@ function closePhaseMenu({ restoreFocus = false } = {}) {
 
 function activateStage(stageId) {
   if (!stages.some((stage) => stage.id === stageId)) return;
+  if (els.proposalGlanceView && !els.proposalGlanceView.hidden) closeProposalGlance({ restoreFocus: false });
   state.currentStage = stageId;
   // Persist the selected step without refreshing the dashboard first. Older
   // migrated drafts may contain incomplete records, but that must never block
@@ -1505,13 +1530,6 @@ function applyFocusedStageLayout(stageId) {
   saveUiState();
 }
 
-function focusedCollectionAction(stageId) {
-  if (stageId === "a2") return { section: "a2Patterns", label: "+ Add pattern" };
-  if (stageId === "a3") return { section: "a3Gaps", label: "+ Add gap row" };
-  if (stageId === "terms") return { section: "terms", label: "+ Add term" };
-  return null;
-}
-
 function renderFocusedStageChrome(tasks, activeIndex) {
   const stage = stages[currentIndex()];
   const phase = activeJourneyPhase();
@@ -1522,9 +1540,10 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   els.taskEyebrow.textContent = task.label || copy.eyebrow || "Current task";
   els.stageTitle.textContent = task.title || copy.title || stage.title;
   els.taskSupport.textContent = task.support || copy.support || "Complete this task, then continue.";
-  const collectionAction = focusedCollectionAction(stage.id);
-  els.taskRail.innerHTML = `<div class="task-rail-heading"><span>${escapeHtml(stage.code)}</span><strong>${escapeHtml(stage.title)}</strong></div>${tasks.map((item, index) => `<button type="button" class="task-rail-item ${index === activeIndex ? "active" : ""}" data-focus-task="${index}"><span>${index + 1}</span><span>${escapeHtml(item.label || `Task ${index + 1}`)}</span></button>`).join("")}${collectionAction ? `<button type="button" class="task-rail-add" data-add-row="${collectionAction.section}">${collectionAction.label}</button>` : ""}`;
-  els.allTasksTitle.textContent = stage.title;
+  const allTasksLabel = `All Tasks for ${stage.title}`;
+  els.allTasksBtn.setAttribute("aria-label", allTasksLabel);
+  els.allTasksBtn.innerHTML = `<span class="all-tasks-full-label">${escapeHtml(allTasksLabel)}</span><span class="all-tasks-compact-label" aria-hidden="true">All ${escapeHtml(stage.code)} Tasks</span>`;
+  els.allTasksTitle.textContent = allTasksLabel;
   els.allTaskList.innerHTML = tasks.map((item, index) => `<button type="button" class="all-task-item ${index === activeIndex ? "active" : ""}" data-focus-task="${index}"><span class="task-number">${index + 1}</span><span><strong>${escapeHtml(item.label || `Task ${index + 1}`)}</strong><small>${escapeHtml(item.title || "")}</small></span></button>`).join("");
   document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
   document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
@@ -2357,6 +2376,21 @@ function renderInstrumentation() {
   `;
 }
 
+function instrumentationRowForQuestion(index) {
+  const questionId = state.a4.questionIds[index];
+  const question = String(state.a4.questions[index] || "").trim();
+  return state.instrumentation.rows.find((row) => row.questionId && row.questionId === questionId)
+    || state.instrumentation.rows.find((row) => question && row.rq.trim() === question)
+    || null;
+}
+
+function setSharedQuestionClaim(index, claim) {
+  if (!Number.isInteger(index) || index < 0 || index >= state.a4.questionClaims.length) return;
+  state.a4.questionClaims[index] = claim;
+  const row = instrumentationRowForQuestion(index);
+  if (row) row.claimNeeded = claim;
+}
+
 function syncInstrumentationRows() {
   const existingRows = state.instrumentation.rows.map(normalizeInstrumentRow);
   const byId = new Map(existingRows.filter((row) => row.questionId).map((row) => [row.questionId, row]));
@@ -2376,7 +2410,9 @@ function syncInstrumentationRows() {
           existing = existingRows[legacyIndex];
         }
       }
-      return { ...(existing || emptyRowFor("instrumentation")), questionId, rq: question };
+      const sharedClaim = state.a4.questionClaims[index] || existing?.claimNeeded || "";
+      state.a4.questionClaims[index] = sharedClaim;
+      return { ...(existing || emptyRowFor("instrumentation")), questionId, rq: question, claimNeeded: sharedClaim };
     });
 }
 
@@ -3667,7 +3703,9 @@ function issueTargetTaskIndex(stageId, selector) {
   if (!target) return -1;
   const wrapper = focusWrapper(target);
   const tasks = buildFocusedTasks(stageId).filter((task) => task.items?.length || task.roots?.length);
-  return tasks.findIndex((task) => uniqueNodes([...(task.roots || []), ...(task.items || [])]).some((node) => node === wrapper || node === target || node.contains(target)));
+  const directItemIndex = tasks.findIndex((task) => uniqueNodes(task.items || []).some((node) => node === wrapper || node === target || node.contains(target)));
+  if (directItemIndex >= 0) return directItemIndex;
+  return tasks.findIndex((task) => uniqueNodes(task.roots || []).some((node) => node === wrapper || node === target || node.contains(target)));
 }
 
 function markIssueTarget(selector) {
@@ -3802,6 +3840,130 @@ function showFeedback() {
   updateDashboard();
 }
 
+function proposalDisplayValue(value) {
+  const text = String(value || "").trim();
+  return text ? escapeHtml(text) : '<span class="proposal-not-entered">Not entered</span>';
+}
+
+function proposalSourceButton(stage, selector, label = "View source task") {
+  return `<button class="proposal-source-link" type="button" data-proposal-source-stage="${escapeHtml(stage)}" data-proposal-source-selector="${escapeHtml(encodeURIComponent(selector))}">${escapeHtml(label)}</button>`;
+}
+
+function proposalLogicCard(number, title, value, stage, selector) {
+  return `<li class="proposal-logic-card">
+    <h3>${number}. ${escapeHtml(title)}</h3>
+    <p>${proposalDisplayValue(value)}</p>
+    ${proposalSourceButton(stage, selector, value ? "View source task" : "Go to source task")}
+  </li>`;
+}
+
+function instrumentationRowForGlance(questionId, question, index) {
+  return state.instrumentation.rows.find((row) => row.questionId && row.questionId === questionId)
+    || state.instrumentation.rows.find((row) => question.trim() && row.rq.trim() === question.trim())
+    || state.instrumentation.rows[index]
+    || emptyRowFor("instrumentation");
+}
+
+function proposalTableCell(value, stage, selector, { incomplete = false, label = "" } = {}) {
+  return `<td data-label="${escapeHtml(label)}"><p>${proposalDisplayValue(value)}</p>${incomplete ? '<span class="proposal-review-label">Review alignment</span>' : ""}${proposalSourceButton(stage, selector, value ? "View source task" : "Go to source task")}</td>`;
+}
+
+function proposalEvidenceCell(row, instrumentationIndex, shouldReview) {
+  const evidence = String(row.evidenceNeeded || "").trim();
+  const source = String(row.evidenceSource || "").trim();
+  const content = evidence || source
+    ? `${evidence ? `<strong>Needed:</strong> ${escapeHtml(evidence)}` : '<strong>Needed:</strong> <span class="proposal-not-entered">Not entered</span>'}<br>${source ? `<strong>Source:</strong> ${escapeHtml(source)}` : '<strong>Source:</strong> <span class="proposal-not-entered">Not entered</span>'}`
+    : '<span class="proposal-not-entered">Not entered</span>';
+  return `<td data-label="Evidence needed and source"><p>${content}</p>${shouldReview && (!evidence || !source) ? '<span class="proposal-review-label">Review alignment</span>' : ""}${proposalSourceButton("instrumentation", `[data-table="instrumentation"][data-index="${instrumentationIndex}"][data-key="evidenceNeeded"]`, evidence || source ? "View source task" : "Go to source task")}</td>`;
+}
+
+function ethicsSummary() {
+  if (String(state.ethics.draft || "").trim()) return state.ethics.draft;
+  const selected = Object.entries(state.ethics.checks || {})
+    .filter(([, checked]) => checked)
+    .map(([name]) => name.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (letter) => letter.toUpperCase()));
+  return selected.join("; ");
+}
+
+function renderProposalGlance() {
+  syncInstrumentationRows();
+  const logic = [
+    ["Core construct", state.a1.coreConstruct, "a1", '[data-section="a1"][data-key="coreConstruct"]'],
+    ["Literature patterns", state.a2.synthesis, "a2", '[data-section="a2"][data-key="synthesis"]'],
+    ["Synthesized gap", state.a3.finalGap, "a3", '[data-section="a3"][data-key="finalGap"]'],
+    ["Literature-based problem", state.a4.literatureProblem, "a4", '[data-section="a4"][data-key="literatureProblem"]'],
+    ["Central question", state.a4.centralQuestion, "a4", '[data-section="a4"][data-key="centralQuestion"]'],
+    ["Research design", state.methodology.selectedDesign || state.methodology.design, "methodology", state.methodology.approach ? '[data-methodology-selection="design"]' : '[data-methodology-selection="approach"]']
+  ];
+  els.proposalLogic.innerHTML = logic.map(([title, value, stage, selector], index) => proposalLogicCard(index + 1, title, value, stage, selector)).join("");
+
+  const questionRows = state.a4.questions
+    .map((question, index) => ({ question: String(question || ""), index, questionId: state.a4.questionIds[index] }))
+    .filter(({ question }) => question.trim());
+  const rows = questionRows.length ? questionRows : [{ question: "", index: 0, questionId: state.a4.questionIds[0] }];
+  els.proposalAlignmentBody.innerHTML = rows.map(({ question, index, questionId }, displayIndex) => {
+    const row = instrumentationRowForGlance(questionId, question, index);
+    const instrumentationIndex = Math.max(0, state.instrumentation.rows.indexOf(row));
+    const claim = state.a4.questionClaims[index] || row.claimNeeded || "";
+    const incomplete = Boolean(question) && !claim;
+    return `<tr>
+      ${proposalTableCell(question ? `${displayIndex + 1}. ${question}` : "", "a4", `[data-array="a4.questions"][data-index="${index}"]`, { incomplete: !question, label: "Research question" })}
+      ${proposalTableCell(claim, "a4", `[data-question-claim="${index}"]`, { incomplete, label: "Intended claim" })}
+      ${proposalEvidenceCell(row, instrumentationIndex, Boolean(question))}
+      ${proposalTableCell(row.instrument, "instrumentation", `[data-table="instrumentation"][data-index="${instrumentationIndex}"][data-key="instrument"]`, { incomplete: Boolean(question) && !row.instrument, label: "Instrument or procedure" })}
+      ${proposalTableCell(row.analysis, "instrumentation", `[data-table="instrumentation"][data-index="${instrumentationIndex}"][data-key="analysis"]`, { incomplete: Boolean(question) && !row.analysis, label: "Analysis" })}
+    </tr>`;
+  }).join("");
+
+  const summaries = [
+    ["Framework", state.framework.theoryModel],
+    ["Participants", state.methodology.participants],
+    ["Setting", state.methodology.locale],
+    ["Scope", state.methodology.operationalDelimitations || state.framework.scopeBoundaries],
+    ["Ethics", ethicsSummary()]
+  ];
+  els.proposalSummary.innerHTML = summaries.map(([label, value]) => `<div class="proposal-summary-item"><h3>${escapeHtml(label)}</h3><p>${proposalDisplayValue(value)}</p></div>`).join("");
+}
+
+function openProposalGlance() {
+  closeStatusMenu();
+  document.getElementById("statusDialog")?.close();
+  renderProposalGlance();
+  els.workspace.classList.add("glance-open");
+  els.proposalGlanceView.hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("proposalGlanceTitle")?.focus({ preventScroll: true });
+}
+
+function closeProposalGlance({ restoreFocus = true } = {}) {
+  els.workspace.classList.remove("glance-open");
+  els.proposalGlanceView.hidden = true;
+  if (restoreFocus) document.getElementById("statusBtn")?.focus();
+}
+
+function focusProposalSource(stageId, selector) {
+  closeProposalGlance({ restoreFocus: false });
+  activateStage(stageId);
+  const taskIndex = issueTargetTaskIndex(stageId, selector);
+  if (taskIndex >= 0 && taskIndex !== activeTaskIndex(stageId)) {
+    setActiveTask(stageId, taskIndex, buildFocusedTasks(stageId).length);
+    renderStage();
+  }
+  requestAnimationFrame(() => {
+    const control = document.querySelector(selector);
+    if (!control) return;
+    const target = focusWrapper(control);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    control.focus({ preventScroll: true });
+  });
+}
+
+function printProposalGlance() {
+  document.body.classList.add("printing-glance");
+  window.print();
+  window.setTimeout(() => document.body.classList.remove("printing-glance"), 300);
+}
+
 function closeStatusMenu({ restoreFocus = false } = {}) {
   const menu = document.getElementById("statusMenu");
   const button = document.getElementById("statusBtn");
@@ -3841,6 +4003,10 @@ function handleStatusMenuKeydown(event) {
 }
 
 function openStatusDialog(mode) {
+  if (mode === "glance") {
+    openProposalGlance();
+    return;
+  }
   const dialog = document.getElementById("statusDialog");
   const title = document.getElementById("statusDialogTitle");
   const eyebrow = document.getElementById("statusDialogEyebrow");
@@ -4840,7 +5006,7 @@ function attachEvents() {
       saveState();
     }
     if (target.dataset.questionClaim !== undefined) {
-      state.a4.questionClaims[Number(target.dataset.questionClaim)] = target.value;
+      setSharedQuestionClaim(Number(target.dataset.questionClaim), target.value);
       markContentEdit();
       saveState();
     }
@@ -4855,6 +5021,11 @@ function attachEvents() {
     if (target.dataset.table) {
       const collection = getTableRows(target.dataset.table);
       collection[Number(target.dataset.index)][target.dataset.key] = target.value;
+      if (target.dataset.table === "instrumentation" && target.dataset.key === "claimNeeded") {
+        const row = collection[Number(target.dataset.index)];
+        const questionIndex = state.a4.questionIds.indexOf(row.questionId);
+        if (questionIndex >= 0) setSharedQuestionClaim(questionIndex, target.value);
+      }
       markContentEdit();
       saveState();
       if (target.dataset.table === "terms") {
@@ -5001,7 +5172,7 @@ function attachEvents() {
       return;
     }
     if (target.dataset.focusTask !== undefined) {
-      const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+      const taskCount = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length).length;
       setActiveTask(state.currentStage, Number(target.dataset.focusTask), taskCount);
       document.getElementById("allTasksDialog")?.close();
       renderStage();
@@ -5133,7 +5304,7 @@ function attachEvents() {
   }
 
   document.getElementById("backBtn").addEventListener("click", () => {
-    const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+    const taskCount = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length).length;
     const taskIndex = activeTaskIndex(state.currentStage, taskCount);
     if (taskIndex > 0) {
       setActiveTask(state.currentStage, taskIndex - 1, taskCount);
@@ -5147,7 +5318,7 @@ function attachEvents() {
   });
 
   document.getElementById("nextBtn").addEventListener("click", () => {
-    const taskCount = els.taskRail.querySelectorAll("[data-focus-task]").length;
+    const taskCount = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length).length;
     const taskIndex = activeTaskIndex(state.currentStage, taskCount);
     if (taskIndex < taskCount - 1) {
       setActiveTask(state.currentStage, taskIndex + 1, taskCount);
@@ -5197,6 +5368,15 @@ function attachEvents() {
     const returnTarget = document.getElementById("statusDialog")._returnFocusElement;
     if (returnTarget?.isConnected) returnTarget.focus();
   });
+  document.getElementById("closeProposalGlanceBtn").addEventListener("click", () => closeProposalGlance());
+  document.getElementById("printProposalGlanceBtn").addEventListener("click", printProposalGlance);
+  els.proposalGlanceView.addEventListener("click", (event) => {
+    const source = event.target.closest?.("[data-proposal-source-stage]");
+    if (!source) return;
+    const selector = decodeURIComponent(source.dataset.proposalSourceSelector || "");
+    if (selector) focusProposalSource(source.dataset.proposalSourceStage, selector);
+  });
+  window.addEventListener("afterprint", () => document.body.classList.remove("printing-glance"));
   document.getElementById("toolsBtn").addEventListener("click", () => {
     closeStatusMenu();
     document.getElementById("toolsDialog").showModal();

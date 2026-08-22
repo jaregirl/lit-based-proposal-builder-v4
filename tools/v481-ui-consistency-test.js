@@ -13,6 +13,11 @@ async function openStage(page, phaseId, stageId) {
   await page.waitForTimeout(80);
 }
 
+async function selectTask(page, label) {
+  await page.locator("#allTasksBtn").click();
+  await page.locator("#allTaskList .all-task-item", { hasText: label }).click();
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -79,8 +84,8 @@ async function openStage(page, phaseId, stageId) {
   await page.getByRole("button", { name: "Return to my answer" }).click();
   assert(await contextAnswer.inputValue() === "My mapped response must remain unchanged.", "Opening the example changed the student's response.");
   assert(await contextExample.evaluate((button) => document.activeElement === button), "Focus did not return to the example control.");
-  assert(await page.locator('#taskRail [data-add-row="a2Patterns"]').isVisible(), "Desktop Add Pattern control is missing.");
-  await page.locator('#taskRail [data-add-row="a2Patterns"]').click();
+  assert(await page.locator('#stageForm [data-add-row="a2Patterns"]').isVisible(), "Desktop Add Pattern control is missing.");
+  await page.locator('#stageForm [data-add-row="a2Patterns"]').click();
   assert(await page.locator(".a2Patterns-row").count() === 8, "Add Pattern did not create a row.");
   assert(await page.locator('.a2Patterns-row.additional-row [data-remove-row]').count() === 1, "Added A2 row is not removable.");
   await page.locator('.a2Patterns-row.additional-row textarea[data-key="type"]').fill("Additional pattern");
@@ -90,7 +95,7 @@ async function openStage(page, phaseId, stageId) {
   await openStage(page, "foundations", "a3");
   assert(await page.locator(".a3Gaps-row.protected-standard-row").count() === 7, "A3 standard rows are not protected.");
   assert(await page.locator('button[data-example-stage="a3"]').count() === 9, "A3 example controls are incomplete.");
-  await page.locator('#taskRail .task-rail-item', { hasText: "Compare gaps" }).click();
+  await selectTask(page, "Compare gaps");
   assert(await page.locator("[data-gap-decision]").count() === 7, "Gap comparison choices are incomplete.");
   await page.locator("[data-gap-route]").selectOption("synthesis");
   await page.locator('[data-gap-decision="Context"]').selectOption("related");
@@ -99,7 +104,8 @@ async function openStage(page, phaseId, stageId) {
   await page.locator('[data-synthesis-check="supported"]').check();
   await page.locator('[data-synthesis-check="manageable"]').check();
   assert(await page.getByText(/Synthesis is warranted by your three checks/).isVisible(), "Synthesis readiness did not appear.");
-  await page.locator("#taskRail .task-rail-item").first().click();
+  await page.locator("#allTasksBtn").click();
+  await page.locator("#allTaskList .all-task-item").first().click();
   const containment = await page.locator(".a3Gaps-row:not([hidden])").evaluate((row) => {
     const gap = row.querySelector('[data-key="gap"]');
     const rowRect = row.getBoundingClientRect();

@@ -29,7 +29,8 @@ function assert(condition, message) {
   assert(await page.locator(".journey-header").isVisible(), "Journey header is missing.");
   assert(await page.locator(".phase-step").count() === 4, "Four journey phases were not rendered.");
   assert(await page.locator("#stageTaskCounter").innerText() === "Task 1 of 4", "Student Details task count is incorrect.");
-  assert(await page.locator("#taskRail .task-rail-item.active").count() === 1, "Exactly one task should be active.");
+  assert(await page.locator("#taskRail").count() === 0, "The duplicate task rail is still present.");
+  assert((await page.locator("#allTasksBtn").innerText()) === "All Tasks for Student Details", "All Tasks does not identify its current builder.");
   assert(await page.locator("#stageForm [data-section='submission'][data-key='degreeLevel']").isVisible(), "The first Student Details task is not visible.");
 
   const firstTitle = await page.locator("#stageTitle").innerText();
@@ -90,7 +91,7 @@ function assert(condition, message) {
   }));
   if (mobileOverflow.scrollWidth > mobileOverflow.viewport + 1) console.log(JSON.stringify({ mobileOverflow }, null, 2));
   assert(mobileOverflow.scrollWidth <= mobileOverflow.viewport + 1, "Mobile layout has horizontal overflow.");
-  assert(!(await page.locator("#taskRail").isVisible()), "Task rail should be hidden on mobile.");
+  assert(await page.locator("#taskRail").count() === 0, "Task rail should not exist on mobile.");
   assert(await page.locator("#nextBtn").isVisible(), "Primary Continue action is not visible on mobile.");
 
   assert(pageErrors.length === 0, `Page errors: ${pageErrors.join(" | ")}`);

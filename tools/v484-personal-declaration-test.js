@@ -9,7 +9,8 @@ function assert(condition, message) {
 async function openDeclarationTask(page) {
   await page.evaluate(() => document.querySelector('[data-stage="details"]')?.click());
   await page.waitForTimeout(80);
-  const declarationTask = page.locator('#taskRail [data-focus-task="3"]');
+  await page.locator("#allTasksBtn").click();
+  const declarationTask = page.locator('#allTaskList [data-focus-task="3"]');
   assert(await declarationTask.count() === 1, "Personal declaration task is missing.");
   await declarationTask.click();
 }
