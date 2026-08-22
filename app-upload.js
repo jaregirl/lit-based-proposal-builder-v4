@@ -3470,6 +3470,243 @@ function readinessReport() {
   return { score, label, items };
 }
 
+function readinessIssueDestination(item = {}) {
+  if (item.destination?.stage) return item.destination;
+  const text = String(item.text || "");
+  const lower = text.toLowerCase();
+  const srqMatch = text.match(/(?:SRQ|Question)\s+(\d+)/i);
+  const rowIndex = Math.max(0, Number(srqMatch?.[1] || 1) - 1);
+  const sectionField = (stage, section, key) => ({ stage, selector: `[data-section="${section}"][data-key="${key}"]` });
+  const tableField = (stage, table, key) => ({ stage, selector: `[data-table="${table}"][data-index="${rowIndex}"][data-key="${key}"]` });
+
+  if (item.sourceStage === "details") {
+    if (lower.includes("research level") || lower.includes("use context")) return sectionField("details", "submission", "degreeLevel");
+    if (lower.includes("student name")) return sectionField("details", "submission", "studentName");
+    if (lower.includes("course")) return sectionField("details", "submission", "course");
+    if (lower.includes("date")) return sectionField("details", "submission", "submissionDate");
+    return sectionField("details", "submission", "initialReadiness");
+  }
+  if (item.sourceStage === "a1") {
+    const key = lower.includes("initial topic") ? "initialTopic" : lower.includes("major nouns") ? "majorNouns" : lower.includes("15-page") ? "fifteenPageTest" : lower.includes("rrl majority") ? "rrlMajorityTest" : "coreConstruct";
+    return sectionField("a1", "a1", key);
+  }
+  if (item.sourceStage === "a2") {
+    if (lower.includes("complete a1")) return sectionField("a1", "a1", "coreConstruct");
+    if (lower.includes("synthesis")) return sectionField("a2", "a2", "synthesis");
+    const patternIndex = state.a2.patterns.findIndex((row) => lower.startsWith(String(row.type || "").toLowerCase()));
+    const index = patternIndex >= 0 ? patternIndex : Math.max(0, state.a2.patterns.findIndex((row) => !row.notice));
+    const key = lower.includes("authors") ? "authors" : lower.includes("years") ? "years" : "notice";
+    return { stage: "a2", selector: `[data-table="a2Patterns"][data-index="${index}"][data-key="${key}"]` };
+  }
+  if (item.sourceStage === "a3") {
+    if (lower.includes("strongest gap")) return sectionField("a3", "a3", "strongestGap");
+    if (lower.includes("weakest gap")) return sectionField("a3", "a3", "weakestGap");
+    if (lower.includes("selection") || lower.includes("stronger")) return sectionField("a3", "a3", "selectionReason");
+    if (lower.includes("final gap")) return sectionField("a3", "a3", "finalGap");
+    const gapIndex = Math.max(0, state.a3.gaps.findIndex((row) => lower.startsWith(String(row.type || "").toLowerCase())));
+    return { stage: "a3", selector: `[data-table="a3Gaps"][data-index="${gapIndex}"][data-key="${lower.includes("limits") || lower.includes("limitation") ? "limits" : "lessVisible"}"]` };
+  }
+  if (item.sourceStage === "a4") {
+    if (lower.includes("complete a3")) return sectionField("a3", "a3", "finalGap");
+    if (lower.includes("literature-based problem") || lower.includes("problem statement")) return sectionField("a4", "a4", "literatureProblem");
+    if (lower.includes("central study focus") || lower.includes("phenomenon, relationship")) return sectionField("a4", "a4", "centralFocus");
+    if (lower.includes("study components") || lower.includes("dimensions, variables")) return sectionField("a4", "a4", "studyComponents");
+    if (lower.includes("environment") || lower.includes("setting")) return sectionField("methodology", "methodology", "locale");
+    if (lower.includes("broad inquiry purpose")) return sectionField("a4", "a4", "centralPurpose");
+    if (lower.includes("central research question") || lower.includes("crq")) return sectionField("a4", "a4", "centralQuestion");
+    if (lower.includes("gap wording")) return sectionField("a4", "a4", "gapRevisionReason");
+    if (lower.includes("core construct")) return sectionField("a4", "a4", "rqConstructs");
+    if (lower.includes("add 3-7 srqs")) return { stage: "a4", selector: '[data-array="a4.questions"][data-index="0"]' };
+  }
+  if (item.sourceStage === "methodology") {
+    if (lower.includes("broad evidence approach")) return { stage: "methodology", selector: '[data-methodology-selection="approach"]' };
+    if (lower.includes("design") || lower.includes("approach is consistent")) return { stage: "methodology", selector: state.methodology.approach ? '[data-methodology-selection="design"]' : '[data-methodology-selection="approach"]' };
+    if (lower.includes("participants")) return sectionField("methodology", "methodology", "participants");
+    if (lower.includes("environment") || lower.includes("setting")) return sectionField("methodology", "methodology", "locale");
+    if (lower.includes("evidence sources")) return sectionField("methodology", "methodology", "evidenceSources");
+    if (lower.includes("study period")) return sectionField("methodology", "methodology", "studyPeriod");
+    if (lower.includes("delimitations")) return sectionField("methodology", "methodology", "operationalDelimitations");
+    if (lower.includes("collection")) return sectionField("methodology", "methodology", "collection");
+    if (lower.includes("analysis")) return sectionField("methodology", "methodology", "analysis");
+  }
+  if (item.sourceStage === "ethics") {
+    if (lower.includes("safeguards")) return { stage: "ethics", selector: "[data-ethics-check]" };
+    if (lower.includes("permission")) return sectionField("ethics", "ethics", "permissions");
+    if (lower.includes("consent") || lower.includes("withdraw")) return sectionField("ethics", "ethics", "consentPlan");
+    if (lower.includes("storage") || lower.includes("retention") || lower.includes("disposal")) return sectionField("ethics", "ethics", "storagePlan");
+    if (lower.includes("recording") || lower.includes("ai tool")) return sectionField("ethics", "ethics", "recordingAiUse");
+    if (lower.includes("language") || lower.includes("cultural")) return sectionField("ethics", "ethics", "cultureLanguage");
+    return sectionField("ethics", "ethics", "draft");
+  }
+  if (item.sourceStage === "instrumentation") {
+    const instrumentRowMatch = text.match(/(?:Row|SRQ)\s+(\d+)/i);
+    const instrumentIndex = Math.max(0, Number(instrumentRowMatch?.[1] || 1) - 1);
+    if (lower.includes("research question")) return { stage: "a4", selector: `[data-array="a4.questions"][data-index="${instrumentIndex}"]` };
+    const key = lower.includes("intended claim") ? "claimNeeded" : lower.includes("evidence needed") ? "evidenceNeeded" : lower.includes("evidence source") ? "evidenceSource" : lower.includes("analysis") ? "analysis" : lower.includes("description") ? "description" : lower.includes("purpose") ? "purpose" : lower.includes("validation") || lower.includes("reliability") || lower.includes("trustworthiness") ? "validation" : lower.includes("implementation") ? "implementation" : "instrument";
+    return { stage: "instrumentation", selector: `[data-table="instrumentation"][data-index="${instrumentIndex}"][data-key="${key}"]` };
+  }
+  if (item.sourceStage === "submission") {
+    return sectionField("submission", "submission", lower.includes("changed") ? "readinessChange" : "confidence");
+  }
+
+  const researchLevelField = fieldSets.researchLevel.find(([, label]) => lower.startsWith(String(label).toLowerCase()));
+  if (researchLevelField) return sectionField("researchLevel", "researchLevel", researchLevelField[0]);
+
+  if (lower.includes("core construct to literature patterns")) return tableField("a2", "a2Patterns", "notice");
+  if (lower.includes("patterns to gap")) return sectionField("a3", "a3", "finalGap");
+  if (lower.includes("gap to problem")) return sectionField("a4", "a4", "literatureProblem");
+  if (lower.includes("problem to questions")) return sectionField("a4", "a4", "centralQuestion");
+  if (lower.includes("central focus and study components")) return sectionField("a4", "a4", "centralFocus");
+  if (lower.includes("central phenomenon or relationship") && lower.includes("components")) return sectionField("a4", "a4", "centralFocus");
+  if (lower.includes("research environment and evidence sources")) return sectionField("methodology", "methodology", "locale");
+  if (lower.includes("ethics to participants")) return sectionField("ethics", "ethics", "participantAge");
+
+  if (/research level readiness|degree-level|school-level feasibility|responsibility and autonomy|knowledge and understanding|skills and application|pqf level/.test(lower)) {
+    if (/independ|judgment|leadership|autonomy/.test(lower)) return sectionField("researchLevel", "researchLevel", "independentDecisions");
+    if (/original contribution|knowledge or framework|synthesis of literature|literature, local context/.test(lower)) return sectionField("researchLevel", "researchLevel", "scholarlyContribution");
+    if (/design|method|instrument|analysis/.test(lower)) return sectionField("researchLevel", "researchLevel", "designJustification");
+    return sectionField("researchLevel", "researchLevel", "guidedApplication");
+  }
+
+  if (/construct or variable load|conceptual scope|included and excluded constructs|question purposes are focused|many question purposes/.test(lower)) return sectionField("framework", "framework", "scopeBoundaries");
+  if (/more instruments than research questions|instrument count/.test(lower)) return tableField("instrumentation", "instrumentation", "instrument");
+
+  if (/framework|theor|possible explanations|research pathway/.test(lower)) {
+    if (/source|author|year|reference/.test(lower)) return sectionField("framework", "frameworkFinder", "frameworkSource");
+    if (/candidate/.test(lower)) return sectionField("framework", "frameworkFinder", "candidateFrameworks");
+    if (/alternative|selection/.test(lower)) return sectionField("framework", "frameworkFinder", "selectionReason");
+    if (/distinct role/.test(lower)) return sectionField("framework", "frameworkFinder", "frameworkRoles");
+    if (/combination/.test(lower)) return sectionField("framework", "frameworkFinder", "combinationReason");
+    if (/method fit|framework-method/.test(lower)) return sectionField("framework", "frameworkFinder", "methodFit");
+    if (/problem|questions/.test(lower)) return sectionField("framework", "framework", "problemConnection");
+    if (/evidence|interpretation|analytical work/.test(lower)) return sectionField("framework", "framework", "instrumentConnection");
+    if (/named|explanatory concept/.test(lower)) return sectionField("framework", "framework", "theoryModel");
+    return sectionField("framework", "frameworkFinder", "literatureSignals");
+  }
+
+  if (/mixed methods|quantitative strand|qualitative strand|integration point|integration purpose/.test(lower)) {
+    const key = lower.includes("quantitative strand") ? "quantStrand" : lower.includes("qualitative strand") ? "qualStrand" : lower.includes("integration point") ? "integrationPoint" : "integrationPurpose";
+    return sectionField("methodology", "mixedMethods", key);
+  }
+
+  if (/analysis plan|data analysis|matching analysis/.test(lower)) return sectionField("methodology", "methodology", "analysis");
+  if (/selected design|research design|question-design/.test(lower)) return { stage: "methodology", selector: state.methodology.approach ? "[data-methodology-selection=\"design\"]" : "[data-methodology-selection=\"approach\"]" };
+  if (/evidence approach/.test(lower)) return { stage: "methodology", selector: "[data-methodology-selection=\"approach\"]" };
+  if (/participants/.test(lower) && !/term/.test(lower)) return sectionField("methodology", "methodology", "participants");
+  if (/environment|setting|locale/.test(lower)) return sectionField("methodology", "methodology", "locale");
+  if (/evidence sources/.test(lower)) return sectionField("methodology", "methodology", "evidenceSources");
+
+  if (/no selected purpose|needs an inquiry purpose/.test(lower)) return { stage: "a4", selector: `[data-question-purpose="${rowIndex}"]` };
+  if (/instrument|evidence chain|intended claim|data source|observable|self-reports|what is taught|expectations claim/.test(lower)) {
+    const key = /analysis/.test(lower) ? "analysis" : /claim/.test(lower) ? "claimNeeded" : /evidence source|data source|observable|self-reports|what is taught|expectations/.test(lower) ? "evidenceSource" : "instrument";
+    return tableField("instrumentation", "instrumentation", key);
+  }
+
+  if (/term \d+|key term|conceptual definition|operational definition|measurement, observation/.test(lower)) {
+    const termMatch = text.match(/Term\s+(\d+)/i);
+    const termIndex = Math.max(0, Number(termMatch?.[1] || 1) - 1);
+    const key = /conceptual|author|year/.test(lower) ? "conceptual" : /operational/.test(lower) ? "operational" : /measurement|observation|identification/.test(lower) ? "measured" : "term";
+    return { stage: "terms", selector: `[data-table="terms"][data-index="${termIndex}"][data-key="${key}"]` };
+  }
+
+  if (/central question|coverage|specific research question|srq|question \d+/.test(lower)) {
+    if (/specific focus/.test(lower)) return { stage: "a4", selector: `[data-question-focus="${rowIndex}"]` };
+    if (/purpose/.test(lower)) return { stage: "a4", selector: `[data-question-purpose="${rowIndex}"]` };
+    if (/intended claim/.test(lower)) return { stage: "a4", selector: `[data-question-claim="${rowIndex}"]` };
+    if (srqMatch) return { stage: "a4", selector: `[data-array="a4.questions"][data-index="${rowIndex}"]` };
+    return sectionField("a4", "a4", "centralQuestion");
+  }
+
+  if (item.sourceStage === "methodology") return sectionField("methodology", "methodology", "purpose");
+  if (item.sourceStage === "ethics") return sectionField("ethics", "ethics", "draft");
+  if (item.sourceStage === "instrumentation") return tableField("instrumentation", "instrumentation", "instrument");
+  if (item.sourceStage === "terms") return { stage: "terms", selector: '[data-table="terms"][data-index="0"][data-key="term"]' };
+  if (item.sourceStage && stages.some((stage) => stage.id === item.sourceStage)) return { stage: item.sourceStage, selector: "input, textarea, select, button" };
+  return { stage: "readiness", selector: ".feedback-item" };
+}
+
+function outstandingIssues() {
+  const checkedStages = ["details", "a1", "a2", "a3", "a4", "framework", "methodology", "ethics", "instrumentation", "terms", "researchLevel", "submission"];
+  const candidates = checkedStages.flatMap((stageId) => runChecks(stageId)
+    .filter((item) => item.level !== "green")
+    .map((item) => ({ ...item, sourceStage: stageId })));
+  candidates.push(...readinessReport().items
+    .filter((item) => item.level !== "green")
+    .map((item) => ({ ...item, sourceStage: "readiness" })));
+  const seen = new Set();
+  return candidates.filter((item) => {
+    const key = String(item.text || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function issueDestinationLabel(item) {
+  const destination = readinessIssueDestination(item);
+  const labels = {
+    details: "Student Details",
+    a1: "A1",
+    a2: "A2",
+    a3: "A3",
+    a4: "A4",
+    framework: "Framework",
+    methodology: "Methodology",
+    ethics: "Ethics",
+    instrumentation: "Instrumentation",
+    terms: "Terms",
+    researchLevel: "Research Level",
+    submission: "Submission",
+    readiness: "Readiness"
+  };
+  return labels[destination.stage] || stages.find((stage) => stage.id === destination.stage)?.title || "Check";
+}
+
+function issueTargetTaskIndex(stageId, selector) {
+  const target = els.stageForm.querySelector(selector);
+  if (!target) return -1;
+  const wrapper = focusWrapper(target);
+  const tasks = buildFocusedTasks(stageId).filter((task) => task.items?.length || task.roots?.length);
+  return tasks.findIndex((task) => uniqueNodes([...(task.roots || []), ...(task.items || [])]).some((node) => node === wrapper || node === target || node.contains(target)));
+}
+
+function markIssueTarget(selector) {
+  els.stageForm.querySelectorAll(".needs-attention-target").forEach((node) => node.classList.remove("needs-attention-target"));
+  els.stageForm.querySelectorAll(".needs-attention-label").forEach((node) => node.remove());
+  const control = els.stageForm.querySelector(selector);
+  const target = focusWrapper(control) || control || els.stageForm;
+  target.classList.add("needs-attention-target");
+  const marker = document.createElement("span");
+  marker.className = "needs-attention-label";
+  marker.textContent = "Needs attention";
+  marker.setAttribute("role", "status");
+  target.insertAdjacentElement("afterbegin", marker);
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  const focusTarget = control?.matches?.("input, textarea, select, button, [tabindex]") ? control : target;
+  if (!focusTarget.hasAttribute("tabindex") && focusTarget === target) focusTarget.setAttribute("tabindex", "-1");
+  focusTarget.focus({ preventScroll: true });
+  window.setTimeout(() => {
+    if (!target.isConnected) return;
+    target.classList.remove("needs-attention-target");
+    marker.remove();
+  }, 10000);
+}
+
+function openOutstandingIssue(index) {
+  const issues = outstandingIssues();
+  const issue = issues[Number(index)];
+  if (!issue) return;
+  const destination = readinessIssueDestination(issue);
+  document.getElementById("statusDialog")?.close();
+  activateStage(destination.stage);
+  const taskIndex = issueTargetTaskIndex(destination.stage, destination.selector);
+  if (taskIndex >= 0 && taskIndex !== activeTaskIndex(destination.stage)) {
+    setActiveTask(destination.stage, taskIndex, buildFocusedTasks(destination.stage).length);
+    renderStage();
+  }
+  requestAnimationFrame(() => markIssueTarget(destination.selector));
+}
+
 function stageCompletion(stageId) {
   const section = state[stageId] || {};
   if (stageId === "details") {
@@ -3553,8 +3790,10 @@ function updateDashboard() {
   els.completionBar.style.width = `${completion}%`;
   els.alignmentScore.textContent = score;
   updateActiveTimeDisplay();
-  const issues = readinessReport().items.filter((item) => item.level !== "green").slice(0, 5);
-  els.issueList.innerHTML = issues.length ? issues.map((item) => `<li>${escapeHtml(item.text)}</li>`).join("") : "<li>No major alignment issues detected.</li>";
+  const issues = outstandingIssues();
+  els.issueList.innerHTML = issues.length ? issues.map((item, index) => {
+    return `<li><button type="button" class="issue-link ${escapeHtml(item.level)}" data-issue-index="${index}"><span class="issue-link-status">${escapeHtml(issueDestinationLabel(item))} · Needs attention</span><span>${escapeHtml(item.text)}</span><span class="issue-link-action">Review this issue</span></button></li>`;
+  }).join("") : "<li>No unfinished or misaligned items detected.</li>";
 }
 
 function showFeedback() {
@@ -4696,6 +4935,10 @@ function attachEvents() {
     }
     if (target.id === "closeExampleDialogBtn" || target.id === "returnFromExampleBtn") {
       els.exampleDialog?.close();
+      return;
+    }
+    if (target.dataset.issueIndex !== undefined) {
+      openOutstandingIssue(target.dataset.issueIndex);
       return;
     }
     if (target.dataset.focusTask !== undefined) {

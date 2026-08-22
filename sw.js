@@ -1,10 +1,10 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-declarationfix1";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-clickable-issues1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20260813-v484-declarationfix1",
+  "./styles-upload.css?v=20260822-v484-clickable-issues",
   "./example-guidance.js?v=20260813-v484-declarationfix1",
-  "./app-upload.js?v=20260813-v484-declarationfix1",
+  "./app-upload.js?v=20260822-v484-clickable-issues",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",

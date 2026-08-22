@@ -187,6 +187,87 @@ button.compact {
   font-size: 0.9rem;
 }
 
+#issueList {
+  display: grid;
+  gap: 9px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.issue-link {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warn);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fffdf7;
+  color: var(--ink);
+  text-align: left;
+  line-height: 1.4;
+}
+
+.issue-link.red {
+  border-left-color: var(--danger);
+}
+
+.issue-link:hover,
+.issue-link:focus-visible {
+  border-color: #936018;
+  color: var(--ink);
+  background: #f6ead4;
+  outline: 3px solid rgba(183, 121, 31, 0.24);
+  outline-offset: 2px;
+}
+
+.issue-link.red:hover,
+.issue-link.red:focus-visible {
+  border-color: var(--danger);
+  background: #faeaea;
+  outline-color: rgba(178, 59, 59, 0.22);
+}
+
+.issue-link-status,
+.issue-link-action,
+.needs-attention-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.issue-link-status {
+  color: #8a5400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.issue-link.red .issue-link-status {
+  color: var(--danger);
+}
+
+.issue-link-action {
+  color: var(--accent-dark);
+}
+
+.needs-attention-target {
+  position: relative;
+  border-radius: 6px;
+  outline: 3px solid var(--danger);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 7px rgba(164, 48, 48, 0.12);
+}
+
+.needs-attention-label {
+  display: block;
+  width: fit-content;
+  margin: 0 0 8px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--danger);
+  color: #fff;
+}
+
 .dashboard strong {
   display: block;
   margin-top: 3px;
