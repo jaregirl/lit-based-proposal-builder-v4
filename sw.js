@@ -1,10 +1,10 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-declutter3";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-team-contribution1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles-upload.css?v=20260822-v484-declutter3",
   "./example-guidance.js?v=20260813-v484-declarationfix1",
-  "./app-upload.js?v=20260822-v484-declutter2",
+  "./app-upload.js?v=20260827-v484-team-contribution1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",

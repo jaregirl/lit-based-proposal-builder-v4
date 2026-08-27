@@ -49,9 +49,25 @@ async function chooseFoundationStep(page, stageId) {
   assert(await page.locator("#exampleDialog").isVisible(), "A2 example pop-up did not open.");
   await page.getByRole("button", { name: "Return to my answer" }).click();
 
+  await chooseFoundationStep(page, "details");
+  const groupArrangement = page.locator('input[data-work-arrangement][value="group"]:visible');
+  await groupArrangement.check();
+  assert(await groupArrangement.isChecked(), "Group work arrangement was not selected before the navigation test.");
   await chooseFoundationStep(page, "a3");
   assert((await page.locator("#stageBreadcrumb").innerText()).includes("From Patterns to Gaps"), "A3 did not open.");
   assert(await page.locator("#phaseMenu").isHidden(), "Foundations menu remained open after choosing A3.");
+
+  await page.locator("#allTasksBtn").click();
+  const teamContributionTask = page.locator('#allTaskList [data-focus-task]').filter({ hasText: "Team contribution" });
+  assert(await teamContributionTask.count() === 1, "Team contribution is missing from the A3 task list for group work.");
+  await teamContributionTask.click();
+  const selectedTaskLabel = await page.locator("#taskEyebrow").innerText();
+  assert(selectedTaskLabel.toLowerCase() === "team contribution", `Choosing Team contribution returned to another A3 task: ${selectedTaskLabel}`);
+  assert((await page.locator("#stageTaskCounter").innerText()) === "Task 13 of 13", "Team contribution was not counted as the final A3 task.");
+  await page.locator("#allTasksBtn").click();
+  assert(await teamContributionTask.evaluate((element) => element.classList.contains("active")), "Team contribution was not retained when All Tasks reopened.");
+  await page.locator('#allTaskList [data-focus-task="0"]').click();
+
   const a3Example = page.locator('button[data-example-stage="a3"]:visible').first();
   assert(await a3Example.isVisible(), "A3 View example control is missing.");
   await a3Example.click();

@@ -3835,9 +3835,66 @@ function updateDashboard() {
 }
 
 function showFeedback() {
-  const items = runChecks();
+  const items = [...visibleResponseQualityItems(), ...runChecks()];
   els.feedback.innerHTML = items.map(feedbackHtml).join("");
   updateDashboard();
+}
+
+function obviousPlaceholderReason(value) {
+  const original = String(value || "").trim();
+  if (!original) return "";
+  const lower = original.toLowerCase();
+  const compact = lower.replace(/[^a-z0-9]+/g, "");
+  const tokens = lower.match(/[a-z0-9]+/g) || [];
+  const knownPlaceholder = /^(asdfg?h?|qwerty(?:uiop)?|zxcv(?:bnm)?|sdfghj?|test(?:ing)?|dummy|placeholder|sampletext|loremipsum|x{3,}|a{4,}|1{4,}|12345(?:6789)?)$/;
+  if (knownPlaceholder.test(compact)) return "The entry matches common placeholder or test text.";
+  if (/^(.)\1{4,}$/.test(compact)) return "The entry repeats one character without meaningful variation.";
+  if (compact.length >= 7 && new Set(compact).size <= 2) return "The entry contains very little character variation.";
+  if (tokens.length >= 2 && new Set(tokens).size === 1 && knownPlaceholder.test(tokens[0])) return "The entry repeats common placeholder text.";
+  if (tokens.length === 1 && tokens[0].length >= 6 && !/[aeiouy]/.test(tokens[0]) && original !== original.toUpperCase()) {
+    return "The entry resembles a keyboard sequence rather than ordinary words.";
+  }
+  return "";
+}
+
+function responseControlLabel(control) {
+  const direct = control.getAttribute("aria-label") || control.getAttribute("placeholder");
+  if (direct) return direct.trim().slice(0, 90);
+  const label = control.labels?.[0] || control.closest("label");
+  if (label) {
+    const copy = label.cloneNode(true);
+    copy.querySelectorAll("input, textarea, select, button, small, .hint").forEach((node) => node.remove());
+    const text = copy.textContent.replace(/\s+/g, " ").trim();
+    if (text) return text.slice(0, 90);
+  }
+  return "Current response";
+}
+
+function visibleResponseQualityItems() {
+  const controls = Array.from(els.stageForm.querySelectorAll('textarea, input[type="text"], input[type="search"], input[type="email"], input[type="url"]'))
+    .filter((control) => !control.disabled && !control.readOnly && !control.closest("[hidden]") && control.offsetParent !== null);
+  const entered = controls.filter((control) => String(control.value || "").trim());
+  if (!entered.length) return [];
+  const suspicious = entered.map((control) => ({ control, reason: obviousPlaceholderReason(control.value) })).filter((item) => item.reason);
+  const items = suspicious.map(({ control, reason }) => ({
+    level: "yellow",
+    text: `${responseControlLabel(control)}: text is present, but it resembles placeholder or test text. Replace it with a substantive response. This screening does not evaluate academic quality.`,
+    evidence: {
+      compared: "The visible response with a limited list of obvious placeholder patterns",
+      matched: reason,
+      mismatch: "The app cannot treat obvious test text as a completed response.",
+      why: "Placeholder screening prevents accidental completion signals, but it does not judge scholarly quality.",
+      revisit: responseControlLabel(control),
+      action: "Replace the placeholder with your own substantive response, then run the check again."
+    }
+  }));
+  if (!suspicious.length) {
+    items.push({
+      level: "green",
+      text: `Text is present in ${entered.length} visible response field${entered.length === 1 ? "" : "s"}. This check found no obvious placeholder text; academic quality and correctness were not evaluated.`
+    });
+  }
+  return items;
 }
 
 function proposalDisplayValue(value) {
@@ -5172,7 +5229,7 @@ function attachEvents() {
       return;
     }
     if (target.dataset.focusTask !== undefined) {
-      const taskCount = buildFocusedTasks(state.currentStage).filter((task) => task.items?.length || task.roots?.length).length;
+      const taskCount = els.allTaskList.querySelectorAll("[data-focus-task]").length;
       setActiveTask(state.currentStage, Number(target.dataset.focusTask), taskCount);
       document.getElementById("allTasksDialog")?.close();
       renderStage();
