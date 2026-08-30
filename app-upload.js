@@ -758,17 +758,49 @@ function groupRoster() {
   ].filter((person) => person.id);
 }
 
+function normalizedRosterName(name) {
+  return String(name || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
+function duplicateRosterNames(roster = groupRoster()) {
+  const grouped = new Map();
+  roster.forEach((person) => {
+    const key = normalizedRosterName(person.name);
+    if (!key) return;
+    if (!grouped.has(key)) grouped.set(key, { name: String(person.name || "").trim(), count: 0 });
+    grouped.get(key).count += 1;
+  });
+  return [...grouped.values()].filter((item) => item.count > 1);
+}
+
+function removeContributionEntriesForMember(personId) {
+  if (!personId) return;
+  Object.values(state.teamContributions || {}).forEach((record) => {
+    record.rosterSnapshot = (record.rosterSnapshot || []).filter((person) => person.id !== personId);
+    delete record.assessments?.[personId];
+  });
+}
+
 function contributionRecord(stageId) {
   if (!state.teamContributions[stageId]) {
     state.teamContributions[stageId] = { stageId, rosterSnapshot: [], assessments: {}, updatedAt: "" };
   }
   const record = state.teamContributions[stageId];
   const roster = groupRoster();
-  const known = new Set(record.rosterSnapshot.map((person) => person.id));
+  const previousRoster = record.rosterSnapshot || [];
+  const currentIds = new Set(roster.map((person) => person.id));
+  const removedPeople = previousRoster.filter((person) => !currentIds.has(person.id));
   roster.forEach((person) => {
-    if (!known.has(person.id)) record.rosterSnapshot.push({ id: person.id, name: person.name || "", role: person.role });
+    if (!record.assessments[person.id]) {
+      const replacement = removedPeople.find((previous) => normalizedRosterName(previous.name) && normalizedRosterName(previous.name) === normalizedRosterName(person.name) && record.assessments[previous.id]);
+      if (replacement) {
+        record.assessments[person.id] = normalizeContributionAssessment(record.assessments[replacement.id]);
+        delete record.assessments[replacement.id];
+      }
+    }
     if (!record.assessments[person.id]) record.assessments[person.id] = normalizeContributionAssessment();
   });
+  record.rosterSnapshot = roster.map((person) => ({ id: person.id, name: person.name || "", role: person.role }));
   record.updatedAt = record.updatedAt || new Date().toISOString();
   return record;
 }
@@ -785,6 +817,7 @@ function renderTeamContributionRecord(stageId) {
   const record = contributionRecord(stageId);
   const ownerId = state.submission.studentId;
   const roster = record.rosterSnapshot;
+  const duplicateNames = duplicateRosterNames(roster);
   const card = (person, index) => {
     const assessment = record.assessments[person.id] || normalizeContributionAssessment();
     const isSelf = person.id === ownerId;
@@ -810,7 +843,7 @@ function renderTeamContributionRecord(stageId) {
     <div class="team-contribution-content">
       <p class="hint">Complete this record for ${escapeHtml(stages.find((stage) => stage.id === stageId)?.code || stageId)}. The app stores the responses but does not score, rank, interpret, or adjust grades.</p>
       <p class="privacy-note">Use “Not enough information to assess” when appropriate. Describe observable behavior, submitted work, or evidence rather than motives.</p>
-      ${roster.length ? roster.map(card).join("") : `<p class="hint">Add the group roster in Student Details first.</p>`}
+      ${duplicateNames.length ? `<div class="group-roster-warning" role="alert"><strong>Review the group roster before recording contributions.</strong><p>${escapeHtml(duplicateNames.map((item) => item.name).join(", "))} ${duplicateNames.length === 1 ? "appears" : "appear"} more than once in Student Details. Each person should have one roster entry.</p><button type="button" class="ghost" data-open-student-details>Review group roster</button></div>` : roster.length ? roster.map(card).join("") : `<p class="hint">Add the group roster in Student Details first.</p>`}
     </div>
   </details>`;
 }
@@ -1654,6 +1687,7 @@ function renderGroupDetails(prefix) {
   const groupNameId = `${prefix}groupName`;
   const reflectionId = `${prefix}personalGroupReflection`;
   const roster = groupRoster();
+  const duplicateNames = duplicateRosterNames(roster);
   return `
     <section class="group-details">
       <div class="field">
@@ -1665,6 +1699,7 @@ function renderGroupDetails(prefix) {
         ${state.submission.groupMembers.map((person, index) => groupPersonCard(person, "member", index, prefix)).join("")}
       </div>
       <button type="button" class="ghost" data-add-group-member>Add Group Member</button>
+      ${duplicateNames.length ? `<p class="group-roster-warning" role="alert"><strong>Review the group roster.</strong> ${escapeHtml(duplicateNames.map((item) => item.name).join(", "))} ${duplicateNames.length === 1 ? "appears" : "appear"} more than once. Keep one entry for each person before recording contributions.</p>` : ""}
       <div class="field full copy-owner-field">
         <div class="field-label"><label for="${prefix}studentId">Student completing this copy</label>${helpControl(`${prefix}studentId-help`, "Student completing this copy", "Choose the student whose personal reflection, declaration, activity record, and confidential contribution record belong in this copy.")}</div>
         <select id="${prefix}studentId" data-copy-owner aria-describedby="${prefix}studentId-help">
@@ -5220,6 +5255,10 @@ function attachEvents() {
       openExampleDialog(target.dataset.exampleStage, target.dataset.exampleType, target);
       return;
     }
+    if (target.dataset.openStudentDetails !== undefined) {
+      openStudentDetails();
+      return;
+    }
     if (target.id === "closeExampleDialogBtn" || target.id === "returnFromExampleBtn") {
       els.exampleDialog?.close();
       return;
@@ -5331,6 +5370,7 @@ function attachEvents() {
       const hasContributionWork = person && Object.values(state.teamContributions || {}).some((record) => record.assessments?.[person.id] && Object.values(record.assessments[person.id]).some((item) => Array.isArray(item) ? item.length : String(item || "").trim()));
       const hasSavedWork = person && ([person.name, person.initialReadiness, person.confidence, person.readinessChange].some((item) => String(item || "").trim()) || hasContributionWork);
       if (hasSavedWork && !confirm("This group member has saved information or reflections. Remove this member and their entries?")) return;
+      removeContributionEntriesForMember(person?.id);
       state.submission.groupMembers.splice(index, 1);
       markContentEdit();
       saveState();

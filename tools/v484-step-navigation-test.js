@@ -72,6 +72,35 @@ async function chooseFoundationStep(page, stageId) {
   assert(await a3Example.isVisible(), "A3 View example control is missing.");
   await a3Example.click();
   assert(await page.locator("#exampleDialog").isVisible(), "A3 example pop-up did not open.");
+  await page.getByRole("button", { name: "Return to my answer" }).click();
+
+  await chooseFoundationStep(page, "details");
+  await page.locator("#allTasksBtn").click();
+  await page.locator('#allTaskList [data-focus-task="1"]').click();
+  const addMember = page.locator('button[data-add-group-member]:visible');
+  await addMember.click();
+  await page.locator('details.group-person-card:visible').last().locator("summary").click();
+  await page.locator('[data-group-person-role="member"][data-group-person-key="name"]:visible').nth(0).fill("Jia Verso");
+  await addMember.click();
+  await page.locator('details.group-person-card:visible').last().locator("summary").click();
+  await page.locator('[data-group-person-role="member"][data-group-person-key="name"]:visible').last().fill("Jia Verso");
+  const memberNames = await page.evaluate(() => JSON.parse(localStorage.getItem("proposalBuilderA4DraftUploadVersion")).submission.groupMembers.map((member) => member.name));
+  assert(memberNames.filter((name) => name === "Jia Verso").length === 2, `Duplicate roster setup failed: ${memberNames.join(", ")}`);
+
+  await chooseFoundationStep(page, "a3");
+  await page.locator("#allTasksBtn").click();
+  await teamContributionTask.click();
+  await page.locator(".team-contribution-panel > summary").click();
+  assert(await page.locator(".group-roster-warning:visible").count() === 1, "Duplicate group names did not produce a roster warning.");
+  assert(await page.locator('[data-contribution-key="level"]:visible').count() === 0, "Contribution inputs remained available for a duplicate roster.");
+  await page.locator('button[data-open-student-details]:visible').click();
+  assert(await page.locator("#studentDetailsDialog").isVisible(), "Review group roster did not open Student Details.");
+  await page.locator("#studentDetailsDialog details.group-person-card").last().locator("summary").click();
+  await page.locator('button[data-remove-group-member="1"]:visible').click();
+  await page.locator("#closeStudentDetailsBtn").click();
+  await page.locator(".team-contribution-panel > summary").click();
+  assert(await page.locator(".group-roster-warning:visible").count() === 0, "Roster warning remained after the duplicate member was removed.");
+  assert(await page.getByRole("heading", { name: "Group member: Jia Verso" }).count() === 1, "The corrected roster still produced duplicate contribution cards.");
 
   assert(pageErrors.length === 0, `Page errors occurred: ${pageErrors.join(" | ")}`);
   console.log(JSON.stringify({ status: "passed", viewport: "712x1213", stages: ["A2", "A3"], migratedDraft: true }, null, 2));

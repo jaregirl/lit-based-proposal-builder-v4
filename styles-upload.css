@@ -493,6 +493,17 @@ button.compact {
   background: #eef7f5;
 }
 
+.group-roster-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--warn);
+  background: #fff8e8;
+}
+
+.group-roster-warning p {
+  margin: 6px 0 10px;
+}
+
 .contribution-card {
   display: grid;
   gap: 8px;
