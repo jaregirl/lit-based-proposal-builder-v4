@@ -92,6 +92,7 @@ async function chooseFoundationStep(page, stageId) {
   await teamContributionTask.click();
   await page.locator(".team-contribution-panel > summary").click();
   assert(await page.locator(".group-roster-warning:visible").count() === 1, "Duplicate group names did not produce a roster warning.");
+  assert((await page.locator(".group-roster-warning:visible").innerText()).includes("where the group names were first entered"), "Duplicate roster warning did not direct students back to the original Student Details roster.");
   assert(await page.locator('[data-contribution-key="level"]:visible').count() === 0, "Contribution inputs remained available for a duplicate roster.");
   await page.locator('button[data-open-student-details]:visible').click();
   assert(await page.locator("#studentDetailsDialog").isVisible(), "Review group roster did not open Student Details.");
