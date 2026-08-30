@@ -655,6 +655,9 @@ function normalizeState(nextState) {
     ];
   }
   normalized.terms.rows = normalized.terms.rows.map(normalizeTermRow);
+  if (normalized.submission.workArrangement === "group") {
+    synchronizeContributionRecords(normalized.teamContributions, rosterFromSubmission(normalized.submission));
+  }
   return normalized;
 }
 
@@ -742,6 +745,12 @@ function normalizeContributionRecords(records = {}) {
       role: person.role || "member"
     })) : [],
     assessments: Object.fromEntries(Object.entries(record?.assessments || {}).map(([personId, assessment]) => [personId, normalizeContributionAssessment(assessment)])),
+    archivedRoster: Array.isArray(record?.archivedRoster) ? record.archivedRoster.map((person) => ({
+      id: person.id || createStableId("archived-roster"),
+      name: person.name || "",
+      role: person.role || "member",
+      archivedAt: person.archivedAt || ""
+    })) : [],
     updatedAt: record?.updatedAt || ""
   }]));
 }
@@ -750,12 +759,16 @@ function isAcademicStage(stageId) {
   return stages.some((stage) => stage.id === stageId) && !["details", "submission"].includes(stageId);
 }
 
-function groupRoster() {
-  if (state.submission.workArrangement !== "group") return [];
+function rosterFromSubmission(submission = {}) {
+  if (submission.workArrangement !== "group") return [];
   return [
-    { ...state.submission.groupLeader, role: "leader" },
-    ...state.submission.groupMembers.map((person) => ({ ...person, role: "member" }))
+    { ...(submission.groupLeader || {}), role: "leader" },
+    ...(submission.groupMembers || []).map((person) => ({ ...person, role: "member" }))
   ].filter((person) => person.id);
+}
+
+function groupRoster() {
+  return rosterFromSubmission(state.submission);
 }
 
 function normalizedRosterName(name) {
@@ -773,29 +786,35 @@ function duplicateRosterNames(roster = groupRoster()) {
   return [...grouped.values()].filter((item) => item.count > 1);
 }
 
-function removeContributionEntriesForMember(personId) {
-  if (!personId) return;
+function archiveContributionEntriesForMember(person) {
+  if (!person?.id) return;
   Object.values(state.teamContributions || {}).forEach((record) => {
-    record.rosterSnapshot = (record.rosterSnapshot || []).filter((person) => person.id !== personId);
-    delete record.assessments?.[personId];
+    record.rosterSnapshot = (record.rosterSnapshot || []).filter((entry) => entry.id !== person.id);
+    record.archivedRoster ||= [];
+    if (!record.archivedRoster.some((entry) => entry.id === person.id)) {
+      record.archivedRoster.push({ id: person.id, name: person.name || "", role: "member", archivedAt: new Date().toISOString() });
+    }
   });
 }
 
-function contributionRecord(stageId) {
-  if (!state.teamContributions[stageId]) {
-    state.teamContributions[stageId] = { stageId, rosterSnapshot: [], assessments: {}, updatedAt: "" };
-  }
-  const record = state.teamContributions[stageId];
-  const roster = groupRoster();
+function reconcileContributionRecord(record, roster) {
+  record.rosterSnapshot ||= [];
+  record.assessments ||= {};
+  record.archivedRoster ||= [];
   const previousRoster = record.rosterSnapshot || [];
   const currentIds = new Set(roster.map((person) => person.id));
   const removedPeople = previousRoster.filter((person) => !currentIds.has(person.id));
+  removedPeople.forEach((person) => {
+    if (!record.archivedRoster.some((entry) => entry.id === person.id)) {
+      record.archivedRoster.push({ ...person, archivedAt: new Date().toISOString() });
+    }
+  });
+  const previousPeople = [...previousRoster, ...record.archivedRoster];
   roster.forEach((person) => {
     if (!record.assessments[person.id]) {
-      const replacement = removedPeople.find((previous) => normalizedRosterName(previous.name) && normalizedRosterName(previous.name) === normalizedRosterName(person.name) && record.assessments[previous.id]);
+      const replacement = previousPeople.find((previous) => previous.id !== person.id && normalizedRosterName(previous.name) && normalizedRosterName(previous.name) === normalizedRosterName(person.name) && record.assessments[previous.id]);
       if (replacement) {
         record.assessments[person.id] = normalizeContributionAssessment(record.assessments[replacement.id]);
-        delete record.assessments[replacement.id];
       }
     }
     if (!record.assessments[person.id]) record.assessments[person.id] = normalizeContributionAssessment();
@@ -803,6 +822,22 @@ function contributionRecord(stageId) {
   record.rosterSnapshot = roster.map((person) => ({ id: person.id, name: person.name || "", role: person.role }));
   record.updatedAt = record.updatedAt || new Date().toISOString();
   return record;
+}
+
+function synchronizeContributionRecords(records, roster) {
+  Object.values(records || {}).forEach((record) => reconcileContributionRecord(record, roster));
+}
+
+function synchronizeAllContributionRecords() {
+  if (state.submission.workArrangement !== "group") return;
+  synchronizeContributionRecords(state.teamContributions, groupRoster());
+}
+
+function contributionRecord(stageId) {
+  if (!state.teamContributions[stageId]) {
+    state.teamContributions[stageId] = { stageId, rosterSnapshot: [], assessments: {}, archivedRoster: [], updatedAt: "" };
+  }
+  return reconcileContributionRecord(state.teamContributions[stageId], groupRoster());
 }
 
 function contributionAssessmentMissing(assessment = {}) {
@@ -5073,6 +5108,7 @@ function attachEvents() {
       if (person) {
         person[target.dataset.groupPersonKey] = target.value;
         if (target.dataset.groupPersonKey === "name" && person.id === state.submission.studentId) state.submission.studentName = target.value;
+        if (target.dataset.groupPersonKey === "name") synchronizeAllContributionRecords();
         markContentEdit();
         saveState();
       }
@@ -5187,6 +5223,7 @@ function attachEvents() {
         state.submission.groupLeader.name = state.submission.studentName;
         state.submission.groupLeader.initialReadiness = state.submission.initialReadiness || "";
       }
+      if (target.value === "group") synchronizeAllContributionRecords();
       markContentEdit();
       saveState();
       renderStage();
@@ -5359,6 +5396,7 @@ function attachEvents() {
     }
     if (target.dataset.addGroupMember !== undefined) {
       state.submission.groupMembers.push(normalizeGroupPerson({}, "member"));
+      synchronizeAllContributionRecords();
       markContentEdit();
       saveState();
       renderStage();
@@ -5369,9 +5407,10 @@ function attachEvents() {
       const person = state.submission.groupMembers[index];
       const hasContributionWork = person && Object.values(state.teamContributions || {}).some((record) => record.assessments?.[person.id] && Object.values(record.assessments[person.id]).some((item) => Array.isArray(item) ? item.length : String(item || "").trim()));
       const hasSavedWork = person && ([person.name, person.initialReadiness, person.confidence, person.readinessChange].some((item) => String(item || "").trim()) || hasContributionWork);
-      if (hasSavedWork && !confirm("This group member has saved information or reflections. Remove this member and their entries?")) return;
-      removeContributionEntriesForMember(person?.id);
+      if (hasSavedWork && !confirm("This group member has saved information or reflections. Remove this member from the active roster? Their existing contribution entries will stay in this local draft but will no longer appear in the active roster.")) return;
+      archiveContributionEntriesForMember(person);
       state.submission.groupMembers.splice(index, 1);
+      synchronizeAllContributionRecords();
       markContentEdit();
       saveState();
       renderStage();

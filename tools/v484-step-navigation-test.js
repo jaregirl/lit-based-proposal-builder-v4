@@ -101,6 +101,30 @@ async function chooseFoundationStep(page, stageId) {
   await page.locator(".team-contribution-panel > summary").click();
   assert(await page.locator(".group-roster-warning:visible").count() === 0, "Roster warning remained after the duplicate member was removed.");
   assert(await page.getByRole("heading", { name: "Group member: Jia Verso" }).count() === 1, "The corrected roster still produced duplicate contribution cards.");
+  const contributionMemberId = await page.evaluate(() => JSON.parse(localStorage.getItem("proposalBuilderA4DraftUploadVersion")).submission.groupMembers[0].id);
+  await page.locator(`[data-contribution-person="${contributionMemberId}"][data-contribution-key="level"]:visible`).selectOption("agreed");
+
+  await chooseFoundationStep(page, "a2");
+  await page.locator("#allTasksBtn").click();
+  await page.locator("#allTaskList [data-focus-task]").last().click();
+  await page.locator(".team-contribution-panel > summary").click();
+
+  await chooseFoundationStep(page, "details");
+  await page.locator("#allTasksBtn").click();
+  await page.locator('#allTaskList [data-focus-task="1"]').click();
+  await page.locator('details.group-person-card:visible').last().locator("summary").click();
+  await page.locator('[data-group-person-role="member"][data-group-person-key="name"]:visible').fill("Jia Verso Updated");
+  const synchronizedRecords = await page.evaluate(() => {
+    const draft = JSON.parse(localStorage.getItem("proposalBuilderA4DraftUploadVersion"));
+    const member = draft.submission.groupMembers[0];
+    return ["a2", "a3"].map((stageId) => ({
+      stageId,
+      rosterName: draft.teamContributions[stageId]?.rosterSnapshot.find((person) => person.id === member.id)?.name || "",
+      level: draft.teamContributions[stageId]?.assessments[member.id]?.level || ""
+    }));
+  });
+  assert(synchronizedRecords.every((record) => record.rosterName === "Jia Verso Updated"), `Roster name did not synchronize across saved contribution records: ${JSON.stringify(synchronizedRecords)}`);
+  assert(synchronizedRecords.find((record) => record.stageId === "a3")?.level === "agreed", "Existing A3 contribution level was lost when the roster name changed.");
 
   assert(pageErrors.length === 0, `Page errors occurred: ${pageErrors.join(" | ")}`);
   console.log(JSON.stringify({ status: "passed", viewport: "712x1213", stages: ["A2", "A3"], migratedDraft: true }, null, 2));
