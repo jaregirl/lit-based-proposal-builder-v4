@@ -476,6 +476,7 @@ const els = {
   ,stageTaskCounter: document.getElementById("stageTaskCounter")
   ,taskEyebrow: document.getElementById("taskEyebrow")
   ,taskSupport: document.getElementById("taskSupport")
+  ,sectionTaskPath: document.getElementById("sectionTaskPath")
   ,allTasksBtn: document.getElementById("allTasksBtn")
   ,allTaskList: document.getElementById("allTaskList")
   ,allTasksTitle: document.getElementById("allTasksTitle")
@@ -1334,7 +1335,7 @@ function render() {
   updateDashboard();
   renderMigrationNotice();
   renderStageFeedback();
-  if (els.autosaveStatus) els.autosaveStatus.textContent = "Saved";
+  if (els.autosaveStatus) els.autosaveStatus.textContent = "Saved in this browser";
 }
 
 function renderMigrationNotice() {
@@ -1658,7 +1659,10 @@ function applyFocusedStageLayout(stageId) {
     roots: [contributionPanel],
     items: [contributionPanel]
   });
-  if (!tasks.length) return;
+  if (!tasks.length) {
+    if (els.sectionTaskPath) els.sectionTaskPath.hidden = true;
+    return;
+  }
   uiState.tasks[stageId] = Math.min(Math.max(0, Number(uiState.tasks[stageId] || 0)), tasks.length - 1);
   const activeIndex = uiState.tasks[stageId];
   const activeTask = tasks[activeIndex];
@@ -1676,6 +1680,29 @@ function applyFocusedStageLayout(stageId) {
   saveUiState();
 }
 
+function sectionPathLabel(stageId, task, index) {
+  const a4Labels = ["Problem", "Focus", "Components", "Setting", "Purpose", "Central question", "Specific questions"];
+  if (stageId === "a4") return a4Labels[index] || task.title || `Task ${index + 1}`;
+  const label = String(task.label || "").trim();
+  if (/^(A1|L)\.\d+$/.test(label)) return task.title || label;
+  return label || task.title || `Task ${index + 1}`;
+}
+
+function renderSectionTaskPath(stageId, tasks, activeIndex) {
+  if (!els.sectionTaskPath) return;
+  const stage = stages.find((item) => item.id === stageId);
+  const stageName = stage?.title || "current section";
+  els.sectionTaskPath.hidden = false;
+  els.sectionTaskPath.setAttribute("aria-label", `Tasks in ${stageName}`);
+  els.sectionTaskPath.innerHTML = tasks.map((task, index) => {
+    const label = sectionPathLabel(stageId, task, index);
+    const active = index === activeIndex;
+    const stateText = active ? ", current task" : "";
+    return `<button class="section-task-node ${active ? "is-current" : ""}" type="button" data-section-task="${index}" ${active ? 'aria-current="step"' : ""} aria-label="Task ${index + 1} of ${tasks.length}: ${escapeHtml(task.title || label)}${stateText}" title="${escapeHtml(task.title || label)}"><span class="section-task-dot" aria-hidden="true"></span><span class="section-task-label">${escapeHtml(label)}</span></button>`;
+  }).join("");
+  requestAnimationFrame(() => els.sectionTaskPath.querySelector("[aria-current=step]")?.scrollIntoView({ block: "nearest", inline: "center" }));
+}
+
 function renderFocusedStageChrome(tasks, activeIndex) {
   const stage = stages[currentIndex()];
   const phase = activeJourneyPhase();
@@ -1691,6 +1718,7 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   els.allTasksBtn.innerHTML = `<span class="all-tasks-full-label">${escapeHtml(allTasksLabel)}</span><span class="all-tasks-compact-label" aria-hidden="true">All ${escapeHtml(stage.code)} Tasks</span>`;
   els.allTasksTitle.textContent = allTasksLabel;
   els.allTaskList.innerHTML = tasks.map((item, index) => `<button type="button" class="all-task-item ${index === activeIndex ? "active" : ""}" data-focus-task="${index}"><span class="task-number">${index + 1}</span><span><strong>${escapeHtml(item.label || `Task ${index + 1}`)}</strong><small>${escapeHtml(item.title || "")}</small></span></button>`).join("");
+  renderSectionTaskPath(stage.id, tasks, activeIndex);
   document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
   document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
 }
@@ -2020,6 +2048,8 @@ function renderA4() {
     returnSelector: '[data-section="a4"][data-key="centralQuestion"]',
     returnLabel: "A4.6: Write the central research question"
   });
+  const hasRefinedGap = Boolean(String(state.a4.refinedGap || "").trim());
+  const hasGapRevisionWork = hasRefinedGap || Boolean(String(state.a4.gapRevisionReason || "").trim());
   els.stageForm.innerHTML = `
     <section class="output-box">
       <h3>A4 Guided Reasoning Path</h3>
@@ -2029,8 +2059,13 @@ function renderA4() {
     <details class="guided-step" name="a4-flow" open>
       <summary>1. State the literature-based problem</summary>
       <div class="guided-step-content">
-        <label>Optional refined gap for A4<textarea data-section="a4" data-key="refinedGap">${escapeHtml(state.a4.refinedGap)}</textarea><span class="hint">Refine the wording if the gap became clearer. The original A3 gap will not be overwritten. If the unresolved issue itself changed, revisit ${a3GapForProblem} before continuing.</span></label>
-        <label>Why did the gap wording change?<textarea data-section="a4" data-key="gapRevisionReason">${escapeHtml(state.a4.gapRevisionReason)}</textarea></label>
+        <details class="gap-refinement ${hasRefinedGap ? "has-saved-refinement" : ""}" ${hasGapRevisionWork ? "open" : ""}>
+          <summary>Review or refine your gap <span class="gap-refinement-status" data-gap-refinement-status>${hasRefinedGap ? "Saved refinement" : "Optional"}</span></summary>
+          <div class="gap-refinement-content">
+            <label>Refined gap for A4<textarea data-section="a4" data-key="refinedGap">${escapeHtml(state.a4.refinedGap)}</textarea><span class="hint">Use this only when the wording became clearer. The original A3 gap will not be overwritten. If the unresolved issue itself changed, revisit ${a3GapForProblem} before continuing.</span></label>
+            <div data-gap-revision-reason ${hasRefinedGap ? "" : "hidden"}><label>Why did the gap wording change?<textarea data-section="a4" data-key="gapRevisionReason">${escapeHtml(state.a4.gapRevisionReason)}</textarea></label></div>
+          </div>
+        </details>
         <div class="field-heading"><div class="field-label"><label for="a4-literature-problem">Literature-Based Problem: What problem becomes visible from A3?</label></div>${exampleControl("a4", "problem")}</div>
         <textarea id="a4-literature-problem" data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea><span class="hint">State the problem revealed by what remains less visible and what this limits us from understanding.</span>
       </div>
@@ -5241,6 +5276,15 @@ function attachEvents() {
     }
     if (target.dataset.section && target.dataset.key) {
       setValue(target.dataset.section, target.dataset.key, target.value);
+      if (target.dataset.section === "a4" && target.dataset.key === "refinedGap") {
+        const hasRefinement = Boolean(target.value.trim());
+        const refinement = target.closest(".gap-refinement");
+        const reason = refinement?.querySelector("[data-gap-revision-reason]");
+        const status = refinement?.querySelector("[data-gap-refinement-status]");
+        if (reason) reason.hidden = !hasRefinement;
+        if (status) status.textContent = hasRefinement ? "Saved refinement" : "Optional";
+        refinement?.classList.toggle("has-saved-refinement", hasRefinement);
+      }
     }
     if (target.dataset.array === "a4.questions") {
       state.a4.questions[Number(target.dataset.index)] = target.value;
@@ -5437,6 +5481,12 @@ function attachEvents() {
     }
     if (target.dataset.issueIndex !== undefined) {
       openOutstandingIssue(target.dataset.issueIndex);
+      return;
+    }
+    if (target.dataset.sectionTask !== undefined) {
+      const taskCount = els.sectionTaskPath?.querySelectorAll("[data-section-task]").length || 0;
+      setActiveTask(state.currentStage, Number(target.dataset.sectionTask), taskCount);
+      renderStage();
       return;
     }
     if (target.dataset.focusTask !== undefined) {

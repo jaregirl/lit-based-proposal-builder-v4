@@ -13,6 +13,13 @@ async function chooseFoundationStep(page, stageId) {
   await page.waitForTimeout(100);
 }
 
+async function chooseSectionTask(page, taskIndex) {
+  const task = page.locator(`#sectionTaskPath [data-section-task="${taskIndex}"]`);
+  assert(await task.isVisible(), `Section task ${taskIndex + 1} was not visible.`);
+  await task.click();
+  await page.waitForTimeout(100);
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -50,14 +57,22 @@ async function chooseFoundationStep(page, stageId) {
   await page.getByRole("button", { name: "Return to my answer" }).click();
 
   await chooseFoundationStep(page, "a4");
-  await page.locator("#allTasksBtn").click();
-  await page.locator('#allTaskList [data-focus-task="0"]').click();
+  await chooseSectionTask(page, 0);
+  const a4Path = page.getByRole("navigation", { name: /Tasks in Literature-Based Problem and Questions/i });
+  assert(await a4Path.isVisible(), "The A4 section path is not available.");
+  assert((await a4Path.getByRole("button").count()) === 7, "The A4 section path did not list all seven tasks.");
   const a4ProblemExample = page.locator('[data-example-stage="a4"][data-example-type="problem"]').first();
   assert(await a4ProblemExample.isVisible(), "A4.1 did not provide an illustrative example.");
   await a4ProblemExample.click();
   assert(await page.locator("#exampleDialog[open]").isVisible(), "The A4.1 example dialog did not open.");
   assert((await page.locator("#exampleDialogBody").innerText()).includes("Use this template"), "The A4.1 example did not provide a template.");
   await page.locator("#closeExampleDialogBtn").click();
+  const gapRefinement = page.locator(".gap-refinement");
+  assert(await gapRefinement.isVisible(), "A4 gap refinement is unavailable.");
+  assert(!(await gapRefinement.evaluate((element) => element.open)), "An empty optional gap refinement should begin collapsed.");
+  await gapRefinement.locator("summary").click();
+  await gapRefinement.locator('[data-key="refinedGap"]').fill("The wording is now more specific.");
+  assert(await gapRefinement.getByText("Why did the gap wording change?").isVisible(), "The explanation field did not appear after a gap refinement.");
   const a3GapLink = page.getByRole("button", { name: "A3: Final Gap" }).first();
   assert(await a3GapLink.isVisible(), "A4 did not provide an in-context link to the A3 final gap.");
   await a3GapLink.click();
@@ -76,16 +91,14 @@ async function chooseFoundationStep(page, stageId) {
   assert((await page.locator("#stageBreadcrumb").innerText()).includes("From Patterns to Gaps"), "A3 did not open.");
   assert(await page.locator("#phaseMenu").isHidden(), "Foundations menu remained open after choosing A3.");
 
-  await page.locator("#allTasksBtn").click();
-  const teamContributionTask = page.locator('#allTaskList [data-focus-task]').filter({ hasText: "Team contribution" });
-  assert(await teamContributionTask.count() === 1, "Team contribution is missing from the A3 task list for group work.");
+  const teamContributionTask = page.locator('#sectionTaskPath [data-section-task]').last();
+  assert(await teamContributionTask.getAttribute("title") === "Team contribution", "Team contribution is missing from the A3 section path for group work.");
   await teamContributionTask.click();
   const selectedTaskLabel = await page.locator("#taskEyebrow").innerText();
   assert(selectedTaskLabel.toLowerCase() === "team contribution", `Choosing Team contribution returned to another A3 task: ${selectedTaskLabel}`);
   assert((await page.locator("#stageTaskCounter").innerText()) === "Task 13 of 13", "Team contribution was not counted as the final A3 task.");
-  await page.locator("#allTasksBtn").click();
-  assert(await teamContributionTask.evaluate((element) => element.classList.contains("active")), "Team contribution was not retained when All Tasks reopened.");
-  await page.locator('#allTaskList [data-focus-task="0"]').click();
+  assert(await teamContributionTask.getAttribute("aria-current") === "step", "Team contribution was not retained as the current section task.");
+  await chooseSectionTask(page, 0);
 
   const a3Example = page.locator('button[data-example-stage="a3"]:visible').first();
   assert(await a3Example.isVisible(), "A3 View example control is missing.");
@@ -94,8 +107,7 @@ async function chooseFoundationStep(page, stageId) {
   await page.getByRole("button", { name: "Return to my answer" }).click();
 
   await chooseFoundationStep(page, "details");
-  await page.locator("#allTasksBtn").click();
-  await page.locator('#allTaskList [data-focus-task="1"]').click();
+  await chooseSectionTask(page, 1);
   const addMember = page.locator('button[data-add-group-member]:visible');
   await addMember.click();
   await page.locator('details.group-person-card:visible').last().locator("summary").click();
@@ -107,7 +119,6 @@ async function chooseFoundationStep(page, stageId) {
   assert(memberNames.filter((name) => name === "Jia Verso").length === 2, `Duplicate roster setup failed: ${memberNames.join(", ")}`);
 
   await chooseFoundationStep(page, "a3");
-  await page.locator("#allTasksBtn").click();
   await teamContributionTask.click();
   await page.locator(".team-contribution-panel > summary").click();
   assert(await page.locator(".group-roster-warning:visible").count() === 1, "Duplicate group names did not produce a roster warning.");
@@ -125,13 +136,11 @@ async function chooseFoundationStep(page, stageId) {
   await page.locator(`[data-contribution-person="${contributionMemberId}"][data-contribution-key="level"]:visible`).selectOption("agreed");
 
   await chooseFoundationStep(page, "a2");
-  await page.locator("#allTasksBtn").click();
-  await page.locator("#allTaskList [data-focus-task]").last().click();
+  await page.locator("#sectionTaskPath [data-section-task]").last().click();
   await page.locator(".team-contribution-panel > summary").click();
 
   await chooseFoundationStep(page, "details");
-  await page.locator("#allTasksBtn").click();
-  await page.locator('#allTaskList [data-focus-task="1"]').click();
+  await chooseSectionTask(page, 1);
   await page.locator('details.group-person-card:visible').last().locator("summary").click();
   await page.locator('[data-group-person-role="member"][data-group-person-key="name"]:visible').fill("Jia Verso Updated");
   const synchronizedRecords = await page.evaluate(() => {

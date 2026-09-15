@@ -696,7 +696,7 @@ label {
 .hint {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -1761,7 +1761,7 @@ dialog::backdrop {
   border-radius: 0 6px 6px 0;
   padding: 11px 14px;
   color: #3f5653;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   background: #edf4f1;
 }
 
@@ -1838,11 +1838,11 @@ dialog::backdrop {
 }
 
 .stage-form textarea {
-  min-height: 150px;
+  min-height: 140px;
 }
 
 .stage-form .hint {
-  font-size: 0.86rem;
+  font-size: 0.78rem;
 }
 
 .stage-form .generated-text {
@@ -2013,29 +2013,154 @@ dialog::backdrop {
   background: #b33b3b;
 }
 
-.focused-actions {
+.focused-navigation {
   position: sticky;
   z-index: 30;
   bottom: 0;
-  display: grid;
-  grid-template-columns: auto auto auto 1fr auto;
-  align-items: center;
-  gap: 10px;
   margin: auto -12px -28px;
   border-top: 1px solid #d8dddf;
-  padding: 13px 12px;
   background: rgba(247, 247, 243, 0.97);
   backdrop-filter: blur(10px);
 }
 
-.focused-actions .footer-save-state {
-  justify-self: end;
-  color: #768085;
-  font-size: 0.75rem;
+.section-task-path {
+  display: flex;
+  min-height: 42px;
+  align-items: stretch;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-bottom: 1px solid #e0e4e4;
+  padding: 4px 12px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c3c2 transparent;
+}
+
+.section-task-node {
+  position: relative;
+  display: inline-flex;
+  min-width: max-content;
+  min-height: 34px;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 12px 6px 0;
+  color: #7b8588;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  background: transparent;
+  cursor: pointer;
+}
+
+.section-task-node::after {
+  width: clamp(18px, 2.4vw, 42px);
+  height: 1px;
+  margin-left: 5px;
+  background: #cbd3d4;
+  content: "";
+}
+
+.section-task-node:last-child::after {
+  display: none;
+}
+
+.section-task-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #b9c2c4;
+}
+
+.section-task-node:hover {
+  color: #284f49;
+  background: transparent;
+}
+
+.section-task-node.is-current {
+  color: #1f5b50;
+  font-weight: 800;
+  box-shadow: inset 0 -2px 0 #267565;
+}
+
+.section-task-node.is-current .section-task-dot {
+  background: #267565;
+}
+
+.section-task-node:focus-visible {
+  outline: 3px solid var(--focus, #d0911d);
+  outline-offset: -2px;
+}
+
+.focused-actions {
+  position: static;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  border: 0;
+  padding: 10px 12px 12px;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.focused-actions #allTasksBtn {
+  display: none !important;
 }
 
 .focused-actions #nextBtn {
   min-width: 132px;
+  justify-self: end;
+}
+
+.stage-form textarea,
+.stage-form input,
+.stage-form select,
+.stage-form button {
+  scroll-margin-block-end: 112px;
+}
+
+.gap-refinement {
+  margin-bottom: 16px;
+  border: 1px solid #d2dadb;
+  border-radius: 7px;
+  background: #f8fbfa;
+}
+
+.gap-refinement > summary {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  color: #3f5653;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gap-refinement-status {
+  color: #728084;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.gap-refinement.has-saved-refinement .gap-refinement-status {
+  color: #216b5b;
+}
+
+.gap-refinement-content {
+  border-top: 1px solid #dce3e2;
+  padding: 12px;
+}
+
+.gap-refinement-content textarea {
+  min-height: 118px;
+}
 }
 
 .all-tasks-compact-label {
@@ -2151,6 +2276,9 @@ dialog::backdrop {
 
 .example-control {
   flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.72rem;
   white-space: nowrap;
 }
 
@@ -2268,7 +2396,7 @@ dialog::backdrop {
   align-items: center;
   gap: 8px 12px;
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.76rem;
 }
 
 .example-badge {
@@ -2284,6 +2412,7 @@ dialog::backdrop {
 .example-caution {
   border-left: 4px solid var(--warn);
   padding: 12px 14px;
+  font-size: 0.8rem;
   line-height: 1.5;
   background: #fff8e8;
 }
@@ -2448,7 +2577,7 @@ dialog::backdrop {
     font-size: clamp(1.45rem, 5vw, 1.9rem);
   }
 
-  .focused-actions {
+  .focused-navigation {
     margin-bottom: -28px;
   }
 }
@@ -2478,6 +2607,14 @@ dialog::backdrop {
   }
 
   .status-summary {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 0.64rem;
+    white-space: nowrap;
+  }
+
+  .status-summary .status-separator,
+  .status-summary .active-time {
     display: none;
   }
 
@@ -2511,7 +2648,7 @@ dialog::backdrop {
   }
 
   .focus-support {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
   }
 
   .stage-form .field,
@@ -2523,25 +2660,41 @@ dialog::backdrop {
   }
 
   .stage-form textarea {
-    min-height: 170px;
+    min-height: 130px;
+  }
+
+  .focused-navigation {
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .section-task-path {
+    min-height: 40px;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .section-task-node {
+    min-height: 32px;
+    gap: 4px;
+    padding-right: 8px;
+    font-size: 0.64rem;
+  }
+
+  .section-task-node::after {
+    width: 18px;
+    margin-left: 3px;
   }
 
   .focused-actions {
     grid-template-columns: auto 1fr auto;
     gap: 6px;
-    margin-right: 0;
-    margin-left: 0;
   }
 
-  .focused-actions #skipBtn,
-  .focused-actions .footer-save-state {
-    display: none;
-  }
-
-  .focused-actions #allTasksBtn {
-    display: inline-flex;
-    min-width: 0;
-    justify-content: center;
+  .focused-actions #skipBtn {
+    white-space: nowrap;
+    padding-inline: 5px;
+    font-size: 0.72rem;
   }
 
   .focused-actions #nextBtn {
@@ -2568,7 +2721,8 @@ dialog::backdrop {
   }
 
   .example-control {
-    width: 100%;
+    width: auto;
+    align-self: flex-start;
   }
 
   .gap-choice-row {
@@ -2985,6 +3139,7 @@ dialog::backdrop {
   .support-note,
   .stage-form,
   .checker-panel,
+  .focused-navigation,
   .footer-actions,
   dialog,
   .dialog-header,

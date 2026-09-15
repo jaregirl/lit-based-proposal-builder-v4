@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20260915-v484-context-links1" />
+    <link rel="stylesheet" href="styles-upload.css?v=20260915-v484-ui-refine1" />
   </head>
   <body>
     <div class="app-shell">
@@ -26,7 +26,7 @@
 
         <div class="journey-utilities" aria-label="App status and utilities">
           <span class="status-summary" aria-label="Local save and active work status">
-            <span class="save-state" id="autosaveStatus">Saved</span>
+            <span class="save-state" id="autosaveStatus">Saved in this browser</span>
             <span class="status-separator" aria-hidden="true">&middot;</span>
             <span class="active-time" id="activeWorkText">Not started</span>
           </span>
@@ -78,13 +78,15 @@
           <button class="ghost compact" id="downloadFeedbackBtn" type="button">Download App Feedback Report</button>
         </details>
 
-        <footer class="footer-actions focused-actions">
-          <button class="ghost" id="backBtn" type="button">Back</button>
-          <button class="text-action" id="skipBtn" type="button">Skip for now</button>
-          <button class="ghost" id="allTasksBtn" type="button">All Tasks for this step</button>
-          <span class="footer-save-state" aria-hidden="true">Saved locally</span>
-          <button class="primary" id="nextBtn" type="button">Continue</button>
-        </footer>
+        <div class="focused-navigation">
+          <nav class="section-task-path" id="sectionTaskPath" aria-label="Tasks in this section"></nav>
+          <footer class="footer-actions focused-actions">
+            <button class="ghost" id="backBtn" type="button">Back</button>
+            <button class="text-action" id="skipBtn" type="button" aria-label="Skip this task for now; you can return using the section path." title="Move forward without completing this task. You can return using the section path.">Skip for now</button>
+            <button class="ghost" id="allTasksBtn" type="button" hidden>All Tasks for this step</button>
+            <button class="primary" id="nextBtn" type="button">Continue</button>
+          </footer>
+        </div>
 
         <section class="proposal-glance-view" id="proposalGlanceView" aria-labelledby="proposalGlanceTitle" hidden>
           <header class="proposal-glance-header">
@@ -365,6 +367,6 @@
     <input id="importFile" type="file" accept="application/json" hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260915-v484-a4-scaffold1"></script>
-    <script src="app-upload.js?v=20260915-v484-a4-scaffold1"></script>
+    <script src="app-upload.js?v=20260915-v484-ui-refine1"></script>
   </body>
 </html>
