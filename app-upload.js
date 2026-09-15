@@ -1725,9 +1725,12 @@ function applyFocusedStageLayout(stageId) {
 
 function sectionPathLabel(stageId, task, index) {
   const a4Labels = ["Problem", "Focus", "Components", "Setting", "Purpose", "Central question", "Specific questions"];
+  const a1Labels = ["Topic", "Key nouns", "15-page test", "RRL majority", "Core construct"];
+  const researchLevelLabels = ["Plan fit", "Decisions", "Design fit", "Trade-offs", "Local context", "Contribution", "Judgment"];
   if (stageId === "a4") return a4Labels[index] || task.title || `Task ${index + 1}`;
+  if (stageId === "a1") return a1Labels[index] || task.label || `Task ${index + 1}`;
+  if (stageId === "researchLevel") return researchLevelLabels[index] || task.label || `Task ${index + 1}`;
   const label = String(task.label || "").trim();
-  if (/^(A1|L)\.\d+$/.test(label)) return task.title || label;
   return label || task.title || `Task ${index + 1}`;
 }
 
