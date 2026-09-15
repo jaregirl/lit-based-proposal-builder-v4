@@ -1,10 +1,10 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.4-ui-refine1";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.6-erb-guide1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20260915-v484-ui-refine1",
+  "./styles-upload.css?v=20260915-v486-erb-guide1",
   "./example-guidance.js?v=20260915-v484-a4-scaffold1",
-  "./app-upload.js?v=20260915-v484-ui-refine1",
+  "./app-upload.js?v=20260915-v486-erb-guide1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",
@@ -13,7 +13,8 @@ const APP_SHELL = [
   "./erb-templates/adult-consent.docx",
   "./erb-templates/child-assent.docx",
   "./erb-templates/parent-permission.docx",
-  "./erb-templates/two-representative-permission.docx"
+  "./erb-templates/two-representative-permission.docx",
+  "./erb-templates/HNU-ERB-Protocol-Packet-v1-June-2026.docx"
 ];
 
 self.addEventListener("install", (event) => {

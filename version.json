@@ -1,14 +1,14 @@
 {
-  "version": "4.8.4",
+  "version": "4.8.6",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-07-30",
-  "title": "v4.8.4 Example Guidance",
+  "releaseDate": "2026-09-15",
+  "title": "v4.8.6 ERB Packet Preparation Guide",
   "url": "./",
   "notes": [
-    "Task-specific illustrative examples for all seven A2 and A3 pattern lenses",
-    "Accessible, response-preserving example pop-ups with clear origin and source-use warnings",
-    "Candidate-gap comparison with valid single-gap and evidence-guarded synthesis routes",
-    "The guidance keeps Context and Population distinct and strengthens Theory and Evidence examples",
+    "The HNU ERB Protocol Packet can be downloaded from Tools and Ethical Considerations",
+    "Ethical Considerations now includes an ERB protocol profile, document checklist, and preparation summary",
+    "Consent-document preparation now prompts for access, data sharing or future use, opt-out, and local-language planning",
+    "ERB reviewer-only forms are clearly kept outside student tasks",
     "Offline access and local-only proposal storage remain unchanged"
   ]
 }

@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.4";
-const APP_VERSION = `v${RELEASE_VERSION} - Example Guidance`;
+const RELEASE_VERSION = "4.8.6";
+const APP_VERSION = `v${RELEASE_VERSION} - ERB Packet Preparation Guide`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -370,6 +370,20 @@ const defaultData = {
   ethics: {
     checks: {},
     draft: "",
+    erb: {
+      protocolTitle: "",
+      institution: "",
+      institutionAddress: "",
+      studyType: "",
+      siteArrangement: "",
+      funding: "",
+      startDate: "",
+      endDate: "",
+      participantCount: "",
+      technicalReview: "",
+      otherRec: "",
+      documents: {}
+    },
     documents: {
       humanParticipants: "",
       capableAdults: "",
@@ -390,6 +404,10 @@ const defaultData = {
       benefits: "",
       compensation: "",
       researchContact: "",
+      dataAccess: "",
+      dataSharingFutureUse: "",
+      optOut: "",
+      consentLanguage: "",
       childAgeRange: "",
       assentLanguage: ""
     }
@@ -439,6 +457,26 @@ const ethicsChecks = [
   "No coercion",
   "Researcher-participant power issues",
   "Ethics review requirements"
+];
+
+const erbPacketDocuments = [
+  { key: "coverLetter", number: "1", label: "Cover Letter", source: "Prepare and attach outside the app." },
+  { key: "protocolApplication", number: "2", label: "Research Protocol Application Form", source: "Use the ERB profile, then complete the official form outside the app." },
+  { key: "budget", number: "5", label: "Detailed Budget Sheet", source: "Prepare and attach outside the app." },
+  { key: "studyProtocol", number: "6", label: "Study Protocol", source: "Build from the proposal and prepare the required protocol copy." },
+  { key: "consentForms", number: "7", label: "Informed Consent Form in English and local dialect", source: "Prepare through Consent Documents, then use the current official packet template." },
+  { key: "assentForms", number: "8", label: "Assent Form in English and local dialect", source: "Required only when minors or relevant persons unable to consent are involved." },
+  { key: "dataCollectionForms", number: "9", label: "Data Collection Forms / Case Record Form", source: "Finalize the questionnaire, guide, or other tool in Instrumentation Builder." },
+  { key: "cv", number: "10", label: "Curriculum Vitae of Principal Investigator and study makers", source: "Prepare and attach outside the app." },
+  { key: "receiptForm", number: "11", label: "Document Receipt Form", source: "Complete the current official form as directed by the ERB Secretariat." },
+  { key: "ncipClearance", number: "12", label: "NCIP Clearance", source: "Confirm applicability with the adviser or ERB before marking this ready." },
+  { key: "siteProfile", number: "13", label: "Site Profile", source: "Prepare and attach outside the app." },
+  { key: "coiCertification", number: "14", label: "Certification of No Conflict of Interest", source: "Prepare and attach outside the app." }
+];
+
+const erbReviewerOnlyDocuments = [
+  "3. Protocol Review Assessment Form — for ERB reviewer use only.",
+  "4. Informed Consent Form (ICF) Checklist — for ERB reviewer use only."
 ];
 
 let state = normalizeState(loadState());
@@ -678,6 +716,8 @@ function normalizeState(nextState) {
   migrateMethodologySelection(normalized.methodology);
   normalized.mixedMethods = { ...clone(defaultData.mixedMethods), ...(nextState.mixedMethods || {}) };
   normalized.ethics = { ...clone(defaultData.ethics), ...(nextState.ethics || {}) };
+  normalized.ethics.erb = { ...clone(defaultData.ethics.erb), ...(nextState.ethics?.erb || {}) };
+  normalized.ethics.erb.documents = { ...clone(defaultData.ethics.erb.documents), ...(nextState.ethics?.erb?.documents || {}) };
   normalized.ethics.documents = { ...clone(defaultData.ethics.documents), ...(nextState.ethics?.documents || {}) };
   normalized.instrumentation = { ...clone(defaultData.instrumentation), ...(nextState.instrumentation || {}) };
   normalized.terms = { ...clone(defaultData.terms), ...(nextState.terms || {}) };
@@ -1597,7 +1637,10 @@ function buildFocusedTasks(stageId) {
       { label: "Privacy and data", title: "How will private information be protected?", support: "Plan confidentiality or anonymity, access, storage, retention, disposal, recording, and any AI-tool use.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"dataPrivacy\"]", "[data-section=\"ethics\"][data-key=\"storagePlan\"]", "[data-section=\"ethics\"][data-key=\"recordingAiUse\"]"]) },
       { label: "Permissions", title: "What permissions and review may be required?", support: "Identify institutional permission and adviser or ERB review needed before recruitment or data collection.", items: taskNodes(["[data-section=\"ethics\"][data-key=\"permissions\"]"]) },
       { label: "Safeguards", title: "Which safeguards apply to this study?", support: "Select applicable safeguards and revise the draft Ethical Considerations section in future tense.", roots: ethicsChecklist ? [ethicsChecklist] : [], items: taskNodes(["[data-ethics-check]", "[data-section=\"ethics\"][data-key=\"draft\"]"]) },
-      { label: "Consent documents", title: "Which consent, permission, or assent drafts may be needed?", support: "Use this preparation area only after the participant and permission decisions are clear. All outputs remain drafts for adviser and ERB review.", items: taskNodes([".consent-preparation"]) }
+      { label: "Consent documents", title: "Which consent, permission, or assent drafts may be needed?", support: "Use this preparation area only after the participant and permission decisions are clear. All outputs remain drafts for adviser and ERB review.", items: taskNodes([".consent-preparation"]) },
+      { label: "ERB profile", title: "Which protocol details belong in the official application form?", support: "Prepare the formal study details once, then transfer them to the current Research Protocol Application Form with your adviser.", roots: taskNodes([".erb-packet-profile"]), items: taskNodes([".erb-packet-profile"]) },
+      { label: "Packet checklist", title: "Which ERB documents are ready, still needed, or not applicable?", support: "Track only your group’s preparation. The ERB reviewer forms remain outside the student workflow.", roots: taskNodes([".erb-packet-checklist"]), items: taskNodes([".erb-packet-checklist"]) },
+      { label: "Preparation summary", title: "What remains before adviser review and packet assembly?", support: "Use this summary to prepare for adviser review. It does not certify ERB completeness or approval.", roots: taskNodes([".erb-packet-summary"]), items: taskNodes([".erb-packet-summary"]) }
     ];
   }
   if (stageId === "instrumentation") {
@@ -2444,6 +2487,7 @@ function renderEthics() {
       <p class="hint">Risk level: ${escapeHtml(ethicsRisk().label)}. ${escapeHtml(ethicsRisk().reason)}</p>
     </section>
     ${renderConsentDocumentPreparation()}
+    ${renderErbPacketGuide()}
   `;
 }
 
@@ -2463,13 +2507,17 @@ function renderConsentDocumentPreparation() {
     ["benefits", "Expected benefits", docs.benefits],
     ["compensation", "Compensation, reimbursement, or gift", docs.compensation],
     ["researchContact", "Researcher contact information", docs.researchContact],
+    ["dataAccess", "Who can access the information?", docs.dataAccess],
+    ["dataSharingFutureUse", "Will information be shared or used for future studies?", docs.dataSharingFutureUse],
+    ["optOut", "What opt-out or withdrawal option will be explained?", docs.optOut],
+    ["consentLanguage", "Consent-form language and local-language version", docs.consentLanguage],
     ["childAgeRange", "Child age range, if applicable", docs.childAgeRange],
     ["assentLanguage", "Assent form language, if applicable", docs.assentLanguage]
   ];
   return `<details class="table-wrap consent-preparation">
     <summary><strong>Consent, Permission, and Assent Document Preparation</strong></summary>
     <div class="guided-step-content">
-      <section class="notice-box"><strong>Draft for Adviser and ERB Review - Not Approved for Recruitment or Data Collection</strong><p>This tool prepares editable drafts from the supplied HNU Consent Forms v2 template. Verify the latest official ERB form and instructions with your adviser or institution before use.</p></section>
+      <section class="notice-box"><strong>Draft for Adviser and ERB Review - Not Approved for Recruitment or Data Collection</strong><p>The generated Word drafts use an earlier HNU Consent Forms v2 template. Use them only to prepare content, then compare and transfer that content to the current June 2026 ERB Protocol Packet form with your adviser.</p></section>
       <div class="field-grid">
         ${consentSelect("humanParticipants", "Does the study involve direct human participants?", [["", "Choose"], ["yes", "Yes"], ["no", "No - documents or non-human sources only"], ["uncertain", "Uncertain - adviser/ERB decision needed"]])}
         ${consentSelect("capableAdults", "Are all direct participants adults able to provide their own consent?", [["", "Choose"], ["yes", "Yes"], ["no", "No"], ["uncertain", "Uncertain"]])}
@@ -2481,10 +2529,125 @@ function renderConsentDocumentPreparation() {
       <div class="field-grid">${fields.map(([key, label, current]) => `<div class="field"><label>${escapeHtml(label)}</label><textarea data-ethics-document="${key}">${escapeHtml(current || "")}</textarea></div>`).join("")}</div>
       <section class="output-box"><h3>Documents indicated by current answers</h3><div class="generated-text">${escapeHtml(consentDocumentDecision().message)}</div></section>
       <button type="button" data-download-consent-docs ${consentDocumentDecision().files.length ? "" : "disabled"}>Generate Draft Word Form${consentDocumentDecision().files.length === 1 ? "" : "s"}</button>
+      <a class="button-link compact" href="./erb-templates/HNU-ERB-Protocol-Packet-v1-June-2026.docx" download>Download ERB Protocol Packet</a>
       <p class="hint">The app creates one master copy of each applicable form. Participant names, signatures, and signed dates remain blank. Never store signed forms or participant-identifying information in this app.</p>
-      <p class="hint">This proposal builder only helps you draft the Ethical Considerations section. It does not replace the official ethics review process. Before data gathering, ask your adviser, program head, or dean for the official ERB protocol packet and submission procedures required by your institution. Do not begin recruitment or data collection until the required permissions and ethics clearance, when applicable, have been secured.</p>
+      <p class="hint">This proposal builder only helps you draft the Ethical Considerations section. It does not replace the official ethics review process. Read the downloaded ERB Protocol Packet with your adviser, then follow the current institutional submission procedures. Do not begin recruitment or data collection until the required permissions and ethics clearance, when applicable, have been secured.</p>
     </div>
   </details>`;
+}
+
+function erbProfileField(key, label, value, { type = "textarea", options = [] } = {}) {
+  const id = `erb-${key}`;
+  if (type === "select") {
+    return `<div class="field"><label for="${id}">${escapeHtml(label)}</label><select id="${id}" data-erb-field="${key}">${options.map(([optionValue, optionLabel]) => `<option value="${escapeHtml(optionValue)}" ${value === optionValue ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("")}</select></div>`;
+  }
+  if (type === "date" || type === "number") {
+    return `<div class="field"><label for="${id}">${escapeHtml(label)}</label><input id="${id}" type="${type}" data-erb-field="${key}" value="${escapeHtml(value || "")}"${type === "number" ? ' min="0"' : ""}></div>`;
+  }
+  return `<div class="field"><label for="${id}">${escapeHtml(label)}</label><textarea id="${id}" data-erb-field="${key}">${escapeHtml(value || "")}</textarea></div>`;
+}
+
+function erbDocumentRoute(item) {
+  const returnOptions = { returnSelector: ".erb-packet-checklist", returnLabel: "ERB packet checklist" };
+  if (item.key === "studyProtocol") return contextTaskLink("outline", "[data-outline-section]", "Open Proposal Outline", returnOptions);
+  if (item.key === "consentForms" || item.key === "assentForms") return contextTaskLink("ethics", ".consent-preparation", "Open Consent Documents", returnOptions);
+  if (item.key === "dataCollectionForms") return contextTaskLink("instrumentation", ".instrumentation-row", "Open Instrumentation", returnOptions);
+  if (item.key === "protocolApplication") return "Complete the profile above, then transfer it to the official application form.";
+  return item.source;
+}
+
+function erbDocumentStatusOptions(status) {
+  return [["", "Choose status"], ["ready", "Ready to attach"], ["needed", "Still needed"], ["na", "Not applicable"]]
+    .map(([value, label]) => `<option value="${value}" ${status === value ? "selected" : ""}>${label}</option>`).join("");
+}
+
+function erbResearchTeam() {
+  if (state.submission.workArrangement === "group") {
+    return [state.submission.groupLeader.name, ...state.submission.groupMembers.map((person) => person.name)].filter(Boolean).join(", ");
+  }
+  return state.submission.studentName || "";
+}
+
+function erbProfileItems() {
+  const erb = state.ethics.erb;
+  return [
+    ["Formal protocol title", erb.protocolTitle],
+    ["Researcher or research team", erbResearchTeam()],
+    ["Institution", erb.institution],
+    ["Institution address", erb.institutionAddress],
+    ["Study site", state.methodology.locale],
+    ["Researcher contact", state.ethics.documents.researchContact],
+    ["Type of study", erb.studyType],
+    ["Site arrangement", erb.siteArrangement],
+    ["Source of funding", erb.funding],
+    ["Start and end dates", erb.startDate && erb.endDate ? `${erb.startDate} to ${erb.endDate}` : ""],
+    ["Number of study participants", erb.participantCount],
+    ["Technical review status", erb.technicalReview],
+    ["Other REC submission status", erb.otherRec]
+  ];
+}
+
+function erbPreparationProgress() {
+  const profile = erbProfileItems();
+  const completedProfile = profile.filter(([, item]) => String(item || "").trim()).length;
+  const statuses = erbPacketDocuments.map((item) => state.ethics.erb.documents[item.key] || "");
+  return {
+    profile,
+    completedProfile,
+    profileTotal: profile.length,
+    documentsReady: statuses.filter((status) => status === "ready").length,
+    documentsNeeded: statuses.filter((status) => status === "needed" || !status).length,
+    documentsNa: statuses.filter((status) => status === "na").length
+  };
+}
+
+function renderErbPacketGuide() {
+  const erb = state.ethics.erb;
+  const progress = erbPreparationProgress();
+  return `
+    <section class="output-box erb-packet-profile">
+      <h3>ERB Protocol Profile</h3>
+      <p>Prepare the details requested in the Research Protocol Application Form. This does not complete or submit the official form. The ERB code is supplied by the ERB Secretariat, so leave that part to them.</p>
+      <div class="erb-source-links">
+        <span><strong>Already available:</strong> research team from Student Details; study site from Methodology; researcher contact from Consent Documents.</span>
+        ${contextTaskLink("methodology", '[data-section="methodology"][data-key="locale"]', "Review study site", { returnSelector: ".erb-packet-profile", returnLabel: "ERB protocol profile" })}
+        ${contextTaskLink("ethics", ".consent-preparation", "Review researcher contact", { returnSelector: ".erb-packet-profile", returnLabel: "ERB protocol profile" })}
+      </div>
+      <div class="field-grid">
+        ${erbProfileField("protocolTitle", "Formal protocol title", erb.protocolTitle)}
+        ${erbProfileField("institution", "Institution", erb.institution)}
+        ${erbProfileField("institutionAddress", "Institution address", erb.institutionAddress)}
+        ${erbProfileField("studyType", "Type of study", erb.studyType, { type: "select", options: [["", "Choose"], ["Social / Behavioral Research", "Social / Behavioral Research"], ["Health Operations Research", "Health Operations Research"], ["Public Health / Epidemiologic Research", "Public Health / Epidemiologic Research"], ["Biomedical Research", "Biomedical Research"], ["Clinical Trial (Sponsored)", "Clinical Trial (Sponsored)"], ["Clinical Trial (Researcher-initiated)", "Clinical Trial (Researcher-initiated)"], ["Stem Cell Research", "Stem Cell Research"], ["Genetic Research", "Genetic Research"], ["Other", "Other"]] })}
+        ${erbProfileField("siteArrangement", "Site arrangement", erb.siteArrangement, { type: "select", options: [["", "Choose"], ["Single site", "Single site"], ["Multicenter (National)", "Multicenter (National)"], ["Multicenter (International)", "Multicenter (International)"]] })}
+        ${erbProfileField("funding", "Source of funding", erb.funding, { type: "select", options: [["", "Choose"], ["Self-funded", "Self-funded"], ["Government-funded", "Government-funded"], ["Scholarship / Research Grant", "Scholarship / Research Grant"], ["Sponsored by a pharmaceutical company", "Sponsored by a pharmaceutical company"], ["Institution-funded", "Institution-funded"], ["Other", "Other"]] })}
+        ${erbProfileField("startDate", "Planned start date", erb.startDate, { type: "date" })}
+        ${erbProfileField("endDate", "Planned end date", erb.endDate, { type: "date" })}
+        ${erbProfileField("participantCount", "Number of study participants", erb.participantCount, { type: "number" })}
+        ${erbProfileField("technicalReview", "Has the research undergone technical review?", erb.technicalReview, { type: "select", options: [["", "Choose"], ["Yes", "Yes — attach technical-review result as required"], ["No", "No"], ["Not yet determined", "Not yet determined — discuss with adviser"]] })}
+        ${erbProfileField("otherRec", "Has the research been submitted to another REC?", erb.otherRec, { type: "select", options: [["", "Choose"], ["Yes", "Yes"], ["No", "No"], ["Not yet determined", "Not yet determined — discuss with adviser"]] })}
+      </div>
+    </section>
+    <section class="output-box erb-packet-checklist">
+      <h3>ERB Submission Checklist</h3>
+      <p>Mark the documents your group must prepare. “Ready to attach” means ready for adviser review, not accepted by the ERB Secretariat.</p>
+      <div class="erb-checklist-list">
+        ${erbPacketDocuments.map((item) => `<div class="erb-checklist-row">
+          <div><strong>${escapeHtml(item.number)}. ${escapeHtml(item.label)}</strong><p class="hint">${erbDocumentRoute(item)}</p></div>
+          <div class="erb-document-status"><label class="visually-hidden" for="erb-document-${item.key}">Status for ${escapeHtml(item.label)}</label><select id="erb-document-${item.key}" data-erb-document="${item.key}">${erbDocumentStatusOptions(erb.documents[item.key] || "")}</select></div>
+        </div>`).join("")}
+      </div>
+      <section class="notice-box erb-reviewer-only"><strong>ERB reviewer forms</strong><p>${erbReviewerOnlyDocuments.map(escapeHtml).join("<br>")} Do not mark these as student tasks or attempt to complete the reviewer recommendation.</p></section>
+    </section>
+    <section class="output-box erb-packet-summary">
+      <h3>ERB Preparation Summary</h3>
+      <p><strong>Protocol profile:</strong> ${progress.completedProfile} of ${progress.profileTotal} details entered. <strong>Documents:</strong> ${progress.documentsReady} ready to attach, ${progress.documentsNeeded} still needing a decision or preparation, and ${progress.documentsNa} marked not applicable.</p>
+      <div class="erb-summary-list">
+        ${progress.profile.filter(([, item]) => !String(item || "").trim()).map(([label]) => `<p><strong>Still needed:</strong> ${escapeHtml(label)}</p>`).join("") || "<p>All ERB profile details are entered. Review their accuracy with the adviser.</p>"}
+      </div>
+      <button type="button" data-print-erb-summary>Print ERB Preparation Summary</button>
+      <a class="button-link compact" href="./erb-templates/HNU-ERB-Protocol-Packet-v1-June-2026.docx" download>Download ERB Protocol Packet</a>
+      <p class="hint">Preparation aid only. The ERB Secretariat determines completeness, and the ERB reviewer determines approval. Do not recruit or collect data until required permissions and ethics clearance are secured.</p>
+    </section>`;
 }
 
 function consentSelect(key, label, options) {
@@ -2567,6 +2730,24 @@ function downloadBlob(blob, filename) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function printErbPreparationSummary() {
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if (!printWindow) {
+    alert("Your browser blocked the print summary window. Allow pop-ups for this app, then try again.");
+    return;
+  }
+  const progress = erbPreparationProgress();
+  const profileRows = progress.profile.map(([label, detail]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(detail || "Still needed")}</td></tr>`).join("");
+  const documentRows = erbPacketDocuments.map((item) => {
+    const statuses = { ready: "Ready to attach", needed: "Still needed", na: "Not applicable" };
+    return `<tr><td>${escapeHtml(item.number)}</td><th>${escapeHtml(item.label)}</th><td>${escapeHtml(statuses[state.ethics.erb.documents[item.key]] || "No status selected")}</td></tr>`;
+  }).join("");
+  printWindow.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>ERB Preparation Summary</title><style>body{font:12pt Arial,sans-serif;color:#172126;margin:32px;line-height:1.45}h1{font-size:20pt;margin-bottom:4px}h2{font-size:14pt;margin-top:28px}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #77858a;padding:8px;text-align:left;vertical-align:top}th{background:#edf3f1}.notice{border-left:4px solid #9b5d00;background:#fff8e8;padding:12px;margin-top:20px}@media print{body{margin:18px}}</style></head><body><h1>ERB Submission Preparation Summary</h1><p>Prepared from the Lit-Based Proposal Builder on ${escapeHtml(new Date().toLocaleString())}.</p><h2>Protocol profile</h2><table>${profileRows}</table><h2>Student-prepared documents</h2><table><thead><tr><th>Item</th><th>Document</th><th>Preparation status</th></tr></thead><tbody>${documentRows}</tbody></table><h2>ERB reviewer forms</h2><p>${erbReviewerOnlyDocuments.map(escapeHtml).join("<br>")}</p><div class="notice"><strong>Preparation aid only.</strong> This summary does not determine ERB completeness or approval. The ERB Secretariat determines completeness, and the ERB reviewer determines approval. Do not recruit or collect data until required permissions and ethics clearance are secured.</div></body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 250);
 }
 
 function renderInstrumentation() {
@@ -5274,6 +5455,12 @@ function attachEvents() {
       saveState();
       return;
     }
+    if (target.dataset.erbField) {
+      state.ethics.erb[target.dataset.erbField] = target.value;
+      markContentEdit();
+      saveState();
+      return;
+    }
     if (target.dataset.section && target.dataset.key) {
       setValue(target.dataset.section, target.dataset.key, target.value);
       if (target.dataset.section === "a4" && target.dataset.key === "refinedGap") {
@@ -5421,6 +5608,20 @@ function attachEvents() {
       renderStage();
       return;
     }
+    if (target.dataset.erbField) {
+      state.ethics.erb[target.dataset.erbField] = target.value;
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
+    if (target.dataset.erbDocument) {
+      state.ethics.erb.documents[target.dataset.erbDocument] = target.value;
+      markContentEdit();
+      saveState();
+      renderStage();
+      return;
+    }
     if (target.dataset.methodologyAction !== undefined) {
       state.methodology.actionResearch = target.checked ? "yes" : "no";
       state.methodology.selectedDesign = methodologyDisplayName(state.methodology.approach, state.methodology.design, target.checked);
@@ -5473,6 +5674,10 @@ function attachEvents() {
     }
     if (target.dataset.openStudentDetails !== undefined) {
       openStudentDetails();
+      return;
+    }
+    if (target.dataset.printErbSummary !== undefined) {
+      printErbPreparationSummary();
       return;
     }
     if (target.id === "closeExampleDialogBtn" || target.id === "returnFromExampleBtn") {
