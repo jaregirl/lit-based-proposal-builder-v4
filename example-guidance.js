@@ -100,5 +100,49 @@ globalThis.PROPOSAL_EXAMPLES = Object.freeze({
     }
   },
   synthesis: "Although assessment literacy is commonly treated as an individual set of competencies and is often examined through self-reports or knowledge tests, the mapped literature provides limited multi-source evidence of how preservice teachers enact those competencies across the assessment cycle during school-based practicum and how mentor guidance and school conditions shape that enactment. Consequently, the relationship between what preservice teachers know or report and what they do in classroom assessment remains insufficiently understood.",
-  singleGap: "I retained the Evidence gap because it is directly supported by the mapped studies, identifies a clear limitation in what can currently be concluded, and is manageable within one practicum-based study. The other patterns help justify this gap but do not need to become separate components of it."
+  singleGap: "I retained the Evidence gap because it is directly supported by the mapped studies, identifies a clear limitation in what can currently be concluded, and is manageable within one practicum-based study. The other patterns help justify this gap but do not need to become separate components of it.",
+  a4: {
+    problem: {
+      label: "from final gap to literature-based problem",
+      model: "The mapped literature provides limited understanding of how preservice teachers enact assessment literacy across an assessment cycle during school-based teaching practicum. This limitation makes it difficult to explain how reported assessment knowledge is carried into classroom decisions and instructional adjustments under actual practicum conditions.",
+      frame: "The mapped literature provides limited understanding of how [group] [enacts, experiences, or relates to the central focus] in [relevant setting or condition]. This limitation makes it difficult to explain [what cannot yet be understood, compared, or decided].",
+      checks: ["Does the problem state an uncertainty from the literature, rather than only a practical concern?", "Does it preserve the central unresolved issue from A3?", "Does it explain what the limitation prevents us from understanding?"]
+    },
+    focus: {
+      label: "central study focus",
+      model: "This study focuses on how preservice teachers enact assessment literacy across the assessment cycle during school-based teaching practicum.",
+      frame: "This study focuses on [the phenomenon, relationship, process, condition, or experience] in [relevant setting or condition].",
+      checks: ["Did I name what will be investigated?", "Did I avoid naming participants as though they were the focus itself?", "Does this focus follow directly from the literature-based problem?"]
+    },
+    components: {
+      label: "study components",
+      model: "The study examines assessment tasks, interpretation of learner evidence, feedback, and instructional adjustment as connected parts of assessment literacy during practicum.",
+      frame: "To examine [central focus], this study needs to consider [component 1], [component 2], and [component 3] as [their relationship or role].",
+      checks: ["Are the components necessary to answer the central question?", "Do they carry forward the A1 construct and A3 problem?", "Did I avoid adding an attractive but unsupported new topic?"]
+    },
+    setting: {
+      label: "research environment or setting",
+      model: "The setting is school-based teaching practicum in partner basic-education schools, where preservice teachers plan, assess, respond to learner evidence, and work with mentor teachers.",
+      frame: "The research environment is [institutional, classroom, community, workplace, document, or online setting], where [the relevant activity or condition occurs].",
+      checks: ["Did I describe the environment rather than the participants?", "Does this setting matter to the literature-based problem?", "Did I include only context that is relevant to the inquiry?"]
+    },
+    purpose: {
+      label: "broad inquiry purpose",
+      model: "The broad purpose is to explore how preservice teachers enact assessment literacy during school-based teaching practicum and how they describe the conditions shaping those decisions.",
+      frame: "The purpose of this study is to [describe, compare, relate, explore, explain, evaluate, or develop] [central focus] in [relevant setting or condition].",
+      checks: ["Does the verb match what the literature-based problem leaves uncertain?", "Can the eventual questions realistically answer this purpose?", "Did I avoid choosing a purpose only because its question starter sounds familiar?"]
+    },
+    centralQuestion: {
+      label: "central research question",
+      model: "How do preservice teachers enact assessment literacy during school-based teaching practicum, and how do they describe the conditions shaping those assessment decisions?",
+      frame: "[Question starter that fits the purpose] [central focus] among or within [relevant setting or group] [under the condition, when needed]?",
+      checks: ["Does this question respond to the unresolved issue in A3?", "Is it broad enough to contain the specific questions?", "Did I avoid introducing a cause, comparison, or outcome that the problem does not support?"]
+    },
+    specificQuestions: {
+      label: "specific research questions",
+      model: ["What assessment tasks, interpretations of learner evidence, feedback practices, and instructional adjustments do preservice teachers describe during teaching practicum?", "How do preservice teachers describe the relationship between their assessment knowledge and their classroom assessment decisions during practicum?", "How do preservice teachers describe the role of mentor guidance and school conditions in those assessment decisions?"],
+      frame: "For each specific question: [one necessary part of the central question] → [the inquiry purpose] → [the claim the evidence should allow] → [a question using a suitable starter].",
+      checks: ["Does each question answer one necessary part of the central question?", "Does every question have a distinct purpose and intended claim?", "Do the questions together remain manageable for one study?"]
+    }
+  }
 });

@@ -502,10 +502,11 @@ function loadUiState() {
     const saved = JSON.parse(localStorage.getItem(UI_STATE_KEY) || "{}");
     return {
       tasks: saved.tasks && typeof saved.tasks === "object" ? saved.tasks : {},
-      showAll: saved.showAll && typeof saved.showAll === "object" ? saved.showAll : {}
+      showAll: saved.showAll && typeof saved.showAll === "object" ? saved.showAll : {},
+      contextReturn: saved.contextReturn && typeof saved.contextReturn === "object" ? saved.contextReturn : null
     };
   } catch {
-    return { tasks: {}, showAll: {} };
+    return { tasks: {}, showAll: {}, contextReturn: null };
   }
 }
 
@@ -530,6 +531,73 @@ function setActiveTask(stageId, index, taskCount) {
   uiState.tasks[stageId] = Math.max(0, Math.min(Math.max(0, taskCount - 1), Number(index) || 0));
   uiState.showAll[stageId] = false;
   saveUiState();
+}
+
+function contextTaskLink(stageId, selector, label, { returnSelector = "", returnLabel = "" } = {}) {
+  const returnAttributes = returnSelector
+    ? ` data-context-return="true" data-context-return-selector="${escapeHtml(encodeURIComponent(returnSelector))}" data-context-return-label="${escapeHtml(returnLabel)}"`
+    : "";
+  return `<button class="context-task-link" type="button" data-context-stage="${escapeHtml(stageId)}" data-context-selector="${escapeHtml(encodeURIComponent(selector))}"${returnAttributes}>${escapeHtml(label)}</button>`;
+}
+
+function focusedTaskCount(stageId = state.currentStage) {
+  return buildFocusedTasks(stageId).filter((task) => task.items?.length || task.roots?.length).length;
+}
+
+function focusContextTask(stageId, selector) {
+  activateStage(stageId);
+  const taskCount = focusedTaskCount(stageId);
+  const taskIndex = issueTargetTaskIndex(stageId, selector);
+  if (taskIndex >= 0 && taskIndex !== activeTaskIndex(stageId, taskCount)) {
+    setActiveTask(stageId, taskIndex, taskCount);
+    renderStage();
+  }
+  requestAnimationFrame(() => {
+    const control = els.stageForm.querySelector(selector);
+    if (!control) return;
+    control.closest("details")?.setAttribute("open", "");
+    const target = focusWrapper(control);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (control.matches?.("input, textarea, select, button, [tabindex]")) control.focus({ preventScroll: true });
+    else {
+      if (!target?.hasAttribute("tabindex")) target?.setAttribute("tabindex", "-1");
+      target?.focus({ preventScroll: true });
+    }
+  });
+}
+
+function openContextTask(stageId, selector, returnDetails = null) {
+  if (returnDetails) {
+    uiState.contextReturn = {
+      destinationStage: stageId,
+      sourceStage: state.currentStage,
+      sourceTaskIndex: activeTaskIndex(state.currentStage, focusedTaskCount(state.currentStage)),
+      sourceSelector: returnDetails.selector,
+      sourceLabel: returnDetails.label || "the previous task"
+    };
+    saveUiState();
+  }
+  focusContextTask(stageId, selector);
+}
+
+function returnToContextTask() {
+  const returnDetails = uiState.contextReturn;
+  if (!returnDetails?.sourceStage) return;
+  uiState.contextReturn = null;
+  saveUiState();
+  activateStage(returnDetails.sourceStage);
+  const taskCount = focusedTaskCount(returnDetails.sourceStage);
+  if (Number.isInteger(returnDetails.sourceTaskIndex)) {
+    setActiveTask(returnDetails.sourceStage, returnDetails.sourceTaskIndex, taskCount);
+  }
+  renderStage();
+  if (returnDetails.sourceSelector) focusContextTask(returnDetails.sourceStage, returnDetails.sourceSelector);
+}
+
+function renderContextReturnNotice(stageId) {
+  const returnDetails = uiState.contextReturn;
+  if (!returnDetails || returnDetails.destinationStage !== stageId) return;
+  els.stageForm.insertAdjacentHTML("afterbegin", `<section class="context-return-notice" role="status">Review this earlier decision, then <button class="context-task-link" type="button" data-context-return-home>Return to ${escapeHtml(returnDetails.sourceLabel)}</button>.</section>`);
 }
 
 function createStableId(prefix = "item") {
@@ -1098,6 +1166,15 @@ function openExampleDialog(stage, type, trigger) {
     const single = state.a3.finalGapMode !== "synthesis";
     els.exampleDialogTitle.textContent = single ? "Example: retain one strong gap" : "Example: synthesized final gap";
     body = `${exampleNoticeHtml()}<section class="example-section"><h3>${single ? "Valid single-gap route" : "Synthesized final-gap model"}</h3><blockquote class="example-model">${escapeHtml(single ? examples.singleGap : examples.synthesis)}</blockquote></section>`;
+  } else if (stage === "a4" && examples.a4?.[type]) {
+    const item = examples.a4[type];
+    els.exampleDialogTitle.textContent = `Example: ${item.label}`;
+    const model = Array.isArray(item.model)
+      ? `<ol class="example-reasoning">${item.model.map((question) => `<li><p>${escapeHtml(question)}</p></li>`).join("")}</ol>`
+      : `<blockquote class="example-model">${escapeHtml(item.model)}</blockquote>`;
+    body = `${exampleNoticeHtml()}<section class="example-section"><h3>Working model</h3>${model}</section>
+      <section class="example-section"><h3>Use this template</h3><p class="example-frame">${escapeHtml(item.frame)}</p></section>
+      <details class="example-details"><summary>Check your own answer</summary><ul>${item.checks.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul><p class="example-source-prompt">Use only claims you can support from your own literature map. ${escapeHtml(examples.sourcePrompt)}</p></details>`;
   } else return;
   els.exampleDialogBody.innerHTML = body;
   els.exampleDialog._returnFocusElement = trigger || null;
@@ -1410,6 +1487,7 @@ function renderStage() {
   else if (id === "outline") result = renderOutline();
   else if (id === "readiness") result = renderReadiness();
   else result = renderSubmission();
+  renderContextReturnNotice(id);
   if (isAcademicStage(id) && state.submission.workArrangement === "group") {
     els.stageForm.insertAdjacentHTML("beforeend", renderTeamContributionRecord(id));
   }
@@ -1854,10 +1932,11 @@ function renderGapComparison() {
 }
 
 function renderA2() {
+  const a1CoreConstructLink = contextTaskLink("a1", '[data-section="a1"][data-key="coreConstruct"]', "A1: Core Construct");
   els.stageForm.innerHTML = `
     <section class="table-wrap">
       <h3>Pattern Mapping Matrix</h3>
-      <p class="hint">Read at least 10-15 peer-reviewed journal articles directly related to your A1 core construct. Do not summarize each article separately. Look for repetition across studies.</p>
+      <p class="hint">Read at least 10-15 peer-reviewed journal articles directly related to your ${a1CoreConstructLink}. Do not summarize each article separately. Look for repetition across studies.</p>
       <div class="table-scroll">
         <div class="editable-list">
           ${state.a2.patterns.map((row, index) => tableRow("a2Patterns", index, ["type", "notice", "authors", "years"], ["Pattern Type", "What do you notice across studies?", "Supporting Authors", "Year"])).join("")}
@@ -1873,10 +1952,11 @@ function renderA2() {
 }
 
 function renderA3() {
+  const a2PatternLink = contextTaskLink("a2", '[data-table="a2Patterns"][data-index="0"]', "A2: Pattern Mapping");
   els.stageForm.innerHTML = `
     <section class="table-wrap">
       <h3>A3 Matrix: From Patterns to Gaps</h3>
-      <p class="hint">A gap is not simply what is missing. It is what cannot yet be understood because studies emphasize certain approaches, groups, methods, or explanations.</p>
+      <p class="hint">Begin with ${a2PatternLink}. A gap is not simply what is missing. It is what cannot yet be understood because studies emphasize certain approaches, groups, methods, or explanations.</p>
       <div class="table-scroll">
         <div class="editable-list">
           ${state.a3.gaps.map((row, index) => tableRow("a3Gaps", index, ["type", "show", "emphasized", "lessVisible", "limits", "gap"], ["Pattern Type", "Studies repeatedly show...", "What is emphasized", "What is not captured / less visible", "What this limits us from understanding", "Refined Gap Statement"])).join("")}
@@ -1924,57 +2004,80 @@ function renderA4() {
   const centralStarter = state.a4.centralPurpose && rqPurposeOptions[state.a4.centralPurpose]
     ? rqPurposeOptions[state.a4.centralPurpose].starters
     : "Choose the broad inquiry purpose to see suitable question starters.";
+  const a3GapForProblem = contextTaskLink("a3", '[data-section="a3"][data-key="finalGap"]', "A3: Final Gap", {
+    returnSelector: '[data-section="a4"][data-key="refinedGap"]',
+    returnLabel: "A4.1: State the literature-based problem"
+  });
+  const a1ConstructForComponents = contextTaskLink("a1", '[data-section="a1"][data-key="coreConstruct"]', "A1: Core Construct", {
+    returnSelector: '[data-section="a4"][data-key="rqConstructs"]',
+    returnLabel: "A4.3: Identify the study components"
+  });
+  const a3GapForComponents = contextTaskLink("a3", '[data-section="a3"][data-key="finalGap"]', "A3: Final Gap", {
+    returnSelector: '[data-section="a4"][data-key="rqConstructs"]',
+    returnLabel: "A4.3: Identify the study components"
+  });
+  const a3GapForQuestions = contextTaskLink("a3", '[data-section="a3"][data-key="finalGap"]', "A3: Final Gap", {
+    returnSelector: '[data-section="a4"][data-key="centralQuestion"]',
+    returnLabel: "A4.6: Write the central research question"
+  });
   els.stageForm.innerHTML = `
     <section class="output-box">
       <h3>A4 Guided Reasoning Path</h3>
-      <div class="generated-text">Move from evidence to questions: A3 gap &rarr; literature-based problem &rarr; central study focus &rarr; components and environment &rarr; inquiry purpose &rarr; central question &rarr; specific questions. Open one step at a time.</div>
+      <div class="generated-text">Move from evidence to questions: ${a3GapForProblem} &rarr; literature-based problem &rarr; central study focus &rarr; components and environment &rarr; inquiry purpose &rarr; central question &rarr; specific questions. Open one step at a time.</div>
     </section>
-    <section class="output-box"><h3>Your original A3 final gap</h3><div class="generated-text">${escapeHtml(state.a3.finalGap || "Complete the A3 final gap first. Your answer to the literature-based problem begins there.")}</div></section>
+    <section class="output-box"><h3>Your original A3 final gap</h3><div class="generated-text">${escapeHtml(state.a3.finalGap || "Complete the A3 final gap first. Your answer to the literature-based problem begins there.")}</div><p class="hint">Need to check or revise the source reasoning? ${a3GapForProblem}</p></section>
     <details class="guided-step" name="a4-flow" open>
       <summary>1. State the literature-based problem</summary>
       <div class="guided-step-content">
-        <label>Optional refined gap for A4<textarea data-section="a4" data-key="refinedGap">${escapeHtml(state.a4.refinedGap)}</textarea><span class="hint">Refine the wording if the gap became clearer. The original A3 gap will not be overwritten.</span></label>
+        <label>Optional refined gap for A4<textarea data-section="a4" data-key="refinedGap">${escapeHtml(state.a4.refinedGap)}</textarea><span class="hint">Refine the wording if the gap became clearer. The original A3 gap will not be overwritten. If the unresolved issue itself changed, revisit ${a3GapForProblem} before continuing.</span></label>
         <label>Why did the gap wording change?<textarea data-section="a4" data-key="gapRevisionReason">${escapeHtml(state.a4.gapRevisionReason)}</textarea></label>
-        <label>Literature-Based Problem: What problem becomes visible from A3?<textarea data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea><span class="hint">State the problem revealed by what remains less visible and what this limits us from understanding.</span></label>
+        <div class="field-heading"><div class="field-label"><label for="a4-literature-problem">Literature-Based Problem: What problem becomes visible from A3?</label></div>${exampleControl("a4", "problem")}</div>
+        <textarea id="a4-literature-problem" data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea><span class="hint">State the problem revealed by what remains less visible and what this limits us from understanding.</span>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>2. Identify the central study focus</summary>
       <div class="guided-step-content">
-        <label>Central Study Focus: What phenomenon, relationship, process, alignment, or condition will be investigated?<textarea data-section="a4" data-key="centralFocus">${escapeHtml(state.a4.centralFocus)}</textarea><span class="hint">State what is being investigated, not the people or materials that will provide evidence.</span></label>
+        <div class="field-heading"><div class="field-label"><label for="a4-central-focus">Central Study Focus: What phenomenon, relationship, process, alignment, or condition will be investigated?</label></div>${exampleControl("a4", "focus")}</div>
+        <textarea id="a4-central-focus" data-section="a4" data-key="centralFocus">${escapeHtml(state.a4.centralFocus)}</textarea><span class="hint">State what is being investigated, not the people or materials that will provide evidence.</span>
         ${state.a4.studiedGroup ? `<section class="output-box"><h3>Previous-version study-focus answer</h3><div class="generated-text">${escapeHtml(state.a4.studiedGroup)}</div><p class="hint">This answer was preserved. Decide whether it describes participants, an environment, evidence sources, or the central focus; the app will not reinterpret it automatically.</p></section>` : ""}
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>3. Identify the study components</summary>
       <div class="guided-step-content">
-        <label>Study Components: What dimensions, variables, experiences, processes, or categories are needed to examine that focus?<textarea data-section="a4" data-key="studyComponents">${escapeHtml(state.a4.studyComponents)}</textarea></label>
-        <label>Required Ideas: What A1 construct and A3 gap ideas must remain visible?<textarea data-section="a4" data-key="rqConstructs">${escapeHtml(state.a4.rqConstructs)}</textarea></label>
+        <div class="field-heading"><div class="field-label"><label for="a4-study-components">Study Components: What dimensions, variables, experiences, processes, or categories are needed to examine that focus?</label></div>${exampleControl("a4", "components")}</div>
+        <textarea id="a4-study-components" data-section="a4" data-key="studyComponents">${escapeHtml(state.a4.studyComponents)}</textarea>
+        <label>Required Ideas: What key ideas must remain visible?<textarea data-section="a4" data-key="rqConstructs">${escapeHtml(state.a4.rqConstructs)}</textarea><span class="hint">Carry forward the ${a1ConstructForComponents} and ${a3GapForComponents}. Do not add an unsupported new idea.</span></label>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>4. Identify the research environment or setting</summary>
       <div class="guided-step-content">
-        <label>Research environment or setting<textarea data-section="methodology" data-key="locale">${escapeHtml(state.methodology.locale)}</textarea><span class="hint">Describe the physical, institutional, social, community, workplace, classroom, document, or online environment relevant to the study.</span></label>
+        <div class="field-heading"><div class="field-label"><label for="a4-research-setting">Research environment or setting</label></div>${exampleControl("a4", "setting")}</div>
+        <textarea id="a4-research-setting" data-section="methodology" data-key="locale">${escapeHtml(state.methodology.locale)}</textarea><span class="hint">Describe the physical, institutional, social, community, workplace, classroom, document, or online environment relevant to the study.</span>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>5. Clarify the broad inquiry purpose</summary>
       <div class="guided-step-content">
-        <label>Broad inquiry purpose<select data-section="a4" data-key="centralPurpose">${purposeOptions(state.a4.centralPurpose)}</select></label>
+        <div class="field-heading"><div class="field-label"><label for="a4-central-purpose">Broad inquiry purpose</label></div>${exampleControl("a4", "purpose")}</div>
+        <select id="a4-central-purpose" data-section="a4" data-key="centralPurpose">${purposeOptions(state.a4.centralPurpose)}</select>
         <section class="output-box"><h3>Possible central-question starters</h3><div class="generated-text" data-central-starters>${escapeHtml(centralStarter)}</div></section>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>6. Write the central research question</summary>
       <div class="guided-step-content">
-        <label>Central Research Question: What broad question will the study answer?<textarea data-section="a4" data-key="centralQuestion">${escapeHtml(state.a4.centralQuestion)}</textarea></label>
-        <ul class="hint"><li>Responds to the A3 problem</li><li>Retains the central focus and required ideas</li><li>Names the relevant environment when needed</li><li>Is broad enough to contain the SRQs</li><li>Does not introduce an unsupported new idea</li></ul>
+        <div class="field-heading"><div class="field-label"><label for="a4-central-question">Central Research Question: What broad question will the study answer?</label></div>${exampleControl("a4", "centralQuestion")}</div>
+        <textarea id="a4-central-question" data-section="a4" data-key="centralQuestion">${escapeHtml(state.a4.centralQuestion)}</textarea>
+        <ul class="hint"><li>Responds to the unresolved issue in ${a3GapForQuestions}</li><li>Retains the central focus and required ideas</li><li>Names the relevant environment when needed</li><li>Is broad enough to contain the SRQs</li><li>Does not introduce an unsupported new idea</li></ul>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
       <summary>7. Break the central question into specific research questions</summary>
       <div class="guided-step-content">
+        <div class="field-heading"><span class="field-label">Build the question set</span>${exampleControl("a4", "specificQuestions")}</div>
         <section class="output-box rq-anchor-box"><h3>Central question to unpack</h3><div class="generated-text">${escapeHtml(state.a4.centralQuestion || "Write the central research question first.")}</div></section>
         <p class="hint">Each SRQ should answer one necessary part of the central question. Add ${SRQ_LIMITS.minimum}-${SRQ_LIMITS.maximum} as needed.</p>
         <div class="editable-list">
@@ -2014,7 +2117,12 @@ function renderMethodology() {
   const design = state.methodology.design || "";
   const mixedNeeded = approach === "mixed";
   const recommendation = methodologyRecommendation();
+  const a4QuestionsLink = contextTaskLink("a4", '[data-array="a4.questions"][data-index="0"]', "A4.7: Specific Research Questions", {
+    returnSelector: '[data-section="methodology"][data-key="rqTypes"]',
+    returnLabel: "Methodology: Evidence approach"
+  });
   els.stageForm.innerHTML = `
+    <p class="hint">Method choices follow the evidence required by ${a4QuestionsLink}. Do not choose a design only because it is familiar or convenient.</p>
     ${renderFields("methodology", fieldSets.methodology)}
     <section class="output-box methodology-recommendation">
       <h3>Design Guidance from A4</h3>
@@ -2100,10 +2208,15 @@ function methodologyRecommendation() {
 
 function renderFramework() {
   const pathway = value("frameworkFinder.pathway") || "problem-led";
+  const theoryPatternIndex = state.a2.patterns.findIndex((row) => String(row.type || "").trim().toLowerCase() === "theory");
+  const a2TheoryLink = contextTaskLink("a2", theoryPatternIndex >= 0 ? `[data-table="a2Patterns"][data-index="${theoryPatternIndex}"]` : '[data-table="a2Patterns"][data-index="0"]', theoryPatternIndex >= 0 ? "A2: Theory Pattern" : "A2: Pattern Mapping", {
+    returnSelector: '[data-section="frameworkFinder"][data-key="literatureSignals"]',
+    returnLabel: "Framework Finder: Find"
+  });
   els.stageForm.innerHTML = `
     <section class="output-box">
       <h3>Framework Finder: Find &rarr; Compare &rarr; Select &rarr; Test &rarr; Explain</h3>
-      <div class="generated-text">For most beginning researchers, formally select a framework after the literature gap, problem, and questions have become clear enough to test its fit. Theories noticed during A2 are candidates, not automatic choices. Research is iterative, so the selected framework may lead you back to refine A2-A4.</div>
+      <div class="generated-text">For most beginning researchers, formally select a framework after the literature gap, problem, and questions have become clear enough to test its fit. Theories noticed in ${a2TheoryLink} are candidates, not automatic choices. Research is iterative, so the selected framework may lead you back to refine earlier decisions.</div>
     </section>
     <section class="field full framework-pathway">
       <div class="field-label">
@@ -2425,11 +2538,14 @@ function renderInstrumentation() {
   syncInstrumentationRows();
   const rows = state.instrumentation.rows;
   if (!rows.length) {
+    const a4QuestionsLink = contextTaskLink("a4", '[data-array="a4.questions"][data-index="0"]', "A4.7: Specific Research Questions", {
+      returnSelector: ".empty-state",
+      returnLabel: "Instrumentation Builder"
+    });
     els.stageForm.innerHTML = `
       <section class="output-box empty-state">
         <h3>No Specific Research Questions Yet</h3>
-        <div class="generated-text">Instrumentation begins with the specific research questions. Return to A4, add the SRQs, and this section will create exactly one instrumentation card for each question.</div>
-        <button type="button" data-stage="a4">Go to A4</button>
+        <div class="generated-text">Instrumentation begins with the specific research questions. Go to ${a4QuestionsLink}, add the SRQs, and this section will create exactly one instrumentation card for each question.</div>
       </section>`;
     return;
   }
@@ -2492,8 +2608,11 @@ function instrumentationRow(index) {
   const purposeKey = state.a4.questionPurposes[questionIndex] || "";
   const purpose = rqPurposeOptions[purposeKey];
   const purposeHint = purpose
-    ? `Question purpose from A4: ${purpose.label}. Suggested question starters: ${purpose.starters}`
-    : "No A4 question purpose selected yet. Return to A4 and choose the purpose of this question.";
+    ? escapeHtml(`Question purpose from A4: ${purpose.label}. Suggested question starters: ${purpose.starters}`)
+    : `No A4 question purpose selected yet. Choose it in ${contextTaskLink("a4", `[data-question-purpose="${questionIndex}"]`, `A4.7: Question ${questionIndex + 1} purpose`, {
+      returnSelector: `[data-table="instrumentation"][data-index="${index}"][data-key="evidenceNeeded"]`,
+      returnLabel: `Instrumentation: Question ${index + 1}`
+    })}.`;
   const labels = {
     claimNeeded: "Claim Needed",
     evidenceNeeded: "Evidence Needed",
@@ -2510,7 +2629,7 @@ function instrumentationRow(index) {
       <section class="output-box">
         <h3>Research Question ${index + 1}</h3>
         <div class="generated-text">${escapeHtml(row.rq || "No research question has been entered yet.")}</div>
-        <p class="hint">${escapeHtml(purposeHint)}</p>
+        <p class="hint">${purposeHint}</p>
       </section>
       ${["claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"].map((key) => `
         <label>
@@ -5288,6 +5407,22 @@ function attachEvents() {
     if (!document.getElementById("statusMenu")?.hidden && !event.target.closest?.("#statusMenu") && !event.target.closest?.("#statusBtn")) closeStatusMenu();
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.contextReturnHome !== undefined) {
+      returnToContextTask();
+      return;
+    }
+    if (target.dataset.contextStage) {
+      const selector = decodeURIComponent(target.dataset.contextSelector || "");
+      if (!selector) return;
+      const returnDetails = target.dataset.contextReturn === "true"
+        ? {
+          selector: decodeURIComponent(target.dataset.contextReturnSelector || ""),
+          label: target.dataset.contextReturnLabel || "the previous task"
+        }
+        : null;
+      openContextTask(target.dataset.contextStage, selector, returnDetails);
+      return;
+    }
     if (target.dataset.exampleStage && target.dataset.exampleType) {
       openExampleDialog(target.dataset.exampleStage, target.dataset.exampleType, target);
       return;

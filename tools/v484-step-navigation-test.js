@@ -49,6 +49,25 @@ async function chooseFoundationStep(page, stageId) {
   assert(await page.locator("#exampleDialog").isVisible(), "A2 example pop-up did not open.");
   await page.getByRole("button", { name: "Return to my answer" }).click();
 
+  await chooseFoundationStep(page, "a4");
+  await page.locator("#allTasksBtn").click();
+  await page.locator('#allTaskList [data-focus-task="0"]').click();
+  const a4ProblemExample = page.locator('[data-example-stage="a4"][data-example-type="problem"]').first();
+  assert(await a4ProblemExample.isVisible(), "A4.1 did not provide an illustrative example.");
+  await a4ProblemExample.click();
+  assert(await page.locator("#exampleDialog[open]").isVisible(), "The A4.1 example dialog did not open.");
+  assert((await page.locator("#exampleDialogBody").innerText()).includes("Use this template"), "The A4.1 example did not provide a template.");
+  await page.locator("#closeExampleDialogBtn").click();
+  const a3GapLink = page.getByRole("button", { name: "A3: Final Gap" }).first();
+  assert(await a3GapLink.isVisible(), "A4 did not provide an in-context link to the A3 final gap.");
+  await a3GapLink.click();
+  assert((await page.locator("#stageBreadcrumb").innerText()).includes("From Patterns to Gaps"), "The A3 final-gap link did not open A3.");
+  const returnToA4 = page.getByRole("button", { name: "Return to A4.1: State the literature-based problem" });
+  assert(await returnToA4.isVisible(), "The source task did not offer a return link to A4.1.");
+  await returnToA4.click();
+  assert((await page.locator("#stageBreadcrumb").innerText()).includes("Literature-Based Problem and Questions"), "The return link did not restore A4.");
+  assert((await page.locator("#taskEyebrow").innerText()) === "A4.1", "The return link did not restore the original A4 task.");
+
   await chooseFoundationStep(page, "details");
   const groupArrangement = page.locator('input[data-work-arrangement][value="group"]:visible');
   await groupArrangement.check();

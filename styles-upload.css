@@ -2709,6 +2709,43 @@ dialog::backdrop {
   background: transparent;
 }
 
+.context-task-link {
+  display: inline;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: var(--accent-dark);
+  font: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+  background: transparent;
+  cursor: pointer;
+}
+
+.context-task-link:hover {
+  color: #173c36;
+  background: transparent;
+}
+
+.context-task-link:focus-visible {
+  outline: 3px solid var(--focus, #d0911d);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.context-return-notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: #eef7f5;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
 .proposal-not-entered {
   color: #7b8589;
   font-style: italic;
