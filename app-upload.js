@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.6";
-const APP_VERSION = `v${RELEASE_VERSION} - ERB Packet Preparation Guide`;
+const RELEASE_VERSION = "4.8.7";
+const APP_VERSION = `v${RELEASE_VERSION} - Study Design Examples`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -1177,6 +1177,13 @@ function exampleNoticeHtml() {
 }
 
 function openExampleDialog(stage, type, trigger) {
+  if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage]?.[type]) {
+    const route = globalThis.STUDY_DESIGN_EXAMPLES.routes[state.methodology.approach] ? state.methodology.approach : "quantitative";
+    renderStudyDesignExample(stage, type, route);
+    els.exampleDialog._returnFocusElement = trigger || null;
+    els.exampleDialog.showModal();
+    return;
+  }
   const examples = globalThis.PROPOSAL_EXAMPLES;
   if (!examples || !els.exampleDialog) return;
   let body = "";
@@ -1220,6 +1227,30 @@ function openExampleDialog(stage, type, trigger) {
   els.exampleDialogBody.innerHTML = body;
   els.exampleDialog._returnFocusElement = trigger || null;
   els.exampleDialog.showModal();
+}
+
+function renderStudyDesignExample(stage, type, route) {
+  const examples = globalThis.STUDY_DESIGN_EXAMPLES;
+  const [modelKey, frame] = examples.tasks[stage][type];
+  const model = examples.models[route];
+  let answer = model[modelKey];
+  if (stage === "ethics" && ["Permissions", "ERB profile", "Packet checklist", "Preparation summary"].includes(type)) {
+    answer = {
+      Permissions: "We will confirm site access, permission to review assessment plans, and required ethics review before recruitment. Access to a plan does not automatically authorize use of pupil information. Actual permission and review status must be recorded honestly.",
+      "ERB profile": "Hypothetical profile: one institution and a single-site practicum cohort; social/behavioral research. The final title, funding, dates, number of participants, technical-review and other-REC status must reflect the actual study. This example supplies no approval or clearance. The Secretariat assigns the ERB code.",
+      "Packet checklist": "The group has drafted its protocol but has not finalized its interview guide or test and rubric. It therefore marks the data-collection forms as Still needed. It checks consent and language requirements with the adviser. It leaves the Protocol Review Assessment and ICF Checklist to ERB reviewers.",
+      "Preparation summary": "The group reviews unresolved protocol details, consent language versions and unfinished instruments before assembling its submission. Ready to attach records preparation only; the Secretariat determines completeness and the ERB determines approval."
+    }[type];
+  }
+  els.exampleDialogTitle.textContent = `Example and template: ${type}`;
+  els.exampleDialogBody.innerHTML = `<div class="example-origin"><span class="example-badge">Illustrative worked example</span><span>${escapeHtml(examples.topic)}</span></div>
+    <div class="example-warning" role="note">The gap, setting, instruments, sampling decisions and possible interpretations are hypothetical. They guide structure and reasoning. Do not copy this response or cite it as a research finding. Named frameworks have published sources; consult them before citing.</div>
+    <div class="study-example-choices" role="group" aria-label="Example research approach">${Object.entries(examples.routes).map(([key, label]) => `<button type="button" class="ghost compact" data-study-example-route="${key}" data-study-example-stage="${escapeHtml(stage)}" data-study-example-task="${escapeHtml(type)}" aria-pressed="${key === route}">${label}</button>`).join("")}</div>
+    <p class="hint">${escapeHtml(examples.gap)} These routes are alternatives. Use the one appropriate to your own A4 questions; they do not change or replace those questions.</p>
+    <section class="example-section"><h3>${escapeHtml(examples.routes[route])}: ${escapeHtml(type)}</h3><blockquote class="example-model">${escapeHtml(answer)}</blockquote></section>
+    <section class="example-section"><h3>Writing template</h3><p class="example-frame">${escapeHtml(frame)}</p></section>
+    <details class="example-details"><summary>Connected study decisions</summary><p><strong>Questions:</strong> ${escapeHtml(model.questions)}</p><p><strong>Framework:</strong> ${escapeHtml(model.framework)}</p><p><strong>Collection and interpretation:</strong> ${escapeHtml(model.analysis)}</p></details>
+    <details class="example-details"><summary>Framework source references</summary><p>Original framework authors are distinct from authors who apply a framework. These references support the named frameworks, not the invented gap or proposed study decisions.</p><ul>${examples.references.map((ref) => `<li><a href="${ref.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(ref.label)}</a></li>`).join("")}</ul></details>`;
 }
 
 function draftHelp(section, scaffold) {
@@ -1759,6 +1790,11 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   els.taskEyebrow.textContent = task.label || copy.eyebrow || "Current task";
   els.stageTitle.textContent = task.title || copy.title || stage.title;
   els.taskSupport.textContent = task.support || copy.support || "Complete this task, then continue.";
+  document.getElementById("studyExampleAction")?.remove();
+  const exampleTask = stage.id === "instrumentation" ? String(task.label).split(" · ").slice(1).join(" · ") : task.label;
+  if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage.id]?.[exampleTask]) {
+    els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl(stage.id, exampleTask)}</div>`);
+  }
   const allTasksLabel = `All Tasks for ${stage.title}`;
   els.allTasksBtn.setAttribute("aria-label", allTasksLabel);
   els.allTasksBtn.innerHTML = `<span class="all-tasks-full-label">${escapeHtml(allTasksLabel)}</span><span class="all-tasks-compact-label" aria-hidden="true">All ${escapeHtml(stage.code)} Tasks</span>`;
@@ -5655,6 +5691,15 @@ function attachEvents() {
     if (!document.getElementById("statusMenu")?.hidden && !event.target.closest?.("#statusMenu") && !event.target.closest?.("#statusBtn")) closeStatusMenu();
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.studyExampleRoute) {
+      const route = target.dataset.studyExampleRoute;
+      const stage = target.dataset.studyExampleStage;
+      const task = target.dataset.studyExampleTask;
+      if (!globalThis.STUDY_DESIGN_EXAMPLES?.routes[route] || !globalThis.STUDY_DESIGN_EXAMPLES.tasks[stage]?.[task]) return;
+      renderStudyDesignExample(stage, task, route);
+      els.exampleDialogBody.querySelector(`[data-study-example-route="${route}"]`)?.focus();
+      return;
+    }
     if (target.dataset.contextReturnHome !== undefined) {
       returnToContextTask();
       return;

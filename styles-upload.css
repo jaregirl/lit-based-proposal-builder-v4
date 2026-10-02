@@ -1094,6 +1094,23 @@ dialog::backdrop {
   margin-top: 4px;
 }
 
+.study-example-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.study-example-choices button[aria-pressed="true"] {
+  background: #1f5b50;
+  color: #fff;
+  border-color: #1f5b50;
+}
+
+#studyExampleAction {
+  margin: 8px 0 12px;
+}
+
 .consent-preparation > summary {
   cursor: pointer;
   font-size: 1.08rem;

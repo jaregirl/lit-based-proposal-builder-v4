@@ -1,10 +1,11 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.6-erb-guide2";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.7-study1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20260915-v486-erb-guide1",
+  "./styles-upload.css?v=20261002-v487-study1",
   "./example-guidance.js?v=20260915-v484-a4-scaffold1",
-  "./app-upload.js?v=20260915-v486-erb-guide2",
+  "./study-design-examples.js?v=20261002-v487-study1",
+  "./app-upload.js?v=20261002-v487-study1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",
