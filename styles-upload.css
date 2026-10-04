@@ -1111,6 +1111,24 @@ dialog::backdrop {
   margin: 8px 0 12px;
 }
 
+.terms-comparison { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.terms-comparison caption { text-align: left; font-size: 0.85rem; margin-bottom: 10px; }
+.terms-comparison th, .terms-comparison td { padding: 12px; border: 1px solid #c8d5d2; vertical-align: top; overflow-wrap: anywhere; text-align: left; }
+.terms-comparison th { background: #f1f6f4; }
+.terms-comparison th:first-child { width: 18%; }
+.terms-comparison .selected-approach { background: #e5f2ee; }
+.terms-comparison small { display: block; font-weight: normal; }
+.terms-mobile-label { display: none; }
+@media (max-width: 700px) {
+  .terms-comparison, .terms-comparison tbody, .terms-comparison tr { display: block; }
+  .terms-comparison thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .terms-comparison tr { margin-bottom: 16px; }
+  .terms-comparison th, .terms-comparison td { display: block; width: auto; }
+  .terms-comparison th:first-child { width: auto; }
+  .terms-comparison td { border-top: 0; }
+  .terms-mobile-label { display: block; font-weight: 700; margin-bottom: 6px; }
+}
+
 .consent-preparation > summary {
   cursor: pointer;
   font-size: 1.08rem;

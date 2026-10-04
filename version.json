@@ -1,10 +1,11 @@
 {
-  "version": "4.8.8",
+  "version": "4.8.9",
   "schemaVersion": "4.7.0",
   "releaseDate": "2026-10-04",
-  "title": "v4.8.8 Definition of Terms Guidance",
+  "title": "v4.8.9 Definition Comparison",
   "url": "./",
   "notes": [
+    "Compare all three shows definitions of three terms across quantitative, qualitative and mixed methods, with a stacked layout on small screens",
     "Definition of Terms now guides term selection and offers quantitative, qualitative and mixed-methods examples and templates",
     "Literature meaning and measurement details are optional; previews and exports list each term followed by its definition",
     "Study Design tasks now offer quantitative, qualitative and mixed-methods worked examples and writing templates in pop-ups",

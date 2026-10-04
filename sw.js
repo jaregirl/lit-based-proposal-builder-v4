@@ -1,11 +1,11 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.8-terms1";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.9-compare1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20261004-v488-terms1",
+  "./styles-upload.css?v=20261004-v489-compare1",
   "./example-guidance.js?v=20260915-v484-a4-scaffold1",
   "./study-design-examples.js?v=20261002-v487-study1",
-  "./app-upload.js?v=20261004-v488-terms1",
+  "./app-upload.js?v=20261004-v489-compare1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",

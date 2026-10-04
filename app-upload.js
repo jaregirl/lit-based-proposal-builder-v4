@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.8";
-const APP_VERSION = `v${RELEASE_VERSION} - Definition of Terms Guidance`;
+const RELEASE_VERSION = "4.8.9";
+const APP_VERSION = `v${RELEASE_VERSION} - Definition Comparison`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -2478,7 +2478,7 @@ function termsApproachGuidance() {
 
 function renderTermsExample(route) {
   const routes = { quantitative: "Quantitative", qualitative: "Qualitative", mixed: "Mixed methods" };
-  if (!routes[route]) route = "quantitative";
+  if (!routes[route] && route !== "compare") route = "quantitative";
   const models = {
     quantitative: "In this study, assessment literacy is examined through selected dimensions of assessment knowledge and assessment-plan quality. Knowledge will be measured through a scenario-based test covering assessment purposes, alignment, interpretation, feedback, and ethics. Plan quality will be assessed with a rubric covering objective-task alignment, criteria clarity, evidence suitability, and planned feedback use. The two scores will be analyzed separately and examined for their association; they represent the selected dimensions covered by the instruments.",
     qualitative: "In this study, assessment literacy provides a starting concept for exploring how preservice teachers understand assessment and explain their assessment-planning decisions during teaching practicum. Interviews supported by discussion of assessment plans will examine purposes, choices, difficulties, and contextual influences. This starting understanding may be extended or revised through participants’ accounts and analysis, consistent with the selected qualitative approach.",
@@ -2492,11 +2492,33 @@ function renderTermsExample(route) {
   els.exampleDialogTitle.textContent = "Example: Definition of Terms";
   els.exampleDialogBody.innerHTML = `<div class="example-origin"><span class="example-badge">Origin: Illustrative example</span><span>Assessment literacy among preservice teachers during teaching practicum</span></div>
     <div class="example-warning" role="note">These hypothetical examples guide structure. Do not copy them into your proposal or cite them as research findings. They assume the literature meaning has already been discussed and cited in the background.</div>
-    <div class="study-example-choices" role="group" aria-label="Example research approach">${Object.entries(routes).map(([key, label]) => `<button type="button" class="ghost compact" data-terms-example-route="${key}" aria-pressed="${key === route}">${label}</button>`).join("")}</div>
-    <section class="example-section"><h3>${routes[route]} example</h3><ul class="terms-definition-list"><li><strong>Assessment literacy.</strong> ${escapeHtml(models[route])}</li><li><strong>Preservice teachers.</strong> In this study, this refers to undergraduate teacher-education students enrolled in the identified teaching-practicum course during the study period.</li></ul></section>
+    <div class="study-example-choices" role="group" aria-label="Example research approach">${Object.entries({ ...routes, compare: "Compare all three" }).map(([key, label]) => `<button type="button" class="ghost compact" data-terms-example-route="${key}" aria-pressed="${key === route}">${label}</button>`).join("")}</div>
+    ${route === "compare" ? termsComparisonHtml(routes) : `<section class="example-section"><h3>${routes[route]} example</h3><ul class="terms-definition-list"><li><strong>Assessment literacy.</strong> ${escapeHtml(models[route])}</li><li><strong>Preservice teachers.</strong> In this study, this refers to undergraduate teacher-education students enrolled in the identified teaching-practicum course during the study period.</li></ul></section>`}
     <p class="hint">The participant label needs eligibility boundaries. Measurement details apply only where needed. The proposed instruments require evidence supporting their quality.</p>
-    <section class="example-section"><h3>Writing template</h3><p class="example-frame">${escapeHtml(frames[route])}</p></section>
+    ${route === "compare" ? `<details class="example-details"><summary>Writing templates</summary>${Object.entries(routes).map(([key, label]) => `<h3>${label}</h3><p class="example-frame">${escapeHtml(frames[key])}</p>`).join("")}</details>` : `<section class="example-section"><h3>Writing template</h3><p class="example-frame">${escapeHtml(frames[route])}</p></section>`}
     <details class="example-details"><summary>Check your own definition</summary><p>Does it resolve a possible misunderstanding and match your questions, background, and methodology? Define assessment knowledge and assessment-plan quality separately if they need further clarification.</p></details>`;
+}
+
+function termsComparisonHtml(routes) {
+  const selected = state.methodology.approach;
+  const participantDefinition = "In this study, this refers to undergraduate teacher-education students enrolled in the identified teaching-practicum course during the study period.";
+  const rows = [
+    { term: "Assessment knowledge",
+      quantitative: "In this study, this refers to participants’ demonstrated understanding of assessment purposes, alignment, interpretation, feedback, and ethics, measured through a scenario-based test. Correct responses receive one point; the total represents performance on the covered domains.",
+      qualitative: "In this study, this refers to participants’ understanding of assessment, explored through their explanations of specific planning decisions. Its meaning may develop through analysis, consistent with the selected approach.",
+      mixed: "In this study, this refers to demonstrated understanding measured through a scenario-based test, examined alongside participants’ explanations to explore how their understanding relates to planning decisions. Correct test responses receive one point; interview accounts extend or complicate the interpretation of the scores." },
+    { term: "Assessment-plan quality",
+      quantitative: "In this study, this refers to rubric ratings of documented plans covering objective-task alignment, criteria clarity, evidence suitability, and planned feedback use. Ratings follow explicit ordered performance descriptions for each criterion.",
+      qualitative: "In this study, this is a starting concept for examining how participants explain what makes an assessment plan appropriate and how those explanations relate to their plans. Participant meanings and the selected approach guide interpretation.",
+      mixed: "In this study, this refers to rubric ratings of documented plans using explicit performance descriptions for alignment, criteria clarity, evidence suitability, and feedback use, examined alongside participants’ reasoning to explain or complicate the observed score patterns." },
+    { term: "Preservice teachers", quantitative: participantDefinition, qualitative: participantDefinition, mixed: participantDefinition }
+  ];
+  return `<section class="example-section"><h3>Compare the same terms across approaches</h3>
+    <table class="terms-comparison"><caption>Illustrative definitions for three terms. ${routes[selected] ? `Your selected approach: ${escapeHtml(routes[selected])}.` : "No research approach has been selected yet."}</caption>
+      <thead><tr><th scope="col">Term</th>${Object.entries(routes).map(([key, label]) => `<th scope="col" class="${key === selected ? "selected-approach" : ""}">${label}${key === selected ? '<small>Your selected approach</small>' : ""}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((row) => `<tr><th scope="row">${row.term}</th>${Object.entries(routes).map(([key, label]) => `<td class="${key === selected ? "selected-approach" : ""}"><span class="terms-mobile-label" aria-hidden="true">${label}${key === selected ? " · Your selected approach" : ""}</span>${escapeHtml(row[key])}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+    <p class="hint">The participant boundaries stay the same across these examples. Central concepts vary according to what each study examines and how evidence is gathered. Research approach alone does not require every definition to change.</p></section>`;
 }
 
 function updateTermPreview(index) {

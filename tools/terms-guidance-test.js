@@ -15,7 +15,7 @@ const context = vm.createContext({
   flag: (ok, yes, no) => ({ level: ok ? 'green' : 'yellow', text: ok ? yes : no }),
   escapeHtml: text => String(text).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
 });
-for (const name of ['normalizeTermRow', 'termDefinitionText', 'termDefinitionPreview', 'termEntryHtml', 'termsOutputHtml', 'conceptualDefinitionHasSource', 'checkTerms', 'renderTermsExample']) {
+for (const name of ['normalizeTermRow', 'termDefinitionText', 'termDefinitionPreview', 'termEntryHtml', 'termsOutputHtml', 'conceptualDefinitionHasSource', 'checkTerms', 'termsComparisonHtml', 'renderTermsExample']) {
   vm.runInContext(source(name), context);
 }
 // Existing stored fields remain lossless, including legacy field aliases.
@@ -45,5 +45,12 @@ for (const route of ['quantitative', 'qualitative', 'mixed']) {
   assert(popup.includes('Origin: Illustrative example') && popup.includes('Do not copy'));
   assert(popup.includes('Writing template') && popup.includes(`data-terms-example-route="${route}" aria-pressed="true"`));
 }
+context.renderTermsExample('compare');
+const matrix = context.els.exampleDialogBody.innerHTML;
+assert(matrix.includes('data-terms-example-route="compare" aria-pressed="true"'));
+assert.strictEqual((matrix.match(/<td /g) || []).length, 9);
+for (const term of ['Assessment knowledge', 'Assessment-plan quality', 'Preservice teachers']) assert(matrix.includes(`<th scope="row">${term}</th>`));
+assert(matrix.includes('Your selected approach: Qualitative.'));
+assert(!matrix.includes('undefined'));
 assert.strictEqual(JSON.stringify(context.state), before, 'Examples changed saved responses');
-console.log('Passed: legacy text preservation, optional-field checks, term-list exports, escaping, and three examples without response changes.');
+console.log('Passed: legacy text preservation, optional-field checks, term-list exports, escaping, three examples and comparison matrix without response changes.');
