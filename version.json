@@ -1,10 +1,11 @@
 {
-  "version": "4.8.9",
+  "version": "4.8.10",
   "schemaVersion": "4.7.0",
   "releaseDate": "2026-10-04",
-  "title": "v4.8.9 Definition Comparison",
+  "title": "v4.8.10 Update Loading Fix",
   "url": "./",
   "notes": [
+    "Open New Version uses a fresh address; online page loads and service-worker update checks bypass the browser HTTP cache",
     "Compare all three shows definitions of three terms across quantitative, qualitative and mixed methods, with a stacked layout on small screens",
     "Definition of Terms now guides term selection and offers quantitative, qualitative and mixed-methods examples and templates",
     "Literature meaning and measurement details are optional; previews and exports list each term followed by its definition",

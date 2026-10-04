@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.9";
-const APP_VERSION = `v${RELEASE_VERSION} - Definition Comparison`;
+const RELEASE_VERSION = "4.8.10";
+const APP_VERSION = `v${RELEASE_VERSION} - Update Loading Fix`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -1453,8 +1453,11 @@ async function checkForUpdates() {
     const release = await response.json();
     if (!release.version || !isNewerVersion(release.version, RELEASE_VERSION)) return;
     const notes = Array.isArray(release.notes) ? release.notes : [];
+    const updateUrl = new URL(release.url || "./", window.location.href);
+    updateUrl.searchParams.set("appUpdate", release.version);
+    updateUrl.searchParams.set("checked", String(Date.now()));
     els.updateNotice.hidden = false;
-    els.updateNotice.innerHTML = `<div><strong>A newer version (${escapeHtml(release.version)}) is available.</strong><p>Your current draft will not reload or update automatically. Download a backup first.</p></div><div class="inline-actions"><button type="button" class="ghost compact" data-show-whats-new>What's New</button><button type="button" class="ghost compact" data-download-update-backup>Download Backup</button><a class="button-link compact" href="${escapeHtml(release.url || "./")}" target="_blank" rel="noopener">Open New Version</a></div><div class="update-notes" hidden>${notes.length ? `<ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : "<p>No release notes were provided.</p>"}</div>`;
+    els.updateNotice.innerHTML = `<div><strong>A newer version (${escapeHtml(release.version)}) is available.</strong><p>Your current draft will not reload or update automatically. Download a backup first.</p></div><div class="inline-actions"><button type="button" class="ghost compact" data-show-whats-new>What's New</button><button type="button" class="ghost compact" data-download-update-backup>Download Backup</button><a class="button-link compact" href="${escapeHtml(updateUrl.href)}" target="_blank" rel="noopener">Open New Version</a></div><div class="update-notes" hidden>${notes.length ? `<ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>` : "<p>No release notes were provided.</p>"}</div>`;
   } catch {
     // Offline or malformed version checks never interrupt local work.
   }
@@ -6101,7 +6104,7 @@ showWelcomeIfNeeded();
 checkForUpdates();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {
       // Offline caching is an enhancement; registration failure must not interrupt work.
     });
   });

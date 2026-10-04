@@ -1,11 +1,11 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.8.9-compare1";
+const CACHE_NAME = "lit-based-proposal-builder-v4.8.10-update1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles-upload.css?v=20261004-v489-compare1",
+  "./styles-upload.css?v=20261004-v4810-update1",
   "./example-guidance.js?v=20260915-v484-a4-scaffold1",
   "./study-design-examples.js?v=20261002-v487-study1",
-  "./app-upload.js?v=20261004-v489-compare1",
+  "./app-upload.js?v=20261004-v4810-update1",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",
@@ -51,8 +51,9 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
+          if (!response.ok) return caches.match("./index.html").then((cached) => cached || response);
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
           return response;
