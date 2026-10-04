@@ -1851,6 +1851,10 @@ dialog::backdrop {
   min-width: 0;
 }
 
+.terms-definition-list { padding-left: 1.25rem; }
+.terms-definition-list li { margin: 0.6rem 0; overflow-wrap: anywhere; }
+.terms-literature textarea { width: 100%; }
+
 .focus-task-item.is-current-task,
 .focus-task-root:not([hidden]) {
   animation: focus-enter 180ms ease-out;

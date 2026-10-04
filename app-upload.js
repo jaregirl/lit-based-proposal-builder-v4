@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.7";
-const APP_VERSION = `v${RELEASE_VERSION} - Study Design Examples`;
+const RELEASE_VERSION = "4.8.8";
+const APP_VERSION = `v${RELEASE_VERSION} - Definition of Terms Guidance`;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -158,7 +158,7 @@ const focusedStageCopy = {
   methodology: { eyebrow: "Choose how the study will build evidence", title: "Design a method that can answer the questions.", support: "Start with the broad evidence approach, then make each methodological choice explicit." },
   ethics: { eyebrow: "Plan safeguards as part of the design", title: "Protect participants, data, and relationships.", support: "Work from participant type and risk toward the safeguards and permissions that may apply." },
   instrumentation: { eyebrow: "Plan how each question will be answered", title: "Build a complete question-to-evidence chain.", support: "For each SRQ, connect the intended claim to evidence, source, instrument, and analysis." },
-  terms: { eyebrow: "Define terms as they are used in this study", title: "Write precise operational definitions.", support: "Define one important term at a time and connect it to how the study will identify or measure it." },
+  terms: { eyebrow: "Define terms as they are used in this study", title: "Clarify the meaning of important terms.", support: "Choose terms whose meaning, boundaries, measurement, or interpretation need clarification." },
   outline: { eyebrow: "Assemble the proposal from your work", title: "Review the proposal structure.", support: "The app has placed your work into expected sections. Review the structure without treating it as a finished manuscript." },
   researchLevel: { eyebrow: "Show the reasoning behind the proposal", title: "Explain the degree-level evidence in your decisions.", support: "Use your own words to show coherence, judgment, alternatives, contribution, and independence." },
   readiness: { eyebrow: "Review the proposal before sharing it", title: "Strengthen the first important alignment issue.", support: "Review one evidence-based warning at a time, then return directly to the part that needs attention." },
@@ -275,9 +275,9 @@ const tableScaffolds = {
   },
   terms: {
     term: "Write one term only. Use a construct, variable, participant label, intervention name, or context-specific term.",
-    conceptual: "State the general meaning based on literature and identify the author or authors and year of the definition you actually consulted.",
-    operational: "Define exactly what the term means in this study.",
-    measured: "Explain how this term will be measured, observed, identified, coded, or represented in an instrument."
+    conceptual: "Optional: add the literature meaning and cite the source actually consulted if it is needed here. If the background already explains it adequately, focus on its use in this study.",
+    operational: "Explain the meaning and boundaries of this term in your study. Match your research questions and methodology.",
+    measured: "Optional: explain measurement or identification when needed. Assessment knowledge may need test coverage and scoring; a participant label may already be clear from eligibility boundaries."
   }
 };
 
@@ -1177,6 +1177,12 @@ function exampleNoticeHtml() {
 }
 
 function openExampleDialog(stage, type, trigger) {
+  if (stage === "terms") {
+    renderTermsExample(state.methodology.approach);
+    els.exampleDialog._returnFocusElement = trigger || null;
+    els.exampleDialog.showModal();
+    return;
+  }
   if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage]?.[type]) {
     const route = globalThis.STUDY_DESIGN_EXAMPLES.routes[state.methodology.approach] ? state.methodology.approach : "quantitative";
     renderStudyDesignExample(stage, type, route);
@@ -1695,12 +1701,12 @@ function buildFocusedTasks(stageId) {
   if (stageId === "terms") {
     const tasks = [];
     Array.from(els.stageForm.querySelectorAll(".instrumentation-row")).forEach((row, rowIndex) => {
-      [["Term", "term"], ["Conceptual", "conceptual"], ["Operational", "operational"], ["Evidence link", "measured"]].forEach(([label, key]) => tasks.push({
-        label: `Term ${rowIndex + 1} · ${label}`,
-        title: label === "Term" ? `Choose Term ${rowIndex + 1}` : `${label} definition for ${state.terms.rows[rowIndex]?.term || `Term ${rowIndex + 1}`}`,
-        support: tableScaffolds.terms[key], roots: [row], context: Array.from(row.querySelectorAll(":scope > .output-box")),
-        items: taskNodes([`[data-table=\"terms\"][data-index=\"${rowIndex}\"][data-key=\"${key}\"]`], row)
-      }));
+      tasks.push({
+        label: `Term ${rowIndex + 1}`,
+        title: `Define ${state.terms.rows[rowIndex]?.term || `Term ${rowIndex + 1}`}`,
+        support: "Could a reasonable reader understand this term differently in a way that changes how they understand your study?",
+        roots: [row], items: Array.from(row.children)
+      });
     });
     return tasks;
   }
@@ -1794,6 +1800,9 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   const exampleTask = stage.id === "instrumentation" ? String(task.label).split(" · ").slice(1).join(" · ") : task.label;
   if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage.id]?.[exampleTask]) {
     els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl(stage.id, exampleTask)}</div>`);
+  }
+  if (stage.id === "terms" && task.label !== "Team contribution") {
+    els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl("terms", "definition", "View example and template")}</div>`);
   }
   const allTasksLabel = `All Tasks for ${stage.title}`;
   els.allTasksBtn.setAttribute("aria-label", allTasksLabel);
@@ -2384,26 +2393,7 @@ function renderTerms() {
   els.stageForm.innerHTML = `
     <section class="output-box">
       <h3>Definition of Terms</h3>
-      <div class="generated-text">Define one term at a time. Strong operational definitions connect each term to instruments, indicators, observations, documents, or analysis.</div>
-    </section>
-    <section class="output-box">
-      <h3>What Terms Need Operational Definition?</h3>
-      <div class="generated-text">Define terms that control how the study will be understood or measured:
-- the core construct from A1
-- variables, indicators, or major concepts in the research questions
-- participant labels, groups, or roles used in a specific way
-- programs, interventions, strategies, practices, tools, or materials being studied
-- outcome terms such as performance, engagement, awareness, competence, perception, readiness, or integration
-- context-specific terms that may mean something different in this study than in ordinary use
-
-Usually, do not define ordinary words unless the study uses them in a special technical way.</div>
-    </section>
-    <section class="output-box">
-      <h3>Example</h3>
-      <div class="generated-text">Term: Science teaching self-efficacy
-Conceptual definition (with author/s and year): Bandura (1997) describes self-efficacy as a person's belief in their capability to organize and carry out actions needed for a task.
-Operational definition: In this study, science teaching confidence refers to the participant's self-rated confidence in planning, explaining, and assessing science lessons.
-Measured, observed, or identified through: Survey items on confidence in lesson planning, explaining concepts, facilitating activities, and assessing learning.</div>
+      <p class="hint">Review your title, research questions, framework, and methodology. Include terms whose meaning, boundaries, measurement, or interpretation need clarification. Does “performance” mean test scores, observed teaching, or task completion? If the background already explains the literature meaning, focus here on its use in this study.</p>
     </section>
     <section class="table-wrap instrumentation-layout">
       <div class="table-card-list">
@@ -2417,10 +2407,9 @@ Measured, observed, or identified through: Survey items on confidence in lesson 
 function termRow(index) {
   const row = normalizeTermRow(state.terms.rows[index]);
   const fields = [
-    ["term", "Term"],
-    ["conceptual", "Conceptual Definition (with Author/s and Year)"],
-    ["operational", "Operational Definition"],
-    ["measured", "Measured, Observed, or Identified Through"]
+    ["term", "Term or concept"],
+    ["operational", "Meaning in this study"],
+    ["measured", "How it is measured or identified, if applicable"]
   ];
   return `
     <div class="table-row instrumentation-row" style="--cols:4">
@@ -2428,6 +2417,7 @@ function termRow(index) {
         <h3>Term ${index + 1}</h3>
         <div class="generated-text" data-term-title="${index}">${escapeHtml(row.term || "Add one key term for this study.")}</div>
       </section>
+      <p class="hint">Review your title, research questions, framework, and methodology. Does “performance” mean test scores, observed teaching, or task completion? If the literature meaning is already explained in the background, focus here on its use in this study.</p>
       ${fields.map(([key, label]) => `
         <label>
           <span class="field-label">
@@ -2437,10 +2427,24 @@ function termRow(index) {
           <textarea data-table="terms" data-index="${index}" data-key="${key}" aria-describedby="terms-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
         </label>
       `).join("")}
+      <p class="hint">${escapeHtml(termsApproachGuidance())}</p>
+      <details class="example-details terms-literature" ${row.conceptual ? "open" : ""}>
+        <summary>Literature meaning and citation, if needed <span class="hint" data-term-saved="${index}">${row.conceptual ? "(Contains saved text)" : ""}</span></summary>
+        <label>
+          <span class="field-label">Literature meaning and citation, if needed ${helpControl(`terms-${index}-conceptual-help`, "Literature meaning and citation", tableScaffolds.terms.conceptual)}</span>
+          <textarea data-table="terms" data-index="${index}" data-key="conceptual" aria-describedby="terms-${index}-conceptual-help">${escapeHtml(row.conceptual)}</textarea>
+        </label>
+      </details>
       <section class="output-box">
-        <h3>Draft Definition Preview</h3>
-        <div class="generated-text" data-term-preview="${index}">${escapeHtml(termDefinitionPreview(row))}</div>
+        <h3>Definition list preview</h3>
+        <ul class="terms-definition-list"><li data-term-preview="${index}">${termEntryHtml(row)}</li></ul>
       </section>
+      <details class="example-details"><summary>Review this definition</summary><ul>
+        <li>Does this entry resolve a possible misunderstanding?</li>
+        <li>Does the meaning match your research questions and methodology?</li>
+        <li>Is it consistent with what you explained in the background?</li>
+        <li>If the term needs measurement or identification details, have you supplied them here or clearly explained them in the methodology?</li>
+      </ul></details>
       <button class="row-remove" type="button" data-remove-row="terms:${index}" aria-label="Remove this term">Remove term</button>
     </div>
   `;
@@ -2451,19 +2455,58 @@ function termDefinitionPreview(row) {
   if (!row.term && !row.conceptual && !row.operational && !row.measured) {
     return "The draft definition will appear here after you add the term details.";
   }
-  const term = row.term || "[term]";
-  const conceptual = row.conceptual || "[add the literature-based meaning with author/s and year]";
-  const operational = row.operational || "[add how the term is used in this study]";
-  const measured = row.measured || "[add how it will be measured, observed, identified, coded, or represented]";
-  return `${term} refers generally to ${conceptual}. In this study, ${term} refers to ${operational}. It will be measured, observed, or identified through ${measured}.`;
+  return `${row.term || "[Term]"}. ${termDefinitionText(row)}`.trim();
+}
+
+function termDefinitionText(row) {
+  return [row.conceptual, row.operational, row.measured].map((text) => String(text || "").trim()).filter(Boolean)
+    .map((text) => /[.!?]$/.test(text) ? text : `${text}.`).join(" ");
+}
+
+function termEntryHtml(row) {
+  row = normalizeTermRow(row);
+  return `<strong>${escapeHtml(row.term || "[Term]")}.</strong> ${escapeHtml(termDefinitionText(row) || "Add the meaning in this study to preview the definition.")}`;
+}
+
+function termsApproachGuidance() {
+  return {
+    quantitative: "Specify the dimensions and boundaries examined. Add measurement and scoring where needed; keep detailed instrument procedures in Methodology.",
+    qualitative: "Explain the starting meaning, context, and boundaries. Where appropriate to your approach, allow meanings to develop through participants’ accounts and analysis. Participant labels may only need eligibility boundaries.",
+    mixed: "Clarify the meaning and evidence in each relevant strand and their connection during integration. A term used in only one strand needs clarification for that strand."
+  }[state.methodology.approach] || "Explain the meaning and boundaries of the term. Add measurement or identification details only when needed to clarify its use in your study.";
+}
+
+function renderTermsExample(route) {
+  const routes = { quantitative: "Quantitative", qualitative: "Qualitative", mixed: "Mixed methods" };
+  if (!routes[route]) route = "quantitative";
+  const models = {
+    quantitative: "In this study, assessment literacy is examined through selected dimensions of assessment knowledge and assessment-plan quality. Knowledge will be measured through a scenario-based test covering assessment purposes, alignment, interpretation, feedback, and ethics. Plan quality will be assessed with a rubric covering objective-task alignment, criteria clarity, evidence suitability, and planned feedback use. The two scores will be analyzed separately and examined for their association; they represent the selected dimensions covered by the instruments.",
+    qualitative: "In this study, assessment literacy provides a starting concept for exploring how preservice teachers understand assessment and explain their assessment-planning decisions during teaching practicum. Interviews supported by discussion of assessment plans will examine purposes, choices, difficulties, and contextual influences. This starting understanding may be extended or revised through participants’ accounts and analysis, consistent with the selected qualitative approach.",
+    mixed: "In this study, assessment literacy is examined through assessment knowledge, assessment-plan quality, and participants’ explanations of planning decisions. A scenario-based test and plan rubric will produce separate scores. Follow-up interviews and discussion of assessment plans will explore reasoning and circumstances associated with contrasting score patterns. The findings will be integrated to examine how participants’ accounts explain, extend, or complicate the numerical results."
+  };
+  const frames = {
+    quantitative: "[Term]. In this study, this refers to [dimensions and boundaries]. It will be measured through [measure and indicators], using [relevant scoring and interpretation].",
+    qualitative: "[Term or concept]. In this study, this refers to [starting meaning and boundaries]. It will guide inquiry into [accounts, actions, or documents]. [Explain openness to developing meanings where appropriate to the approach].",
+    mixed: "[Term or concept]. In this study, this refers to [meaning in the relevant strands]. The quantitative strand will [measurement]; the qualitative strand will [inquiry]. The findings will be integrated to [explain their connection]."
+  };
+  els.exampleDialogTitle.textContent = "Example: Definition of Terms";
+  els.exampleDialogBody.innerHTML = `<div class="example-origin"><span class="example-badge">Origin: Illustrative example</span><span>Assessment literacy among preservice teachers during teaching practicum</span></div>
+    <div class="example-warning" role="note">These hypothetical examples guide structure. Do not copy them into your proposal or cite them as research findings. They assume the literature meaning has already been discussed and cited in the background.</div>
+    <div class="study-example-choices" role="group" aria-label="Example research approach">${Object.entries(routes).map(([key, label]) => `<button type="button" class="ghost compact" data-terms-example-route="${key}" aria-pressed="${key === route}">${label}</button>`).join("")}</div>
+    <section class="example-section"><h3>${routes[route]} example</h3><ul class="terms-definition-list"><li><strong>Assessment literacy.</strong> ${escapeHtml(models[route])}</li><li><strong>Preservice teachers.</strong> In this study, this refers to undergraduate teacher-education students enrolled in the identified teaching-practicum course during the study period.</li></ul></section>
+    <p class="hint">The participant label needs eligibility boundaries. Measurement details apply only where needed. The proposed instruments require evidence supporting their quality.</p>
+    <section class="example-section"><h3>Writing template</h3><p class="example-frame">${escapeHtml(frames[route])}</p></section>
+    <details class="example-details"><summary>Check your own definition</summary><p>Does it resolve a possible misunderstanding and match your questions, background, and methodology? Define assessment knowledge and assessment-plan quality separately if they need further clarification.</p></details>`;
 }
 
 function updateTermPreview(index) {
   const row = normalizeTermRow(state.terms.rows[index]);
   const preview = document.querySelector(`[data-term-preview="${index}"]`);
   const title = document.querySelector(`[data-term-title="${index}"]`);
-  if (preview) preview.textContent = termDefinitionPreview(row);
+  if (preview) preview.innerHTML = termEntryHtml(row);
   if (title) title.textContent = row.term || "Add one key term for this study.";
+  const saved = document.querySelector(`[data-term-saved="${index}"]`);
+  if (saved) saved.textContent = row.conceptual ? "(Contains saved text)" : "";
 }
 
 function methodologyOutputFields() {
@@ -3135,13 +3178,7 @@ function buildOutline() {
   const crq = state.a4.centralQuestion || "[A4 central research question]";
   const srqs = state.a4.questions.filter(Boolean).map((question, index) => `  ${index + 1}. ${question}`).join("\n") || "  [Add specific research questions from A4]";
   const patterns = state.a2.patterns.filter((row) => row.notice).map((row) => `  - ${row.type}: ${row.notice}`).join("\n") || "  [Add A2 literature patterns]";
-  const termsOutline = state.terms.rows.map(normalizeTermRow).filter((row) => row.term).map((row) => `  - ${row.term}
-    Conceptual definition: ${row.conceptual || "[Add conceptual definition]"}
-    Operational definition: ${row.operational || "[Add operational definition]"}
-    Measured/observed/identified through: ${row.measured || "[Connect to instrument, indicator, observation, document, or analysis]"}`).join("\n") || `  - ${core}
-    Conceptual definition: [Define term based on literature]
-    Operational definition: [Define term as used in this study]
-    Measured/observed/identified through: [Connect to instrument, indicator, observation, document, or analysis]`;
+  const termsOutline = state.terms.rows.map(normalizeTermRow).filter((row) => row.term).map((row) => `  - ${termDefinitionPreview(row)}`).join("\n") || "  [Add key terms whose meaning needs clarification in this study]";
   const mixedIntegration = isMixedMethodsLikely()
     ? `
 - Mixed Methods Integration
@@ -3691,10 +3728,8 @@ function checkTerms() {
   const results = [flag(rows.length > 0, "At least one key term is listed.", "Add one term at a time, starting with the core construct.")];
   rows.forEach((row, index) => {
     if (!row.term) results.push({ level: "red", text: `Term ${index + 1}: term name is missing.` });
-    if (!row.conceptual) results.push({ level: "yellow", text: `Term ${index + 1}: conceptual definition is missing.` });
-    else if (!conceptualDefinitionHasSource(row.conceptual)) results.push({ level: "yellow", text: `Term ${index + 1}: identify the author or authors and year supporting the conceptual definition.` });
-    if (!row.operational) results.push({ level: "yellow", text: `Term ${index + 1}: operational definition is missing.` });
-    if (!row.measured) results.push({ level: "yellow", text: `Term ${index + 1}: measurement, observation, or identification detail is missing.` });
+    if (row.conceptual && !conceptualDefinitionHasSource(row.conceptual)) results.push({ level: "yellow", text: `Term ${index + 1}: identify the author or authors and year supporting the literature definition you included.` });
+    if (!row.operational) results.push({ level: "yellow", text: `Term ${index + 1}: meaning in this study is missing.` });
   });
   return results;
 }
@@ -4085,7 +4120,7 @@ function readinessIssueDestination(item = {}) {
   if (/term \d+|key term|conceptual definition|operational definition|measurement, observation/.test(lower)) {
     const termMatch = text.match(/Term\s+(\d+)/i);
     const termIndex = Math.max(0, Number(termMatch?.[1] || 1) - 1);
-    const key = /conceptual|author|year/.test(lower) ? "conceptual" : /operational/.test(lower) ? "operational" : /measurement|observation|identification/.test(lower) ? "measured" : "term";
+    const key = /conceptual|literature definition|author|year/.test(lower) ? "conceptual" : /operational|meaning in this study/.test(lower) ? "operational" : /measurement|observation|identification/.test(lower) ? "measured" : "term";
     return { stage: "terms", selector: `[data-table="terms"][data-index="${termIndex}"][data-key="${key}"]` };
   }
 
@@ -4257,8 +4292,8 @@ function stageCompletion(stageId) {
   if (stageId === "terms") {
     const rows = state.terms.rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
     if (!rows.length) return 0;
-    const filled = rows.reduce((sum, row) => sum + ["term", "conceptual", "operational", "measured"].filter((field) => row[field]).length, 0);
-    return filled / (rows.length * 4);
+    const filled = rows.reduce((sum, row) => sum + ["term", "operational"].filter((field) => row[field]).length, 0);
+    return filled / (rows.length * 2);
   }
   if (stageId === "readiness") return readinessReport().score / 100;
   const values = Object.values(section).filter((item) => typeof item === "string");
@@ -4561,14 +4596,7 @@ function instrumentationOutputHtml(rows) {
 function termsOutputHtml(rows) {
   rows = rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
   if (!rows.length) return "<p>No definition of terms entries have been added.</p>";
-  return `<div class="instrument-cards">${rows.map((row, index) => `
-    <section class="instrument-card">
-      <h3>Term ${index + 1}: ${escapeHtml(row.term)}</h3>
-      <p><strong>Conceptual Definition (Author/s and Year):</strong> ${escapeHtml(row.conceptual)}</p>
-      <p><strong>Operational Definition:</strong> ${escapeHtml(row.operational)}</p>
-      <p><strong>Measured, Observed, or Identified Through:</strong> ${escapeHtml(row.measured)}</p>
-    </section>
-  `).join("")}</div>`;
+  return `<ul class="terms-definition-list">${rows.map((row) => `<li>${termEntryHtml(row)}</li>`).join("")}</ul>`;
 }
 
 function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
@@ -4594,7 +4622,7 @@ function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
   const instrumentsReady = state.instrumentation.rows.map(normalizeInstrumentRow).some((row) => row.rq && row.claimNeeded && row.evidenceNeeded && row.evidenceSource && row.instrument && row.analysis && row.description && row.purpose && row.validation && row.implementation);
   const mixedMethodsReady = !isMixedMethodsLikely() || Boolean(state.mixedMethods.quantStrand && state.mixedMethods.qualStrand && state.mixedMethods.integrationPoint && state.mixedMethods.integrationPurpose);
   const termsRows = state.terms.rows.map(normalizeTermRow).filter((row) => row.term || row.conceptual || row.operational || row.measured);
-  const termsReady = termsRows.length > 0 && termsRows.every((row) => row.term && row.conceptual && conceptualDefinitionHasSource(row.conceptual) && row.operational && row.measured);
+  const termsReady = termsRows.length > 0 && termsRows.every((row) => row.term && row.operational && (!row.conceptual || conceptualDefinitionHasSource(row.conceptual)));
   const levelRows = state.submission.degreeLevel === "shs"
     ? [
         ["Research level / use context", degreeReadiness.degree.label],
@@ -4619,7 +4647,7 @@ function readinessPrintSummaryHtml(report, includeWorkRecord = true) {
     ["Ethics status", ethicsReady ? "Ethics safeguards have been started." : "Ethics safeguards need more detail before data gathering."],
     ["Formatting status", "Letter-size print layout with 1-inch margins is applied."],
     ["Instrumentation status", instrumentsReady ? "At least one instrument row includes alignment and validation details." : "Instrumentation needs clearer alignment or validation details."],
-    ["Definition of terms status", termsReady ? "Terms are conceptually defined with author and year, then operationally defined for this study." : "Definition of terms needs a cited conceptual definition, operational definition, and measurement or observation details."]
+    ["Definition of terms status", termsReady ? "Term names and meanings in this study are entered. Review their consistency with the questions and methodology; clarify measurement or identification where needed." : "Add term names and meanings in this study. Cite any literature definition included here."]
   ];
   return `
     ${includeWorkRecord ? workRecordHtml() : ""}
@@ -5106,10 +5134,8 @@ function finalSubmissionMissingItems() {
   if (!termRows.length) missing.push("Definition of Terms: at least one term card");
   termRows.forEach((row, index) => {
     if (!row.term) missing.push(`Definition of Terms: term name for Term ${index + 1}`);
-    if (!row.conceptual) missing.push(`Definition of Terms: conceptual definition for Term ${index + 1}`);
-    else if (!conceptualDefinitionHasSource(row.conceptual)) missing.push(`Definition of Terms: author/s and year for the conceptual definition of Term ${index + 1}`);
-    if (!row.operational) missing.push(`Definition of Terms: operational definition for Term ${index + 1}`);
-    if (!row.measured) missing.push(`Definition of Terms: measurement, observation, or identification detail for Term ${index + 1}`);
+    if (row.conceptual && !conceptualDefinitionHasSource(row.conceptual)) missing.push(`Definition of Terms: author/s and year for the literature definition included for Term ${index + 1}`);
+    if (!row.operational) missing.push(`Definition of Terms: meaning in this study for Term ${index + 1}`);
   });
 
   if (state.submission.workArrangement !== "group") {
@@ -5718,6 +5744,11 @@ function attachEvents() {
     }
     if (target.dataset.exampleStage && target.dataset.exampleType) {
       openExampleDialog(target.dataset.exampleStage, target.dataset.exampleType, target);
+      return;
+    }
+    if (target.dataset.termsExampleRoute) {
+      renderTermsExample(target.dataset.termsExampleRoute);
+      els.exampleDialogBody.querySelector(`[data-terms-example-route="${target.dataset.termsExampleRoute}"]`)?.focus();
       return;
     }
     if (target.dataset.openStudentDetails !== undefined) {

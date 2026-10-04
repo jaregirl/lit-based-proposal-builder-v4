@@ -1,10 +1,12 @@
 {
-  "version": "4.8.7",
+  "version": "4.8.8",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-10-02",
-  "title": "v4.8.7 Study Design Examples",
+  "releaseDate": "2026-10-04",
+  "title": "v4.8.8 Definition of Terms Guidance",
   "url": "./",
   "notes": [
+    "Definition of Terms now guides term selection and offers quantitative, qualitative and mixed-methods examples and templates",
+    "Literature meaning and measurement details are optional; previews and exports list each term followed by its definition",
     "Study Design tasks now offer quantitative, qualitative and mixed-methods worked examples and writing templates in pop-ups",
     "Framework examples identify original authors and link to verified publications",
     "The HNU ERB Protocol Packet can be downloaded from Tools and Ethical Considerations",
