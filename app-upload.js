@@ -187,9 +187,11 @@ const fieldSets = {
   methodology: [
     ["rqTypes", "What type of questions are being asked?", "Look at your research questions first. Their verbs usually guide the design: describe, compare, relate, evaluate, or explore."],
     ["dataNeeded", "What data are needed?", "Name the evidence needed to answer the questions: scores, survey responses, interview answers, observations, documents, or classroom outputs."],
-    ["participants", "Participants / Sources of Data", "Identify who or what will be studied: people, documents, records, artifacts, or other sources. Describe the group or collection, approximate number if known, relevant characteristics, and why it fits the study. For a document-only study, state that there are no direct human participants."],
+    ["participants", "Which group of people, documents, records, or other sources will your study draw data from?", "Describe the overall group or collection, approximate number if known, and its relevance. State whether direct human participants are involved. Enter eligibility requirements in the next tasks."],
+    ["inclusionCriteria", "What characteristics must a person or source have to qualify for this study?", "State specific eligibility requirements and explain why they matter to the study."],
+    ["exclusionCriteria", "Among those who meet your inclusion criteria, what additional characteristics would make them unsuitable for this study?", "Explain each additional exclusion. If none are justified, state: No additional exclusion criteria. Withdrawal after joining is a separate matter."],
     ["purpose", "What is the purpose of the study?", "State whether the study aims to describe a condition, understand an experience, test an intervention, compare groups, or improve classroom practice."],
-    ["evidenceSources", "Who or what can provide the evidence needed?", "Separate participants from documents, records, artifacts, outputs, observations, recordings, or test results."],
+    ["evidenceSources", "Which of your identified sources will provide each kind of evidence needed?", "Connect your overall sources to the evidence needed across the study. In Instrumentation, explain the source for each specific research question. Do not repeat the full group description."],
     ["studyPeriod", "What period will the study cover?", "State the data collection period, academic term, document years, or other time boundary."],
     ["operationalDelimitations", "What will the study include, and what will it deliberately not cover?", "State boundaries for participants, research environment or setting, period, evidence sources, procedures, and inclusion or exclusion decisions."]
   ],
@@ -356,6 +358,8 @@ const defaultData = {
   },
   methodology: {
     approach: "",
+    inclusionCriteria: "",
+    exclusionCriteria: "",
     design: "",
     actionResearch: "no",
     designJustification: "",
@@ -717,7 +721,7 @@ function renderAdviserMatrix(records = globalThis.ADVISER_STORE.list(localStorag
   const result = document.getElementById("adviserMatrixResult");
   if (!selected.length || !parts.length) { result.innerHTML = "<p>Select at least one proposal and one part.</p>"; return; }
   const sources = selected.map(record => store.proposalState(record.payload));
-  result.innerHTML = `<div class="adviser-matrix-scroll" role="region" aria-label="Proposal comparison, scroll horizontally and vertically" tabindex="0"><table class="adviser-matrix"><caption>Selected proposal entries</caption><thead><tr><th scope="col">Proposal part</th>${selected.map((record, index) => `<th scope="col">${escapeHtml(sources[index].submission?.groupName || sources[index].submission?.studentName || "Unnamed group")}<small>${escapeHtml(record.fileName)} · ${escapeHtml(formatTimestamp(record.importedAt))}</small></th>`).join("")}</tr></thead><tbody>${parts.map(part => `<tr><th scope="row">${escapeHtml(part.label)}</th>${selected.map((record, index) => {
+  result.innerHTML = `<div class="adviser-matrix-scroll" role="region" aria-label="Proposal comparison, scroll horizontally and vertically" tabindex="0"><table class="adviser-matrix${selected.length === 1 ? " adviser-matrix-single" : ""}" style="--proposal-count: ${selected.length}"><caption>Selected proposal entries</caption><thead><tr><th scope="col">Proposal part</th>${selected.map((record, index) => `<th scope="col">${escapeHtml(sources[index].submission?.groupName || sources[index].submission?.studentName || "Unnamed group")}<small>${escapeHtml(record.fileName)} · ${escapeHtml(formatTimestamp(record.importedAt))}</small></th>`).join("")}</tr></thead><tbody>${parts.map(part => `<tr><th scope="row">${escapeHtml(part.label)}</th>${selected.map((record, index) => {
     const value = store.entry(sources[index], part);
     const label = `View source task: ${part.label}, ${sources[index].submission?.groupName || sources[index].submission?.studentName || record.fileName}`;
     return `<td><a class="adviser-source-icon" href="${escapeHtml(store.sourceUrl(window.location.href, record, part))}" target="_blank" rel="noopener" aria-label="${escapeHtml(label)}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m10 13 4-4m-6 6-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 3 1-1a4 4 0 0 0-6-6l-4 4a4 4 0 0 0 0 6" transform="translate(4 2)"/></svg><span class="adviser-source-tooltip">View source task</span></a><p class="adviser-matrix-entry">${value.trim() ? escapeHtml(value) : '<span class="proposal-not-entered">Not yet entered</span>'}</p></td>`;
@@ -1337,6 +1341,12 @@ function exampleNoticeHtml() {
 }
 
 function openExampleDialog(stage, type, trigger) {
+  if (stage === "sourceEligibility" && globalThis.SOURCE_ELIGIBILITY_EXAMPLES?.[type]) {
+    renderSourceEligibilityExample(type);
+    els.exampleDialog._returnFocusElement = trigger || null;
+    els.exampleDialog.showModal();
+    return;
+  }
   if (stage === "terms") {
     renderTermsExample(state.methodology.approach);
     els.exampleDialog._returnFocusElement = trigger || null;
@@ -1393,6 +1403,14 @@ function openExampleDialog(stage, type, trigger) {
   els.exampleDialogBody.innerHTML = body;
   els.exampleDialog._returnFocusElement = trigger || null;
   els.exampleDialog.showModal();
+}
+
+function renderSourceEligibilityExample(type) {
+  const item = globalThis.SOURCE_ELIGIBILITY_EXAMPLES[type];
+  els.exampleDialogTitle.textContent = `Example and template: ${item.title}`;
+  els.exampleDialogBody.innerHTML = `<div class="example-warning" role="note"><strong>Origin: Illustrative example.</strong> Demonstration topic: assessment literacy among preservice teachers during teaching practicum. Use this to guide structure, not as text to copy or cite as a research finding. These hypothetical choices are not requirements for every study.</div>
+    ${[["Human participants", item.people], ["Documents", item.documents]].map(([heading, answer]) => `<section class="example-section"><h3>${heading}</h3><blockquote class="example-model">${escapeHtml(answer)}</blockquote></section>`).join("")}
+    <section class="example-section"><h3>Writing template</h3><p class="example-frame">${escapeHtml(item.template)}</p></section><p class="hint">${escapeHtml(item.check)}</p>`;
 }
 
 function renderStudyDesignExample(stage, type, route) {
@@ -1837,7 +1855,10 @@ function buildFocusedTasks(stageId) {
     return [
       { label: "Evidence approach", title: "What broad evidence approach can answer the questions?", support: "Compare quantitative, qualitative, and mixed methods using the A4 purposes, claims, and evidence needs.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"rqTypes\"]", "[data-section=\"methodology\"][data-key=\"dataNeeded\"]", "[data-section=\"methodology\"][data-key=\"purpose\"]", "[data-methodology-selection=\"approach\"]", ".methodology-recommendation"]) },
       { label: "Design", title: "Which design within that approach may fit?", support: "Review requirements, assumptions, an alternative, and why the selected design fits better.", items: taskNodes(["[data-methodology-selection=\"design\"]", "[data-methodology-action]", "[data-section=\"methodology\"][data-key=\"designJustification\"]", ".design-guidance"]) },
-      { label: "Participants / Sources of Data", title: "Who or what can provide the evidence?", support: "Identify the people or nonhuman sources studied, then specify the evidence each will provide. Documents and records can be sources without direct human participants.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"participants\"]", "[data-section=\"methodology\"][data-key=\"evidenceSources\"]"]) },
+      { label: "Participants / Sources of Data", title: fieldSets.methodology.find(([key]) => key === "participants")[1], support: "Describe the overall group or collection. Eligibility criteria follow in the next tasks.", items: taskNodes(['[data-section="methodology"][data-key="participants"]']) },
+      { label: "Inclusion criteria", title: fieldSets.methodology.find(([key]) => key === "inclusionCriteria")[1], support: "State specific requirements and why they matter to your study.", items: taskNodes(['[data-section="methodology"][data-key="inclusionCriteria"]']) },
+      { label: "Exclusion criteria", title: fieldSets.methodology.find(([key]) => key === "exclusionCriteria")[1], support: "Do not simply reverse your inclusion criteria. Exclusions apply to otherwise eligible people or sources. If none are justified, say so. Withdrawal is separate.", items: taskNodes(['[data-section="methodology"][data-key="exclusionCriteria"]']) },
+      { label: "Evidence sources", title: "Which of your identified sources will provide each kind of evidence needed?", support: "Connect sources to evidence across the study. You will specify the source for each question in Instrumentation.", items: taskNodes(['[data-section="methodology"][data-key="evidenceSources"]']) },
       { label: "Sampling", title: "How will participants or evidence sources be selected?", support: "Choose a defensible selection process that fits the design and the intended claims.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"sampling\"]"]) },
       { label: "Environment and boundaries", title: "Where and within what boundaries will the study occur?", support: "Define the research environment, period, inclusion and exclusion decisions, and practical delimitations.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"locale\"]", "[data-section=\"methodology\"][data-key=\"studyPeriod\"]", "[data-section=\"methodology\"][data-key=\"operationalDelimitations\"]"]) },
       { label: "Collection and analysis", title: "How will the evidence be collected and analyzed?", support: "Sequence the collection procedure and name the analysis that will produce the intended claim for each question.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"collection\"]", "[data-section=\"methodology\"][data-key=\"analysis\"]", "[data-section=\"mixedMethods\"]"]) }
@@ -1989,6 +2010,11 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   const exampleTask = stage.id === "instrumentation" ? String(task.label).split(" · ").slice(1).join(" · ") : task.label;
   if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage.id]?.[exampleTask]) {
     els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl(stage.id, exampleTask)}</div>`);
+  }
+  const eligibilityType = stage.id === "methodology" ? ({ "Participants / Sources of Data": "participants", "Inclusion criteria": "inclusion", "Exclusion criteria": "exclusion", "Evidence sources": "source" })[task.label] : stage.id === "instrumentation" && exampleTask === "Source" ? "source" : null;
+  if (eligibilityType) {
+    document.getElementById("studyExampleAction")?.remove();
+    els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl("sourceEligibility", eligibilityType, "View example and template")}</div>`);
   }
   if (stage.id === "terms" && task.label !== "Team contribution") {
     els.taskSupport.insertAdjacentHTML("afterend", `<div id="studyExampleAction">${exampleControl("terms", "definition", "View example and template")}</div>`);
@@ -3133,7 +3159,7 @@ function instrumentationRow(index) {
   const labels = {
     claimNeeded: "Claim Needed",
     evidenceNeeded: "Evidence Needed",
-    evidenceSource: "Evidence Source",
+    evidenceSource: "For this research question, which of your identified participants or sources can provide the evidence you need, and why?",
     instrument: "Instrument / Procedure",
     analysis: "Analysis",
     description: "Description",
@@ -3149,13 +3175,14 @@ function instrumentationRow(index) {
         <p class="hint">${purposeHint}</p>
       </section>
       ${["claimNeeded", "evidenceNeeded", "evidenceSource", "instrument", "analysis", "description", "purpose", "validation", "implementation"].map((key) => `
-        <label>
+        <${key === "evidenceSource" ? 'div class="field instrumentation-source-field"' : "label"}>
           <span class="field-label">
             <span>${escapeHtml(labels[key])}</span>
             ${helpControl(`instrumentation-${index}-${key}-help`, key, instrumentationScaffold(key, purposeKey))}
           </span>
-          <textarea data-table="instrumentation" data-index="${index}" data-key="${key}" aria-describedby="instrumentation-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
-        </label>
+          ${key === "evidenceSource" ? `<details class="source-reference"><summary>Review identified sources and eligibility</summary>${[["Participants / Sources of Data", "participants"], ["Inclusion criteria", "inclusionCriteria"], ["Exclusion criteria", "exclusionCriteria"]].map(([label, field]) => `<p><strong>${label}:</strong> ${escapeHtml(state.methodology[field] || "Not entered yet.")}</p>`).join("")}<p>${contextTaskLink("methodology", '[data-section="methodology"][data-key="participants"]', "Review Participants / Sources of Data")}</p></details>` : ""}
+          <textarea data-table="instrumentation" data-index="${index}" data-key="${key}" aria-label="${escapeHtml(labels[key])}" aria-describedby="instrumentation-${index}-${key}-help">${escapeHtml(row[key] || "")}</textarea>
+        </${key === "evidenceSource" ? "div" : "label"}>
       `).join("")}
     </div>
   `;
@@ -3175,7 +3202,7 @@ function instrumentationScaffold(key, purposeKey) {
   const base = {
     claimNeeded: "State the defensible claim this SRQ should support. Distinguish reported understanding, documented expectation, produced output, and demonstrated practice.",
     evidenceNeeded: "Name the evidence required to support that claim: detailed accounts, scores, policy statements, observed actions, artifacts, records, or another suitable form.",
-    evidenceSource: "Name who or what provides the evidence: participants, documents, artifacts, records, observations, recordings, outputs, or test results.",
+    evidenceSource: "For this research question, identify which already described participants or sources can provide the required evidence, and explain why. Review the saved source description and eligibility criteria; do not repeat the whole description.",
     instrument: "Choose the instrument or procedure: survey, test, interview guide, observation, document analysis, rubric, record review, or another defensible method.",
     analysis: "State how this evidence will be analyzed to produce the intended claim, such as descriptive statistics, correlation, thematic analysis, content analysis, or comparison.",
     description: "Describe the instrument parts, scales, prompts, indicators, sections, and sample item or example indicator.",
@@ -3444,6 +3471,8 @@ Methodology
   Operational delimitations: ${state.methodology.operationalDelimitations || "Identify participant, environment, period, evidence-source, and procedure boundaries."}
 - Participants / Sources of Data
   ${state.methodology.participants || "[Describe participants or the documents, records, or other sources studied]"}
+  Inclusion criteria: ${state.methodology.inclusionCriteria || "[State eligibility requirements and their reasons]"}
+  Exclusion criteria: ${state.methodology.exclusionCriteria || "[State justified additional exclusions for otherwise eligible sources, or explain why none are proposed]"}
   Sampling: ${state.methodology.sampling || "[Describe sampling]"}
 - Research Environment or Setting
   ${state.methodology.locale || "[Describe research environment or setting]"}
@@ -3867,6 +3896,8 @@ function checkMethodology() {
     flag(!selectedApproach || !rec.approach || rec.approach === selectedApproach, "The selected evidence approach is consistent with the current A4 purposes and intended claims.", `Review why ${approachLabel(selectedApproach) || "the selected approach"} fits better than ${approachLabel(rec.approach) || "the suggested candidate"}. A different choice may still be justified.`),
     flag(Boolean(state.methodology.designJustification), "The design choice is justified.", "Explain why this design fits the problem and questions better than the alternatives you considered."),
     flag(Boolean(state.methodology.participants), "Participants / sources of data are described.", "Describe who or what will be studied, including documents or records where applicable."),
+    flag(Boolean(state.methodology.inclusionCriteria), "Inclusion criteria text is entered.", "State inclusion criteria: what characteristics must a person or source have to qualify?"),
+    flag(Boolean(state.methodology.exclusionCriteria), "Exclusion criteria text is entered.", "State additional exclusion criteria for otherwise eligible people or sources, or explain that no additional exclusions are justified."),
     flag(Boolean(state.methodology.locale), "Research environment or setting is described.", "Describe the physical, institutional, social, document, or online environment relevant to the study."),
     flag(Boolean(state.methodology.evidenceSources), "Participants and other evidence sources are identified.", "Identify who or what provides evidence, including documents, artifacts, records, observations, or outputs where relevant."),
     flag(Boolean(state.methodology.studyPeriod), "Study period is bounded.", "State the relevant data collection or document period."),
@@ -4253,6 +4284,8 @@ function readinessIssueDestination(item = {}) {
     if (lower.includes("add 3-7 srqs")) return { stage: "a4", selector: '[data-array="a4.questions"][data-index="0"]' };
   }
   if (item.sourceStage === "methodology") {
+    if (lower.includes("inclusion criteria")) return sectionField("methodology", "methodology", "inclusionCriteria");
+    if (lower.includes("exclusion criteria")) return sectionField("methodology", "methodology", "exclusionCriteria");
     if (lower.includes("broad evidence approach")) return { stage: "methodology", selector: '[data-methodology-selection="approach"]' };
     if (lower.includes("design") || lower.includes("approach is consistent")) return { stage: "methodology", selector: state.methodology.approach ? '[data-methodology-selection="design"]' : '[data-methodology-selection="approach"]' };
     if (lower.includes("participants")) return sectionField("methodology", "methodology", "participants");
@@ -4673,6 +4706,8 @@ function renderProposalGlance() {
   const summaries = [
     ["Framework", state.framework.theoryModel],
     ["Participants / Sources of Data", state.methodology.participants],
+    ["Inclusion criteria", state.methodology.inclusionCriteria],
+    ["Exclusion criteria", state.methodology.exclusionCriteria],
     ["Setting", state.methodology.locale],
     ["Scope", state.methodology.operationalDelimitations || state.framework.scopeBoundaries],
     ["Ethics", ethicsSummary()]
@@ -5324,7 +5359,7 @@ function finalSubmissionMissingItems() {
     missing.push("Research Level Justification: not enough evidence or feasible scope for the selected context");
   }
 
-  ["rqTypes", "dataNeeded", "participants", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations"].forEach((key) => {
+  ["rqTypes", "dataNeeded", "participants", "inclusionCriteria", "exclusionCriteria", "purpose", "evidenceSources", "studyPeriod", "operationalDelimitations"].forEach((key) => {
     requireValue(`methodology.${key}`, `Methodology: ${fieldSets.methodology.find((field) => field[0] === key)?.[1] || key}`);
   });
   ["approach", "design", "designJustification", "selectedDesign", "sampling", "locale", "collection", "analysis"].forEach((key) => {

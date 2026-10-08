@@ -1,4 +1,35 @@
 // Verified framework references; all study decisions and possible interpretations are hypothetical.
+globalThis.SOURCE_ELIGIBILITY_EXAMPLES = {
+  participants: {
+    title: "Participants / Sources of Data",
+    people: "Preservice teachers undertaking teaching practicum in the selected teacher-education program.",
+    documents: "Assessment plans produced by preservice teachers during teaching practicum.",
+    template: "The study will draw data from [group of people or collection of sources] in [relevant setting or period]. [State whether direct human participants are involved.]",
+    check: "Describe the overall group or collection here. Specify eligibility in the inclusion and exclusion tasks."
+  },
+  inclusion: {
+    title: "Inclusion criteria",
+    people: "Preservice teachers must be enrolled in the specified practicum course and assigned responsibility for planning and conducting classroom assessment. These requirements ensure that they have relevant assessment responsibilities.",
+    documents: "Assessment plans must have been produced during the specified practicum period and contain an assessment activity planned by the preservice teacher. These criteria keep the collection relevant to the study focus and period.",
+    template: "Eligible [participants/sources] must [criteria], because [relevance to the study].",
+    check: "Make each requirement specific enough to apply consistently. Eligibility does not replace consent or permission."
+  },
+  exclusion: {
+    title: "Exclusion criteria",
+    people: "Among otherwise eligible preservice teachers, those directly supervised or graded by the researcher will be excluded to reduce the researcher's authority over participants. This is one hypothetical safeguard, not a universal requirement.",
+    documents: "Among eligible assessment plans, duplicate copies and plans with missing pages that prevent interpretation of the assessment activity will be excluded. This avoids double-counting and unsupported interpretation.",
+    template: "Among otherwise eligible [participants/sources], those with [additional characteristic] will be excluded because [reason]. If none are justified: No additional exclusion criteria are proposed, because [reason].",
+    check: "Do not simply reverse inclusion criteria. Justify additional exclusions for otherwise eligible sources. Withdrawal after joining is separate."
+  },
+  source: {
+    title: "Source for the required evidence",
+    people: "For a question about assessment decisions, the identified preservice teachers can explain why they selected particular assessment activities. Their accounts provide reported reasoning, not proof of classroom enactment.",
+    documents: "For a question about alignment, the identified assessment plans provide stated learning outcomes, assessment tasks, and scoring criteria. Plans show documented intentions, not necessarily actual classroom practice.",
+    template: "For Research Question [number], [identified source] can provide [evidence] because [reason]. This source cannot establish [limit].",
+    check: "Connect a specific evidence need to an appropriate source already described in Study Design. Do not repeat the full group description."
+  }
+};
+
 globalThis.STUDY_DESIGN_EXAMPLES = {
   topic: "Assessment literacy among preservice teachers during teaching practicum",
   gap: "Illustrative gap: assessment knowledge has received attention, but its connection with assessment planning during practicum remains insufficiently explained. This is an invented demonstration gap, not a finding from a literature review.",

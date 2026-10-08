@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20261008-v492-shared1" />
+    <link rel="stylesheet" href="styles-upload.css?v=20261008-v492-matrix4" />
   </head>
   <body>
     <div class="app-shell">
@@ -146,12 +146,16 @@
         <section id="adviserComparison" hidden aria-labelledby="adviserComparisonTitle">
           <h2 id="adviserComparisonTitle" tabindex="-1">Proposal comparison matrix</h2>
           <p class="hint">Full saved entries from the imported copies, not an assessment of quality. Chain-link icons open source tasks in a separate review tab. Scroll across to compare groups.</p>
+          <div class="adviser-comparison-layout">
           <details class="adviser-matrix-options" open>
             <summary>Choose proposals and parts</summary>
             <div id="adviserMatrixChoices"></div>
           </details>
-          <p id="adviserMatrixStatus" role="status" aria-live="polite"></p>
-          <div id="adviserMatrixResult"></div>
+          <div class="adviser-comparison-content">
+            <p id="adviserMatrixStatus" role="status" aria-live="polite"></p>
+            <div id="adviserMatrixResult"></div>
+          </div>
+          </div>
         </section>
         <div id="adviserProposalList" class="adviser-proposal-list"></div>
       </main>
@@ -399,8 +403,8 @@
     <input id="adviserImportFiles" type="file" accept=".json,application/json" multiple hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260915-v484-a4-scaffold1"></script>
-    <script src="study-design-examples.js?v=20261008-v491-sources1"></script>
-    <script src="adviser-workspace.js?v=20261008-v491-sources1"></script>
-    <script src="app-upload.js?v=20261008-v492-shared1"></script>
+    <script src="study-design-examples.js?v=20261008-v492-eligibility1"></script>
+    <script src="adviser-workspace.js?v=20261008-v492-eligibility1"></script>
+    <script src="app-upload.js?v=20261008-v492-matrix2"></script>
   </body>
 </html>

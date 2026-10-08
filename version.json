@@ -5,6 +5,7 @@
   "title": "v4.9.2 Compact Shared Interface",
   "url": "./",
   "notes": [
+    "Study Design separates participants/data sources, inclusion criteria and additional exclusions; click-to-open examples compare people and documents, and Instrumentation references saved eligibility without overwriting responses",
     "Task screens share a compact header and footer, smaller secondary text, and a clickable working-draft reminder beside the task code",
     "App feedback is temporarily hidden; existing feedback records and proposal responses remain unchanged",
     "Adviser proposal list now offers a comparison matrix with selectable groups and proposal parts, full entries in 12 px desktop / 14 px mobile text, and chain-link source-task links",

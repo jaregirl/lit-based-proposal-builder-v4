@@ -3462,7 +3462,7 @@ dialog::backdrop {
 :root { --adviser-matrix-text-size: 12px; }
 .adviser-matrix-options { margin: 16px 0; }
 .adviser-matrix-options summary { cursor: pointer; }
-.adviser-matrix-select-all { font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #cbd7d8; }
+.adviser-matrix-select-all { font-weight: 400; padding-bottom: 4px; border-bottom: 1px solid #cbd7d8; }
 .task-meta-row { position: relative; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .task-meta-row .eyebrow { margin: 0; }
 .compact-draft-reminder { display: block; color: #647176; font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; }
@@ -3486,6 +3486,9 @@ dialog::backdrop {
 .construct-prompt-guidance { font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
 .construct-prompt-guidance > summary { cursor: pointer; color: var(--accent-dark); width: fit-content; padding: 5px 0; }
 .construct-prompt-guidance p { margin: 8px 0; max-width: 760px; }
+.source-reference { font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+.source-reference summary { cursor: pointer; padding-block: 6px; color: #20574e; }
+.source-reference p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .section-task-path { min-height: 26px; padding-block: 0; }
 .section-task-node { font-size: 11px; min-height: 26px; padding-bottom: 3px; }
 .section-task-dot { width: 6px; height: 6px; flex-basis: 6px; }
@@ -3514,16 +3517,23 @@ dialog::backdrop {
 .a4-prompt-guidance p { margin: 8px 0; max-width: 760px; }
 .a4-problem-task .gap-refinement > summary { font-size: 13px; }
 @media (max-width: 600px) { .compact-a4-problem .stage-intro h2 { font-size: 22px; } }
-#adviserMatrixChoices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
-#adviserMatrixChoices fieldset { min-width: 0; padding: 12px; }
-#adviserMatrixChoices label { display: block; font-size: 14px; margin: 6px 0; overflow-wrap: anywhere; }
+.adviser-comparison-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 8px; align-items: start; --matrix-panel-height: 70vh; font-size: 12px; font-weight: 400; }
+.adviser-comparison-layout summary, #adviserMatrixChoices legend { font-size: 12px; font-weight: 400; }
+.adviser-comparison-layout .adviser-matrix-options { margin: 0; max-height: var(--matrix-panel-height); overflow: auto; scrollbar-gutter: stable; padding: 8px; border: 1px solid #cbd7d8; border-radius: 6px; }
+.adviser-comparison-content { min-width: 0; }
+.adviser-comparison-content > [role="status"] { margin: 0 0 8px; font-size: 12px; }
+#adviserMatrixChoices { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 6px; }
+#adviserMatrixChoices fieldset { min-width: 0; padding: 6px; }
+#adviserMatrixChoices label { display: block; font-size: 12px; font-weight: 400; line-height: 1.25; margin: 1px 0; padding: 2px 0; overflow-wrap: anywhere; }
+#adviserMatrixChoices input[type="checkbox"] { margin: 0 5px 0 0; padding: 0; vertical-align: middle; }
 #adviserMatrixChoices small { display: block; font-size: 12px; margin-left: 24px; }
-.adviser-matrix-scroll { max-height: 70vh; overflow: auto; position: relative; isolation: isolate; margin-bottom: 24px; }
-.adviser-matrix { border-collapse: separate; border-spacing: 0; width: max-content; table-layout: fixed; font-size: var(--adviser-matrix-text-size); }
-.adviser-matrix caption { text-align: left; font-size: 13px; padding: 8px; }
-.adviser-matrix th, .adviser-matrix td { box-sizing: border-box; width: 310px; min-width: 310px; max-width: 310px; border-right: 1px solid #cbd7d8; border-bottom: 1px solid #cbd7d8; padding: 12px; vertical-align: top; overflow-wrap: anywhere; background: #fff; }
+.adviser-matrix-scroll { max-height: calc(var(--matrix-panel-height, 70vh) - 26px); overflow: auto; position: relative; isolation: isolate; margin-bottom: 24px; }
+.adviser-matrix { --matrix-label-width: 75px; --matrix-column-min: 260px; border-collapse: separate; border-spacing: 0; width: 100%; min-width: calc(var(--matrix-label-width) + var(--proposal-count) * var(--matrix-column-min)); table-layout: fixed; font-size: var(--adviser-matrix-text-size); }
+.adviser-matrix-single { min-width: 100%; }
+.adviser-matrix caption { text-align: left; font-size: 12px; font-weight: 400; padding: 4px; }
+.adviser-matrix th, .adviser-matrix td { box-sizing: border-box; font-size: 12px; font-weight: 400; border-right: 1px solid #cbd7d8; border-bottom: 1px solid #cbd7d8; padding: 6px; vertical-align: top; overflow-wrap: anywhere; background: #fff; }
 .adviser-matrix thead th { position: sticky; top: 0; z-index: 2; background: #eaf3f1; font-size: var(--adviser-matrix-text-size); }
-.adviser-matrix th:first-child { width: 150px; min-width: 150px; max-width: 150px; position: sticky; left: 0; z-index: 1; background: #eaf3f1; }
+.adviser-matrix th:first-child { width: var(--matrix-label-width); white-space: normal; overflow-wrap: anywhere; position: sticky; left: 0; z-index: 1; background: #eaf3f1; }
 .adviser-matrix thead th:first-child { z-index: 3; }
 .adviser-matrix th small { display: block; font-size: 12px; font-weight: normal; margin-top: 6px; }
 .adviser-matrix-entry { white-space: pre-wrap; font-size: var(--adviser-matrix-text-size); line-height: 1.55; margin: 0; }
@@ -3531,10 +3541,13 @@ dialog::backdrop {
 .adviser-source-icon:hover, .adviser-source-icon:focus-visible { background: #e2efeb; outline: 2px solid #20574e; }
 .adviser-source-tooltip { display: none; position: absolute; right: 0; top: 100%; z-index: 4; width: max-content; padding: 4px 8px; background: #173f38; color: white; font-size: 12px; }
 .adviser-source-icon:hover .adviser-source-tooltip, .adviser-source-icon:focus-visible .adviser-source-tooltip { display: block; }
+@media (max-width: 800px) {
+  .adviser-comparison-layout { grid-template-columns: 1fr; }
+  .adviser-comparison-layout .adviser-matrix-options { max-height: 35vh; }
+}
 @media (max-width: 600px) {
-  :root { --adviser-matrix-text-size: 14px; }
+  :root { --adviser-matrix-text-size: 12px; }
   #adviserMatrixChoices { grid-template-columns: 1fr; }
-  .adviser-matrix th:first-child { width: 110px; min-width: 110px; max-width: 110px; }
-  .adviser-matrix th, .adviser-matrix td { width: 270px; min-width: 270px; max-width: 270px; }
+  .adviser-matrix { --matrix-label-width: 50px; --matrix-column-min: 240px; }
   .adviser-source-icon { width: 44px; height: 44px; }
 }
