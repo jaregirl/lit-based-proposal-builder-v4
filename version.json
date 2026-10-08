@@ -1,10 +1,14 @@
 {
-  "version": "4.8.10",
+  "version": "4.9.1",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-10-04",
-  "title": "v4.8.10 Update Loading Fix",
+  "releaseDate": "2026-10-08",
+  "title": "v4.9.1 Adviser Comparison Matrix",
   "url": "./",
   "notes": [
+    "Adviser proposal list now offers a comparison matrix with selectable groups and proposal parts, full entries in 14 px text, and chain-link source-task links",
+    "Tools now offers separate Researcher and Adviser workspaces",
+    "Advisers can import several JSON backups as independent read-only review copies and open each in its own tab",
+    "Adviser imports preserve personal reflections and contribution records included in the file; researcher drafts are kept separate",
     "Open New Version uses a fresh address; online page loads and service-worker update checks bypass the browser HTTP cache",
     "Compare all three shows definitions of three terms across quantitative, qualitative and mixed methods, with a stacked layout on small screens",
     "Definition of Terms now guides term selection and offers quantitative, qualitative and mixed-methods examples and templates",

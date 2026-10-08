@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20261004-v4810-update1" />
+    <link rel="stylesheet" href="styles-upload.css?v=20261008-v491-matrix4" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,6 +45,7 @@
       </header>
 
       <main class="workspace">
+        <section id="adviserReviewBanner" class="adviser-review-banner" hidden aria-label="Adviser review copy"></section>
         <header class="stage-context-bar">
           <p id="stageBreadcrumb">Foundations · Student Details</p>
           <div class="stage-context-actions">
@@ -128,6 +129,25 @@
           <section class="proposal-summary-strip" id="proposalSummary" aria-label="Proposal scope and safeguards"></section>
         </section>
       </main>
+      <main id="adviserWorkspace" class="adviser-workspace" hidden aria-labelledby="adviserWorkspaceTitle">
+        <h2 id="adviserWorkspaceTitle" tabindex="-1">Adviser workspace</h2>
+        <p>Import proposal JSON backups to review separate copies. Student responses, personal reflections, and contribution records are read-only. This workspace is saved in this browser.</p>
+        <button type="button" id="adviserImportBtn">Import proposal JSON files</button>
+        <p class="hint">You can select several files at once. Each import is kept separately, including later versions of the same proposal. Keep the original JSON files as your portable backups.</p>
+        <div id="adviserImportResults" role="status" aria-live="polite"></div>
+        <button type="button" id="adviserCompareBtn" class="ghost" aria-expanded="false" aria-controls="adviserComparison">Compare proposals</button>
+        <section id="adviserComparison" hidden aria-labelledby="adviserComparisonTitle">
+          <h2 id="adviserComparisonTitle" tabindex="-1">Proposal comparison matrix</h2>
+          <p class="hint">Full saved entries from the imported copies, not an assessment of quality. Chain-link icons open source tasks in a separate review tab. Scroll across to compare groups.</p>
+          <details class="adviser-matrix-options" open>
+            <summary>Choose proposals and parts</summary>
+            <div id="adviserMatrixChoices"></div>
+          </details>
+          <p id="adviserMatrixStatus" role="status" aria-live="polite"></p>
+          <div id="adviserMatrixResult"></div>
+        </section>
+        <div id="adviserProposalList" class="adviser-proposal-list"></div>
+      </main>
     </div>
 
     <dialog id="allStepsDialog" class="journey-dialog">
@@ -177,6 +197,7 @@
         <button class="ghost" id="closeToolsBtn" type="button">Close</button>
       </div>
       <div class="tool-groups">
+        <section><h3>Workspace role</h3><p class="hint">Choose the tools for your work. This role switch does not verify identity or retrieve students’ files.</p><div class="tool-grid" id="workspaceRoleChoices"></div></section>
         <section><h3>Draft</h3><div class="tool-grid">
           <button id="saveBtn" type="button">Save Draft Checkpoint</button>
           <button class="ghost" id="historyBtn" type="button">Draft History</button>
@@ -368,9 +389,11 @@
     </dialog>
 
     <input id="importFile" type="file" accept="application/json" hidden />
+    <input id="adviserImportFiles" type="file" accept=".json,application/json" multiple hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260915-v484-a4-scaffold1"></script>
     <script src="study-design-examples.js?v=20261002-v487-study1"></script>
-    <script src="app-upload.js?v=20261004-v4810-update1"></script>
+    <script src="adviser-workspace.js?v=20261008-v491-matrix2"></script>
+    <script src="app-upload.js?v=20261008-v491-matrix4"></script>
   </body>
 </html>

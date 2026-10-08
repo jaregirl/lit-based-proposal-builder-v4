@@ -1,0 +1,10 @@
+{
+  "backupFormat": "lit-based-proposal-builder",
+  "state": {
+    "currentStage": "a1",
+    "a1": {"initialTopic": "Demonstration proposal one", "coreConstruct": "Assessment literacy"},
+    "a4": {"questions": ["How do teachers explain assessment decisions?", "What difficulties do they report?"]},
+    "submission": {"workArrangement": "group", "groupName": "Demonstration group one", "studentName": "Demo Student One", "studentId": "demo-one", "initialReadiness": "Demo reflection retained for adviser review.", "personalGroupReflection": "Demo personal reflection.", "personalDeclaration": true, "groupLeader": {"id": "demo-one", "name": "Demo Student One"}, "groupMembers": [{"id": "demo-peer", "name": "Demo Peer"}]},
+    "teamContributions": {"a1": {"rosterSnapshot": [{"id": "demo-one", "name": "Demo Student One", "role": "leader"}, {"id": "demo-peer", "name": "Demo Peer", "role": "member"}], "assessments": {"demo-one": {"level": "agreed", "evidence": "Demo self-assessment evidence."}, "demo-peer": {"level": "substantial", "evidence": "Demo peer contribution evidence."}}}}
+  }
+}

@@ -1,6 +1,10 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.8.10";
-const APP_VERSION = `v${RELEASE_VERSION} - Update Loading Fix`;
+const RELEASE_VERSION = "4.9.1";
+const APP_VERSION = `v${RELEASE_VERSION} - Adviser Comparison Matrix`;
+const adviserParams = new URLSearchParams(window.location.search);
+const IS_ADVISER = adviserParams.get("role") === "adviser";
+const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
+const adviserReview = IS_ADVISER ? globalThis.ADVISER_STORE.read(localStorage, ADVISER_PROPOSAL_ID) : null;
 const SCHEMA_VERSION = "4.7.0";
 const CHECKPOINT_KEY = `${STORAGE_KEY}:checkpoints`;
 const FEEDBACK_KEY = `${STORAGE_KEY}:appFeedback`;
@@ -538,7 +542,7 @@ function clone(value) {
 
 function loadUiState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(UI_STATE_KEY) || "{}");
+    const saved = JSON.parse((IS_ADVISER ? sessionStorage.getItem(`adviserUi:${ADVISER_PROPOSAL_ID}`) : localStorage.getItem(UI_STATE_KEY)) || "{}");
     return {
       tasks: saved.tasks && typeof saved.tasks === "object" ? saved.tasks : {},
       showAll: saved.showAll && typeof saved.showAll === "object" ? saved.showAll : {},
@@ -551,7 +555,8 @@ function loadUiState() {
 
 function saveUiState() {
   try {
-    localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState));
+    if (IS_ADVISER) sessionStorage.setItem(`adviserUi:${ADVISER_PROPOSAL_ID}`, JSON.stringify(uiState));
+    else localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState));
   } catch {
     // UI position is expendable; proposal data remains the source of truth.
   }
@@ -644,7 +649,148 @@ function createStableId(prefix = "item") {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function adviserLink(id = "") {
+  return globalThis.ADVISER_STORE.url(window.location.href, "adviser", id);
+}
+
+function renderWorkspaceRole() {
+  document.body.classList.toggle("adviser-mode", IS_ADVISER);
+  document.body.classList.toggle("adviser-library", IS_ADVISER && !adviserReview);
+  const choices = document.getElementById("workspaceRoleChoices");
+  choices.innerHTML = `<a class="button-link ${IS_ADVISER ? "ghost" : ""}" href="${escapeHtml(globalThis.ADVISER_STORE.url(window.location.href, "researcher"))}" ${!IS_ADVISER ? 'aria-current="page"' : ""}>Researcher</a><a class="button-link ${IS_ADVISER ? "" : "ghost"}" href="${escapeHtml(adviserLink())}" ${IS_ADVISER ? 'aria-current="page"' : ""}>Adviser · Proposal list</a>`;
+  if (!IS_ADVISER) return;
+  for (const id of ["saveBtn", "historyBtn", "uploadFormsBtn", "importBtn", "exportBtn", "memberCopyBtn", "resetBtn", "skipBtn", "downloadFeedbackBtn"]) document.getElementById(id).hidden = true;
+  for (const section of document.querySelectorAll("#toolsDialog .tool-groups > section")) {
+    if (section.querySelector("#saveBtn, #importBtn, #resetBtn")) section.hidden = true;
+  }
+  document.querySelector(".app-feedback-panel").hidden = true;
+  document.querySelector(".focus-support").hidden = true;
+  document.getElementById("returnFromExampleBtn").textContent = "Return to proposal";
+  els.autosaveStatus.textContent = "Adviser workspace";
+  if (!adviserReview) {
+    els.activeWorkText.textContent = "";
+    for (const id of ["summaryBtn", "previewBtn", "studentDetailsBtn"]) document.getElementById(id).hidden = true;
+    return;
+  }
+  const banner = document.getElementById("adviserReviewBanner");
+  banner.hidden = false;
+  banner.innerHTML = `<div><strong>Adviser · Read-only review copy</strong><p>${escapeHtml(adviserReview.fileName)} · Imported ${escapeHtml(formatTimestamp(adviserReview.importedAt))}</p><p class="hint">Personal entries belong to ${escapeHtml(state.submission.studentName || "the student identified in this copy")}. These records are available only if included in the imported file.</p></div><a class="button-link ghost compact" href="${escapeHtml(adviserLink())}">Proposal list</a>`;
+}
+
+function renderAdviserWorkspace() {
+  const workspace = document.getElementById("adviserWorkspace");
+  workspace.hidden = false;
+  let records;
+  try { records = globalThis.ADVISER_STORE.list(localStorage); } catch { records = []; }
+  const list = document.getElementById("adviserProposalList");
+  list.innerHTML = `${ADVISER_PROPOSAL_ID && !adviserReview ? '<p role="alert">This review copy is unavailable in this browser. Select an existing copy or import its JSON backup.</p>' : ""}` + (records.length ? records.map(record => {
+    const source = globalThis.ADVISER_STORE.proposalState(record.payload);
+    const title = source.ethics?.documents?.studyTitle || source.a1?.initialTopic || source.a4?.centralFocus || "Untitled proposal";
+    const group = source.submission?.groupName || source.submission?.studentName || "Student/group not recorded";
+    return `<article class="adviser-proposal-card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(group)}</p><p class="hint">${escapeHtml(record.fileName)} · Imported ${escapeHtml(formatTimestamp(record.importedAt))}</p><div class="inline-actions"><a class="button-link compact" href="${escapeHtml(adviserLink(record.id))}">Review proposal</a><a class="button-link ghost compact" href="${escapeHtml(adviserLink(record.id))}" target="_blank" rel="noopener">Open in another tab</a></div></article>`;
+  }).join("") : "<p>No proposals imported yet.</p>");
+  document.getElementById("adviserCompareBtn").disabled = !records.length;
+  if (!document.getElementById("adviserComparison").hidden) renderAdviserMatrixChoices(records);
+}
+
+// Comparison selections are UI-only. Never normalize or write imported payloads here.
+let adviserMatrixSelection = null;
+function renderAdviserMatrixChoices(records = globalThis.ADVISER_STORE.list(localStorage)) {
+  const store = globalThis.ADVISER_STORE;
+  if (!adviserMatrixSelection) adviserMatrixSelection = { proposals: new Set(records.map(record => record.id)), parts: new Set(["construct", "gap", "questions"]) };
+  const choices = document.getElementById("adviserMatrixChoices");
+  const bulkControls = group => `<label class="adviser-matrix-select-all"><input type="checkbox" data-matrix-all="${group}" aria-label="Select all ${group}"> Select all</label>`;
+  choices.innerHTML = `<fieldset><legend>Proposals</legend>${bulkControls("proposals")}${records.map(record => {
+    const source = store.proposalState(record.payload);
+    const name = source.submission?.groupName || source.submission?.studentName || "Unnamed group";
+    return `<label><input type="checkbox" data-matrix-proposal="${escapeHtml(record.id)}" ${adviserMatrixSelection.proposals.has(record.id) ? "checked" : ""}> ${escapeHtml(name)} <small>${escapeHtml(record.fileName)} · ${escapeHtml(formatTimestamp(record.importedAt))}</small></label>`;
+  }).join("")}</fieldset><fieldset><legend>Proposal parts</legend>${bulkControls("parts")}${store.parts.map(part => `<label><input type="checkbox" data-matrix-part="${part.id}" ${adviserMatrixSelection.parts.has(part.id) ? "checked" : ""}> ${escapeHtml(part.label)}</label>`).join("")}</fieldset>`;
+  renderAdviserMatrix(records);
+}
+
+function renderAdviserMatrix(records = globalThis.ADVISER_STORE.list(localStorage)) {
+  syncAdviserMatrixSelectAll(records);
+  const store = globalThis.ADVISER_STORE;
+  const selected = records.filter(record => adviserMatrixSelection.proposals.has(record.id));
+  const parts = store.parts.filter(part => adviserMatrixSelection.parts.has(part.id));
+  document.getElementById("adviserMatrixStatus").textContent = `${selected.length} proposal(s) · ${parts.length} part(s)`;
+  const result = document.getElementById("adviserMatrixResult");
+  if (!selected.length || !parts.length) { result.innerHTML = "<p>Select at least one proposal and one part.</p>"; return; }
+  const sources = selected.map(record => store.proposalState(record.payload));
+  result.innerHTML = `<div class="adviser-matrix-scroll" role="region" aria-label="Proposal comparison, scroll horizontally and vertically" tabindex="0"><table class="adviser-matrix"><caption>Selected proposal entries</caption><thead><tr><th scope="col">Proposal part</th>${selected.map((record, index) => `<th scope="col">${escapeHtml(sources[index].submission?.groupName || sources[index].submission?.studentName || "Unnamed group")}<small>${escapeHtml(record.fileName)} · ${escapeHtml(formatTimestamp(record.importedAt))}</small></th>`).join("")}</tr></thead><tbody>${parts.map(part => `<tr><th scope="row">${escapeHtml(part.label)}</th>${selected.map((record, index) => {
+    const value = store.entry(sources[index], part);
+    const label = `View source task: ${part.label}, ${sources[index].submission?.groupName || sources[index].submission?.studentName || record.fileName}`;
+    return `<td><a class="adviser-source-icon" href="${escapeHtml(store.sourceUrl(window.location.href, record, part))}" target="_blank" rel="noopener" aria-label="${escapeHtml(label)}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m10 13 4-4m-6 6-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 3 1-1a4 4 0 0 0-6-6l-4 4a4 4 0 0 0 0 6" transform="translate(4 2)"/></svg><span class="adviser-source-tooltip">View source task</span></a><p class="adviser-matrix-entry">${value.trim() ? escapeHtml(value) : '<span class="proposal-not-entered">Not yet entered</span>'}</p></td>`;
+  }).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+function syncAdviserMatrixSelectAll(records) {
+  for (const group of ["proposals", "parts"]) {
+    const control = document.getElementById("adviserMatrixChoices").querySelector(`[data-matrix-all="${group}"]`);
+    if (!control) continue;
+    const items = group === "proposals" ? records : globalThis.ADVISER_STORE.parts;
+    const count = items.filter(item => adviserMatrixSelection[group].has(item.id)).length;
+    control.checked = items.length > 0 && count === items.length;
+    control.indeterminate = count > 0 && count < items.length;
+    control.disabled = !items.length;
+  }
+}
+
+function setAdviserMatrixGroup(group, checked, records = globalThis.ADVISER_STORE.list(localStorage)) {
+  if (!adviserMatrixSelection || !["proposals", "parts"].includes(group)) return;
+  const items = group === "proposals" ? records : globalThis.ADVISER_STORE.parts;
+  adviserMatrixSelection[group] = new Set(checked ? items.map(item => item.id) : []);
+  renderAdviserMatrix(records);
+}
+
+function adviserNavigationButton(button) {
+  return button.matches('[data-example-stage], [data-context-stage], [data-context-return-home], [data-open-student-details], [data-progress-preview], [data-proposal-source-stage]');
+}
+
+function applyAdviserReadOnly() {
+  if (!IS_ADVISER) return;
+  for (const root of [els.stageForm, document.getElementById("studentDetailsDialog")]) {
+    if (!root) continue;
+    root.querySelectorAll("textarea, input, select").forEach(control => {
+      if (control.tagName === "TEXTAREA" || (control.tagName === "INPUT" && !["checkbox", "radio", "file"].includes(control.type))) control.readOnly = true;
+      else control.disabled = true;
+    });
+    root.querySelectorAll("button").forEach(button => {
+      if (button.id.startsWith("close") || adviserNavigationButton(button)) return;
+      button.hidden = true; button.disabled = true;
+    });
+  }
+  document.getElementById("memberCopyBtn").hidden = true;
+}
+
+function validateAdviserState(source) {
+  function check(value, template, path) {
+    if (value === undefined) return;
+    if (Array.isArray(template)) {
+      if (!Array.isArray(value)) throw new Error(`${path} must be a list.`);
+      if (template.length) value.forEach(item => check(item, template[0], path));
+    } else if (template && typeof template === "object") {
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${path} must be an object.`);
+      for (const key of Object.keys(template)) check(value[key], template[key], `${path}.${key}`);
+    } else if (typeof value !== typeof template) throw new Error(`${path} has an invalid value.`);
+  }
+  check(source, defaultData, "Proposal");
+  for (const [section, fields] of Object.entries(fieldSets)) {
+    for (const [key] of fields) {
+      const entry = source[section]?.[key];
+      if (entry !== undefined && typeof entry !== "string") throw new Error(`${section}.${key} must contain text.`);
+    }
+  }
+  return normalizeState(clone(source));
+}
+
 function loadState() {
+  if (IS_ADVISER) {
+    const copy = adviserReview ? clone(globalThis.ADVISER_STORE.proposalState(adviserReview.payload)) : clone(defaultData);
+    const stage = sessionStorage.getItem(`adviserStage:${ADVISER_PROPOSAL_ID}`) || copy.currentStage;
+    copy.currentStage = stages.some(item => item.id === stage) ? stage : "details";
+    return copy;
+  }
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return clone(defaultData);
   try {
@@ -655,6 +801,7 @@ function loadState() {
 }
 
 function loadCheckpoints() {
+  if (IS_ADVISER) return [];
   try {
     const saved = JSON.parse(localStorage.getItem(CHECKPOINT_KEY) || "[]");
     return Array.isArray(saved) ? saved.slice(0, MAX_CHECKPOINTS) : [];
@@ -664,6 +811,7 @@ function loadCheckpoints() {
 }
 
 function loadAppFeedback() {
+  if (IS_ADVISER) return {};
   try {
     const saved = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "{}");
     return saved && typeof saved === "object" ? saved : {};
@@ -967,7 +1115,7 @@ function renderTeamContributionRecord(stageId) {
     const isSelf = person.id === ownerId;
     const prefix = `contribution-${stageId}-${person.id}`;
     return `<section class="contribution-card">
-      <h4>${isSelf ? "Your contribution" : `Group member: ${escapeHtml(person.name || `Member ${index + 1}`)}`}</h4>
+      <h4>${isSelf ? (IS_ADVISER ? `Student self-assessment: ${escapeHtml(person.name)}` : "Your contribution") : `Group member: ${escapeHtml(person.name || `Member ${index + 1}`)}`}</h4>
       <label for="${prefix}-level">Contribution level</label>
       <select id="${prefix}-level" data-contribution-stage="${escapeHtml(stageId)}" data-contribution-person="${escapeHtml(person.id)}" data-contribution-key="level">
         ${CONTRIBUTION_LEVELS.map(([key, label]) => `<option value="${escapeHtml(key)}" ${assessment.level === key ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
@@ -985,8 +1133,8 @@ function renderTeamContributionRecord(stageId) {
   return `<details class="team-contribution-panel">
     <summary>Confidential Team Contribution Record <span class="confidential-label">For Adviser Review Only</span></summary>
     <div class="team-contribution-content">
-      <p class="hint">Complete this record for ${escapeHtml(stages.find((stage) => stage.id === stageId)?.code || stageId)}. The app stores the responses but does not score, rank, interpret, or adjust grades.</p>
-      <p class="privacy-note">Use “Not enough information to assess” when appropriate. Describe observable behavior, submitted work, or evidence rather than motives.</p>
+      <p class="hint">${IS_ADVISER ? "Review the imported record" : "Complete this record"} for ${escapeHtml(stages.find((stage) => stage.id === stageId)?.code || stageId)}. The app stores the responses but does not score, rank, interpret, or adjust grades.</p>
+      <p class="privacy-note">${IS_ADVISER ? "These are the student’s reported observations, not an app assessment of the group members." : "Use “Not enough information to assess” when appropriate. Describe observable behavior, submitted work, or evidence rather than motives."}</p>
       ${duplicateNames.length ? `<div class="group-roster-warning" role="alert"><strong>Review the group roster before recording contributions.</strong><p>${escapeHtml(duplicateNames.map((item) => item.name).join(", "))} ${duplicateNames.length === 1 ? "appears" : "appear"} more than once in Student Details. Each person should have one roster entry. Do not correct names in this contribution record. Return to Student Details, where the group names were first entered, and correct the roster there.</p><button type="button" class="ghost" data-open-student-details>Review group roster</button></div>` : roster.length ? roster.map(card).join("") : `<p class="hint">Add the group roster in Student Details first.</p>`}
     </div>
   </details>`;
@@ -1002,6 +1150,13 @@ function normalizeTermRow(row = {}) {
 }
 
 function saveState(updateUi = true) {
+  if (IS_ADVISER) {
+    if (adviserReview) {
+      try { sessionStorage.setItem(`adviserStage:${ADVISER_PROPOSAL_ID}`, state.currentStage); } catch { /* Navigation can remain in this tab. */ }
+      if (updateUi) updateDashboard();
+    }
+    return;
+  }
   state.meta.schemaVersion = SCHEMA_VERSION;
   state.meta.currentAppVersion = APP_VERSION;
   try {
@@ -1013,6 +1168,7 @@ function saveState(updateUi = true) {
 }
 
 function saveCheckpoints() {
+  if (IS_ADVISER) return false;
   try {
     localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoints));
     return true;
@@ -1043,6 +1199,7 @@ function academicSnapshot() {
 }
 
 function createCheckpoint(label = "", kind = "manual") {
+  if (IS_ADVISER) return false;
   checkpoints.unshift({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
@@ -1079,6 +1236,7 @@ function markInteraction() {
 }
 
 function markContentEdit() {
+  if (IS_ADVISER) return;
   const now = new Date().toISOString();
   if (!state.engagement.workStartedAt) state.engagement.workStartedAt = now;
   state.engagement.lastEditedAt = now;
@@ -1086,6 +1244,7 @@ function markContentEdit() {
 }
 
 function tickActiveTime() {
+  if (IS_ADVISER) return;
   const now = Date.now();
   const delta = now - lastActiveTickAt;
   lastActiveTickAt = now;
@@ -1106,6 +1265,7 @@ function value(path, fallback = "") {
 }
 
 function setValue(section, key, nextValue) {
+  if (IS_ADVISER) return;
   state[section][key] = nextValue;
   markContentEdit();
   saveState();
@@ -1400,6 +1560,15 @@ function render() {
   if (els.appVersion) els.appVersion.textContent = APP_VERSION;
   if (els.appCredit) els.appCredit.textContent = APP_CREDIT;
   if (els.appCitationVersion) els.appCitationVersion.textContent = RELEASE_VERSION;
+  renderWorkspaceRole();
+  if (IS_ADVISER && !adviserReview) {
+    els.workspace.hidden = true;
+    document.getElementById("statusBtn").disabled = true;
+    els.phaseJourney.innerHTML = "";
+    renderAdviserWorkspace();
+    return;
+  }
+  if (IS_ADVISER) document.title = `Adviser review: ${adviserReview.fileName} · Proposal Builder`;
   els.currentStage.textContent = stage.code;
   renderPhaseJourney();
   renderPhaseMenu();
@@ -1412,7 +1581,8 @@ function render() {
   updateDashboard();
   renderMigrationNotice();
   renderStageFeedback();
-  if (els.autosaveStatus) els.autosaveStatus.textContent = "Saved in this browser";
+  if (els.autosaveStatus) els.autosaveStatus.textContent = IS_ADVISER ? "Adviser · Read-only copy" : "Saved in this browser";
+  applyAdviserReadOnly();
 }
 
 function renderMigrationNotice() {
@@ -1517,6 +1687,7 @@ function updateActiveTimeDisplay() {
     else els.activeWorkText.textContent = `${Math.floor(totalMinutes / 60)} hr ${totalMinutes % 60} min active`;
   }
   if (els.statusActiveWorkText) els.statusActiveWorkText.textContent = fullText;
+  if (IS_ADVISER && els.activeWorkText) els.activeWorkText.textContent = "Read-only";
 }
 
 function updateStudentDetailsButtonVisibility() {
@@ -1573,6 +1744,7 @@ function renderStage() {
     els.stageForm.insertAdjacentHTML("beforeend", renderTeamContributionRecord(id));
   }
   applyFocusedStageLayout(id);
+  applyAdviserReadOnly();
   return result;
 }
 
@@ -1737,8 +1909,8 @@ function applyFocusedStageLayout(stageId) {
   const contributionPanel = els.stageForm.querySelector(".team-contribution-panel");
   if (contributionPanel) tasks.push({
     label: "Team contribution",
-    title: "Record observable contributions for this part.",
-    support: "Complete the confidential self- and peer-assessment using factual evidence. The adviser, not the app, interprets these records.",
+    title: IS_ADVISER ? "Review recorded contributions for this part." : "Record observable contributions for this part.",
+    support: IS_ADVISER ? "Read the student’s self- and peer-assessment entries. Interpretation remains with the adviser." : "Complete the confidential self- and peer-assessment using factual evidence. The adviser, not the app, interprets these records.",
     roots: [contributionPanel],
     items: [contributionPanel]
   });
@@ -1815,6 +1987,7 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   renderSectionTaskPath(stage.id, tasks, activeIndex);
   document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
   document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
+  if (IS_ADVISER) document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Next task" : currentIndex() < stages.length - 1 ? "Next section" : "End of review";
 }
 
 function renderFields(section, fields) {
@@ -5228,10 +5401,12 @@ function syncStudentDetailsFields() {
 
 function openStudentDetails() {
   syncStudentDetailsFields();
+  applyAdviserReadOnly();
   document.getElementById("studentDetailsDialog").showModal();
 }
 
 function showWelcomeIfNeeded() {
+  if (IS_ADVISER) return;
   if (!els.welcomeDialog || localStorage.getItem(WELCOME_KEY)) return;
   els.welcomeDialog.showModal();
 }
@@ -5509,7 +5684,61 @@ function openUploadDialog() {
 }
 
 function attachEvents() {
+  document.getElementById("adviserCompareBtn").addEventListener("click", () => {
+    if (!IS_ADVISER || adviserReview) return;
+    const panel = document.getElementById("adviserComparison");
+    panel.hidden = !panel.hidden;
+    document.getElementById("adviserCompareBtn").setAttribute("aria-expanded", String(!panel.hidden));
+    document.getElementById("adviserCompareBtn").textContent = panel.hidden ? "Compare proposals" : "Back to proposal list";
+    document.getElementById("adviserProposalList").hidden = !panel.hidden;
+    if (!panel.hidden) { renderAdviserMatrixChoices(); document.getElementById("adviserComparisonTitle").focus(); }
+  });
+  document.getElementById("adviserMatrixChoices").addEventListener("change", event => {
+    if (!IS_ADVISER || !adviserMatrixSelection) return;
+    const input = event.target;
+    if (input.dataset.matrixAll) {
+      const group = input.dataset.matrixAll;
+      const checked = input.checked;
+      setAdviserMatrixGroup(group, checked);
+      const selector = group === "proposals" ? "[data-matrix-proposal]" : "[data-matrix-part]";
+      document.getElementById("adviserMatrixChoices").querySelectorAll(selector).forEach(item => { item.checked = checked; });
+      return;
+    }
+    const set = input.dataset.matrixProposal ? adviserMatrixSelection.proposals : adviserMatrixSelection.parts;
+    const id = input.dataset.matrixProposal || input.dataset.matrixPart;
+    if (!id) return;
+    if (input.checked) set.add(id); else set.delete(id);
+    renderAdviserMatrix();
+  });
+  // Capture prevents existing researcher handlers from changing review copies.
+  document.addEventListener("click", (event) => {
+    if (!IS_ADVISER) return;
+    const button = event.target.closest?.("button");
+    if (!button) return;
+    const mutationIds = ["saveBtn", "historyBtn", "uploadFormsBtn", "applyUploadBtn", "importBtn", "exportBtn", "memberCopyBtn", "resetBtn", "downloadFeedbackBtn"];
+    const inReviewForm = button.closest("#stageForm, #studentDetailsDialog");
+    if (mutationIds.includes(button.id) || (inReviewForm && !button.id.startsWith("close") && !adviserNavigationButton(button))) {
+      event.preventDefault(); event.stopImmediatePropagation();
+    }
+  }, true);
+  document.getElementById("adviserImportBtn").addEventListener("click", () => document.getElementById("adviserImportFiles").click());
+  document.getElementById("adviserImportFiles").addEventListener("change", async (event) => {
+    if (!IS_ADVISER) return;
+    const button = document.getElementById("adviserImportBtn");
+    button.disabled = true;
+    const resultNode = document.getElementById("adviserImportResults");
+    resultNode.textContent = "Importing review copies…";
+    try {
+      const results = await globalThis.ADVISER_STORE.importFiles(localStorage, Array.from(event.target.files || []), () => createStableId("review"), validateAdviserState);
+      resultNode.innerHTML = `<ul>${results.map(item => `<li>${escapeHtml(item.name)}: ${item.ok ? "Imported as a separate review copy." : escapeHtml(item.error)}</li>`).join("")}</ul>`;
+      renderAdviserWorkspace();
+    } finally { button.disabled = false; event.target.value = ""; }
+  });
+  window.addEventListener("storage", (event) => {
+    if (IS_ADVISER && !adviserReview && event.key?.startsWith(globalThis.ADVISER_STORE.prefix)) renderAdviserWorkspace();
+  });
   document.addEventListener("input", (event) => {
+    if (IS_ADVISER) return;
     const target = event.target;
     markInteraction();
     if (target.dataset.contributionStage && target.dataset.contributionKey) {
@@ -5603,6 +5832,7 @@ function attachEvents() {
   });
 
   document.addEventListener("change", (event) => {
+    if (IS_ADVISER) return;
     const target = event.target;
     markInteraction();
     if (target.dataset.personalDeclaration !== undefined) {
@@ -6100,6 +6330,10 @@ function instrumentRowHasAnswers(row = {}) {
 
 attachEvents();
 render();
+if (IS_ADVISER && adviserReview) {
+  const sourcePart = globalThis.ADVISER_STORE.parts.find(part => part.id === adviserParams.get("sourcePart"));
+  if (sourcePart) focusContextTask(sourcePart.stage, globalThis.ADVISER_STORE.sourceSelector(sourcePart, state));
+}
 showWelcomeIfNeeded();
 checkForUpdates();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {

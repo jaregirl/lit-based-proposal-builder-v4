@@ -1119,6 +1119,18 @@ dialog::backdrop {
 .terms-comparison .selected-approach { background: #e5f2ee; }
 .terms-comparison small { display: block; font-weight: normal; }
 .terms-mobile-label { display: none; }
+.adviser-workspace { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+.adviser-proposal-list { display: grid; gap: 16px; margin-top: 24px; }
+.adviser-proposal-card { background: white; border: 1px solid #c8d5d2; border-radius: 8px; padding: 20px; overflow-wrap: anywhere; }
+.adviser-proposal-card .inline-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.adviser-review-banner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 14px; margin-bottom: 16px; background: #e5f2ee; border-radius: 8px; }
+.adviser-review-banner p { margin: 5px 0 0; overflow-wrap: anywhere; }
+.adviser-mode .workspace.glance-open > .adviser-review-banner { display: flex !important; }
+.adviser-mode #stageForm input:disabled, .adviser-mode #stageForm select:disabled { opacity: 1; color: #263c38; }
+.adviser-mode textarea[readonly] { background: #fafcfb; }
+.adviser-library .phase-journey { display: none; }
+.adviser-library .status-separator { display: none; }
+.adviser-library .journey-header { grid-template-columns: 1fr auto; }
 @media (max-width: 700px) {
   .terms-comparison, .terms-comparison tbody, .terms-comparison tr { display: block; }
   .terms-comparison thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -3446,4 +3458,31 @@ dialog::backdrop {
     size: Letter;
     margin: 1in;
   }
+}
+:root { --adviser-matrix-text-size: 14px; }
+.adviser-matrix-options { margin: 16px 0; }
+.adviser-matrix-options summary { cursor: pointer; }
+.adviser-matrix-select-all { font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #cbd7d8; }
+#adviserMatrixChoices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+#adviserMatrixChoices fieldset { min-width: 0; padding: 12px; }
+#adviserMatrixChoices label { display: block; font-size: 14px; margin: 6px 0; overflow-wrap: anywhere; }
+#adviserMatrixChoices small { display: block; font-size: 12px; margin-left: 24px; }
+.adviser-matrix-scroll { max-height: 70vh; overflow: auto; position: relative; isolation: isolate; margin-bottom: 24px; }
+.adviser-matrix { border-collapse: separate; border-spacing: 0; width: max-content; table-layout: fixed; font-size: var(--adviser-matrix-text-size); }
+.adviser-matrix caption { text-align: left; font-size: 13px; padding: 8px; }
+.adviser-matrix th, .adviser-matrix td { box-sizing: border-box; width: 310px; min-width: 310px; max-width: 310px; border-right: 1px solid #cbd7d8; border-bottom: 1px solid #cbd7d8; padding: 12px; vertical-align: top; overflow-wrap: anywhere; background: #fff; }
+.adviser-matrix thead th { position: sticky; top: 0; z-index: 2; background: #eaf3f1; font-size: 14px; }
+.adviser-matrix th:first-child { width: 150px; min-width: 150px; max-width: 150px; position: sticky; left: 0; z-index: 1; background: #eaf3f1; }
+.adviser-matrix thead th:first-child { z-index: 3; }
+.adviser-matrix th small { display: block; font-size: 12px; font-weight: normal; margin-top: 6px; }
+.adviser-matrix-entry { white-space: pre-wrap; font-size: var(--adviser-matrix-text-size); line-height: 1.55; margin: 0; }
+.adviser-source-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin: 0 0 6px auto; color: #20574e; position: relative; border-radius: 4px; }
+.adviser-source-icon:hover, .adviser-source-icon:focus-visible { background: #e2efeb; outline: 2px solid #20574e; }
+.adviser-source-tooltip { display: none; position: absolute; right: 0; top: 100%; z-index: 4; width: max-content; padding: 4px 8px; background: #173f38; color: white; font-size: 12px; }
+.adviser-source-icon:hover .adviser-source-tooltip, .adviser-source-icon:focus-visible .adviser-source-tooltip { display: block; }
+@media (max-width: 600px) {
+  #adviserMatrixChoices { grid-template-columns: 1fr; }
+  .adviser-matrix th:first-child { width: 110px; min-width: 110px; max-width: 110px; }
+  .adviser-matrix th, .adviser-matrix td { width: 270px; min-width: 270px; max-width: 270px; }
+  .adviser-source-icon { width: 44px; height: 44px; }
 }
