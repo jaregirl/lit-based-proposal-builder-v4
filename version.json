@@ -1,11 +1,13 @@
 {
-  "version": "4.9.1",
+  "version": "4.9.2",
   "schemaVersion": "4.7.0",
   "releaseDate": "2026-10-08",
-  "title": "v4.9.1 Adviser Comparison Matrix",
+  "title": "v4.9.2 Compact Shared Interface",
   "url": "./",
   "notes": [
-    "Adviser proposal list now offers a comparison matrix with selectable groups and proposal parts, full entries in 14 px text, and chain-link source-task links",
+    "Task screens share a compact header and footer, smaller secondary text, and a clickable working-draft reminder beside the task code",
+    "App feedback is temporarily hidden; existing feedback records and proposal responses remain unchanged",
+    "Adviser proposal list now offers a comparison matrix with selectable groups and proposal parts, full entries in 12 px desktop / 14 px mobile text, and chain-link source-task links",
     "Tools now offers separate Researcher and Adviser workspaces",
     "Advisers can import several JSON backups as independent read-only review copies and open each in its own tab",
     "Adviser imports preserve personal reflections and contribution records included in the file; researcher drafts are kept separate",

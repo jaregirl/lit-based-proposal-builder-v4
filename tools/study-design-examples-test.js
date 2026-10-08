@@ -37,5 +37,7 @@ assert.strictEqual(JSON.stringify(context.state), before, 'Rendering changed stu
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 assert(index.indexOf('study-design-examples.js?') < index.indexOf('src="app-upload.js?'));
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-assert(sw.includes('./study-design-examples.js?v=20261002-v487-study1'));
+const exampleScript = index.match(/src="(study-design-examples\.js\?v=[^"]+)"/);
+assert(exampleScript, 'Study Design example script is missing');
+assert(sw.includes(`./${exampleScript[1]}`), 'Offline cache must match the current example script');
 console.log(`Passed: ${count} task/approach renderings; response preservation; script order; offline cache inclusion.`);

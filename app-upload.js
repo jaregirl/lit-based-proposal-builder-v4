@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.1";
-const APP_VERSION = `v${RELEASE_VERSION} - Adviser Comparison Matrix`;
+const RELEASE_VERSION = "4.9.2";
+const APP_VERSION = `v${RELEASE_VERSION} - Compact Shared Interface`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
@@ -187,7 +187,7 @@ const fieldSets = {
   methodology: [
     ["rqTypes", "What type of questions are being asked?", "Look at your research questions first. Their verbs usually guide the design: describe, compare, relate, evaluate, or explore."],
     ["dataNeeded", "What data are needed?", "Name the evidence needed to answer the questions: scores, survey responses, interview answers, observations, documents, or classroom outputs."],
-    ["participants", "Who will participate?", "Identify the participant group, approximate number if known, grade level/program, and why they fit the study."],
+    ["participants", "Participants / Sources of Data", "Identify who or what will be studied: people, documents, records, artifacts, or other sources. Describe the group or collection, approximate number if known, relevant characteristics, and why it fits the study. For a document-only study, state that there are no direct human participants."],
     ["purpose", "What is the purpose of the study?", "State whether the study aims to describe a condition, understand an experience, test an intervention, compare groups, or improve classroom practice."],
     ["evidenceSources", "Who or what can provide the evidence needed?", "Separate participants from documents, records, artifacts, outputs, observations, recordings, or test results."],
     ["studyPeriod", "What period will the study cover?", "State the data collection period, academic term, document years, or other time boundary."],
@@ -1723,6 +1723,8 @@ function updateMemberCopyButtonVisibility() {
 }
 
 function renderStage() {
+  document.body.classList.remove("compact-a4-problem", "compact-a1-construct");
+  document.querySelector(".compact-draft-reminder")?.removeAttribute("open");
   const id = state.currentStage;
   let result;
   if (id === "a1") result = renderA1();
@@ -1835,7 +1837,7 @@ function buildFocusedTasks(stageId) {
     return [
       { label: "Evidence approach", title: "What broad evidence approach can answer the questions?", support: "Compare quantitative, qualitative, and mixed methods using the A4 purposes, claims, and evidence needs.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"rqTypes\"]", "[data-section=\"methodology\"][data-key=\"dataNeeded\"]", "[data-section=\"methodology\"][data-key=\"purpose\"]", "[data-methodology-selection=\"approach\"]", ".methodology-recommendation"]) },
       { label: "Design", title: "Which design within that approach may fit?", support: "Review requirements, assumptions, an alternative, and why the selected design fits better.", items: taskNodes(["[data-methodology-selection=\"design\"]", "[data-methodology-action]", "[data-section=\"methodology\"][data-key=\"designJustification\"]", ".design-guidance"]) },
-      { label: "Participants and sources", title: "Who or what can provide the evidence?", support: "Keep participants separate from documents, artifacts, records, observations, and other evidence sources.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"participants\"]", "[data-section=\"methodology\"][data-key=\"evidenceSources\"]"]) },
+      { label: "Participants / Sources of Data", title: "Who or what can provide the evidence?", support: "Identify the people or nonhuman sources studied, then specify the evidence each will provide. Documents and records can be sources without direct human participants.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"participants\"]", "[data-section=\"methodology\"][data-key=\"evidenceSources\"]"]) },
       { label: "Sampling", title: "How will participants or evidence sources be selected?", support: "Choose a defensible selection process that fits the design and the intended claims.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"sampling\"]"]) },
       { label: "Environment and boundaries", title: "Where and within what boundaries will the study occur?", support: "Define the research environment, period, inclusion and exclusion decisions, and practical delimitations.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"locale\"]", "[data-section=\"methodology\"][data-key=\"studyPeriod\"]", "[data-section=\"methodology\"][data-key=\"operationalDelimitations\"]"]) },
       { label: "Collection and analysis", title: "How will the evidence be collected and analyzed?", support: "Sequence the collection procedure and name the analysis that will produce the intended claim for each question.", items: taskNodes(["[data-section=\"methodology\"][data-key=\"collection\"]", "[data-section=\"methodology\"][data-key=\"analysis\"]", "[data-section=\"mixedMethods\"]"]) }
@@ -1971,6 +1973,18 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   els.taskEyebrow.textContent = task.label || copy.eyebrow || "Current task";
   els.stageTitle.textContent = task.title || copy.title || stage.title;
   els.taskSupport.textContent = task.support || copy.support || "Complete this task, then continue.";
+  const compactProblem = stage.id === "a4" && activeIndex === 0;
+  document.body.classList.toggle("compact-a4-problem", compactProblem);
+  const compactConstruct = stage.id === "a1" && activeIndex === 4;
+  document.body.classList.toggle("compact-a1-construct", compactConstruct);
+  if (compactConstruct) {
+    els.stageTitle.textContent = "Core construct";
+    els.taskSupport.textContent = "Name the central idea your study will investigate.";
+  }
+  if (compactProblem) {
+    els.stageTitle.textContent = "Literature-based problem";
+    els.taskSupport.textContent = "State the research problem that follows from your literature gap.";
+  }
   document.getElementById("studyExampleAction")?.remove();
   const exampleTask = stage.id === "instrumentation" ? String(task.label).split(" · ").slice(1).join(" · ") : task.label;
   if (globalThis.STUDY_DESIGN_EXAMPLES?.tasks[stage.id]?.[exampleTask]) {
@@ -1996,9 +2010,10 @@ function renderFields(section, fields) {
       ${fields.map(([key, label, scaffold], index) => `
         <div class="field ${index === fields.length - 1 ? "full" : ""}">
           <div class="field-label">
-            <label for="${section}-${key}">${label}</label>
-            ${helpControl(`${section}-${key}-help`, label, draftHelp(section, scaffold))}
+            <label for="${section}-${key}">${section === "a1" && key === "coreConstruct" ? "This study is about…" : label}</label>
+            ${section === "a1" && key === "coreConstruct" ? "" : helpControl(`${section}-${key}-help`, label, draftHelp(section, scaffold))}
           </div>
+          ${section === "a1" && key === "coreConstruct" ? `<details class="construct-prompt-guidance"><summary>Question and guidance</summary><p>${escapeHtml(label)}</p><p id="${section}-${key}-help">${escapeHtml(draftHelp(section, scaffold))}</p></details>` : ""}
           <textarea id="${section}-${key}" data-section="${section}" data-key="${key}" aria-describedby="${section}-${key}-help">${escapeHtml(value(`${section}.${key}`))}</textarea>
         </div>
       `).join("")}
@@ -2323,9 +2338,17 @@ function renderA4() {
       <div class="generated-text">Move from evidence to questions: ${a3GapForProblem} &rarr; literature-based problem &rarr; central study focus &rarr; components and environment &rarr; inquiry purpose &rarr; central question &rarr; specific questions. Open one step at a time.</div>
     </section>
     <section class="output-box"><h3>Your original A3 final gap</h3><div class="generated-text">${escapeHtml(state.a3.finalGap || "Complete the A3 final gap first. Your answer to the literature-based problem begins there.")}</div><p class="hint">Need to check or revise the source reasoning? ${a3GapForProblem}</p></section>
-    <details class="guided-step" name="a4-flow" open>
+    <details class="guided-step a4-problem-task" name="a4-flow" open>
       <summary>1. State the literature-based problem</summary>
       <div class="guided-step-content">
+        <div class="field-heading"><div class="field-label"><label for="a4-literature-problem">Problem statement</label></div>${exampleControl("a4", "problem")}</div>
+        <details class="a4-prompt-guidance">
+          <summary>Question and guidance</summary>
+          <p>What problem becomes visible from your literature gap?</p>
+          <p>Use the movement from A3: what studies show, what remains less visible, and what this prevents us from understanding. State the problem revealed by that limitation.</p>
+          <p>Review the source reasoning in ${a3GapForProblem} if needed.</p>
+        </details>
+        <textarea id="a4-literature-problem" data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea>
         <details class="gap-refinement ${hasRefinedGap ? "has-saved-refinement" : ""}" ${hasGapRevisionWork ? "open" : ""}>
           <summary>Review or refine your gap <span class="gap-refinement-status" data-gap-refinement-status>${hasRefinedGap ? "Saved refinement" : "Optional"}</span></summary>
           <div class="gap-refinement-content">
@@ -2333,8 +2356,6 @@ function renderA4() {
             <div data-gap-revision-reason ${hasRefinedGap ? "" : "hidden"}><label>Why did the gap wording change?<textarea data-section="a4" data-key="gapRevisionReason">${escapeHtml(state.a4.gapRevisionReason)}</textarea></label></div>
           </div>
         </details>
-        <div class="field-heading"><div class="field-label"><label for="a4-literature-problem">Literature-Based Problem: What problem becomes visible from A3?</label></div>${exampleControl("a4", "problem")}</div>
-        <textarea id="a4-literature-problem" data-section="a4" data-key="literatureProblem">${escapeHtml(state.a4.literatureProblem)}</textarea><span class="hint">State the problem revealed by what remains less visible and what this limits us from understanding.</span>
       </div>
     </details>
     <details class="guided-step" name="a4-flow">
@@ -3421,8 +3442,8 @@ Methodology
 - Scope and Limitations/Delimitations
   Conceptual scope: ${state.framework.scopeBoundaries || "Identify included and excluded constructs, relationships, and theoretical boundaries."}
   Operational delimitations: ${state.methodology.operationalDelimitations || "Identify participant, environment, period, evidence-source, and procedure boundaries."}
-- Participants
-  ${state.methodology.participants || "[Describe participants]"}
+- Participants / Sources of Data
+  ${state.methodology.participants || "[Describe participants or the documents, records, or other sources studied]"}
   Sampling: ${state.methodology.sampling || "[Describe sampling]"}
 - Research Environment or Setting
   ${state.methodology.locale || "[Describe research environment or setting]"}
@@ -3845,7 +3866,7 @@ function checkMethodology() {
     flag(Boolean(state.methodology.design), "A research design is selected.", "Select a design within the chosen evidence approach."),
     flag(!selectedApproach || !rec.approach || rec.approach === selectedApproach, "The selected evidence approach is consistent with the current A4 purposes and intended claims.", `Review why ${approachLabel(selectedApproach) || "the selected approach"} fits better than ${approachLabel(rec.approach) || "the suggested candidate"}. A different choice may still be justified.`),
     flag(Boolean(state.methodology.designJustification), "The design choice is justified.", "Explain why this design fits the problem and questions better than the alternatives you considered."),
-    flag(Boolean(state.methodology.participants), "Participants are described.", "Describe who will participate."),
+    flag(Boolean(state.methodology.participants), "Participants / sources of data are described.", "Describe who or what will be studied, including documents or records where applicable."),
     flag(Boolean(state.methodology.locale), "Research environment or setting is described.", "Describe the physical, institutional, social, document, or online environment relevant to the study."),
     flag(Boolean(state.methodology.evidenceSources), "Participants and other evidence sources are identified.", "Identify who or what provides evidence, including documents, artifacts, records, observations, or outputs where relevant."),
     flag(Boolean(state.methodology.studyPeriod), "Study period is bounded.", "State the relevant data collection or document period."),
@@ -4164,7 +4185,7 @@ function readinessReport() {
     flag(Boolean(state.a4.centralFocus) && Boolean(state.a4.studyComponents), "Central focus and study components are distinguished.", "Clarify the central phenomenon or relationship and the components needed to examine it."),
     flag(Boolean(state.methodology.locale) && Boolean(state.methodology.evidenceSources), "Research environment and evidence sources are identified separately.", "Distinguish the research environment from participants, documents, artifacts, observations, and other evidence sources."),
     flag(!degreeLevelReadiness().hasMajorGap, "Research Level Readiness: acceptable for formative review.", "Research Level Readiness: add stronger evidence or narrow the scope for the selected context."),
-    flag(Boolean(state.methodology.participants) && Object.values(state.ethics.checks).some(Boolean), "Ethics to Participants: aligned.", "Ethics to Participants: describe participants and select applicable ethics safeguards.")
+    flag(Boolean(state.methodology.participants) && Object.values(state.ethics.checks).some(Boolean), "Ethics to Participants / Sources of Data: aligned.", "Ethics to Participants / Sources of Data: describe who or what will be studied and select applicable ethics safeguards.")
   ];
   const items = [
     ...baseItems,
@@ -4651,7 +4672,7 @@ function renderProposalGlance() {
 
   const summaries = [
     ["Framework", state.framework.theoryModel],
-    ["Participants", state.methodology.participants],
+    ["Participants / Sources of Data", state.methodology.participants],
     ["Setting", state.methodology.locale],
     ["Scope", state.methodology.operationalDelimitations || state.framework.scopeBoundaries],
     ["Ethics", ethicsSummary()]
@@ -4954,7 +4975,7 @@ function outlineHtml() {
     "Significance",
     "Design",
     "Scope and Limitations/Delimitations",
-    "Participants",
+    "Participants / Sources of Data",
     "Research Environment or Setting",
     "Evidence Sources and Period",
     "Instrumentation",
@@ -5031,7 +5052,7 @@ function buildSubmissionHtml() {
     <p><strong>Research Design:</strong> ${escapeHtml(value("methodology.selectedDesign"))}</p>
     <p><strong>Design Justification:</strong> ${escapeHtml(value("methodology.designJustification"))}</p>
     <p><strong>Operational Delimitations:</strong> ${escapeHtml(value("methodology.operationalDelimitations"))}</p>
-    <p><strong>Participants:</strong> ${escapeHtml(value("methodology.participants"))}</p>
+    <p><strong>Participants / Sources of Data:</strong> ${escapeHtml(value("methodology.participants"))}</p>
     <p><strong>Sampling:</strong> ${escapeHtml(value("methodology.sampling"))}</p>
     <p><strong>Research Environment or Setting:</strong> ${escapeHtml(value("methodology.locale"))}</p>
     <p><strong>Evidence Sources:</strong> ${escapeHtml(value("methodology.evidenceSources"))}</p>

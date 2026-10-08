@@ -75,7 +75,7 @@ globalThis.ADVISER_STORE = (() => {
     ["framework", "Theory / model / framework", "framework", "theoryModel"],
     ["approach", "Research approach", "methodology", "approach"],
     ["design", "Research design", "methodology", "selectedDesign"],
-    ["participants", "Participants", "methodology", "participants"],
+    ["participants", "Participants / Sources of Data", "methodology", "participants"],
     ["sampling", "Sampling", "methodology", "sampling"],
     ["setting", "Study setting", "methodology", "locale"],
     ["scope", "Scope and delimitations", "methodology", "operationalDelimitations"],

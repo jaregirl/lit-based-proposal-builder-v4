@@ -3459,10 +3459,61 @@ dialog::backdrop {
     margin: 1in;
   }
 }
-:root { --adviser-matrix-text-size: 14px; }
+:root { --adviser-matrix-text-size: 12px; }
 .adviser-matrix-options { margin: 16px 0; }
 .adviser-matrix-options summary { cursor: pointer; }
 .adviser-matrix-select-all { font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #cbd7d8; }
+.task-meta-row { position: relative; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.task-meta-row .eyebrow { margin: 0; }
+.compact-draft-reminder { display: block; color: #647176; font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; }
+.compact-draft-reminder summary { cursor: pointer; padding: 6px 0; list-style: none; }
+.compact-draft-reminder summary::-webkit-details-marker { display: none; }
+.compact-draft-reminder summary:focus-visible { outline: 2px solid var(--focus, #d0911d); outline-offset: 3px; border-radius: 2px; }
+.compact-draft-reminder p { position: absolute; left: 0; top: 100%; z-index: 40; width: min(380px, 100%); box-sizing: border-box; margin: 4px 0 0; padding: 12px; border: 1px solid #cbd7d8; border-radius: 6px; background: #fff; color: #34484c; line-height: 1.5; box-shadow: 0 4px 16px #183f3920; }
+.focus-support { display: none; }
+.journey-header { min-height: 72px; padding-block: 8px; gap: 16px; }
+.journey-brand h1 { font-size: 18px; }
+.journey-brand .app-version { font-size: 11px; }
+.journey-brand img { width: 30px; height: 30px; }
+.phase-step { font-size: 13px; min-height: 44px; padding-block: 4px; }
+.journey-utilities { font-size: 12px; }
+.journey-utilities .icon-text-button { font-size: 13px; min-height: 32px; padding-block: 4px; }
+.stage-support { font-size: 13px; line-height: 1.5; }
+.stage-form .hint, .stage-form .example-control, #studyExampleAction .example-control { font-size: 12px; line-height: 1.5; }
+.compact-a1-construct .stage-intro h2 { font-size: 24px; line-height: 1.25; }
+.compact-a1-construct .stage-support { font-size: 13px; margin-top: 6px; }
+.compact-a1-construct .field-label { font-size: 14px; }
+.construct-prompt-guidance { font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+.construct-prompt-guidance > summary { cursor: pointer; color: var(--accent-dark); width: fit-content; padding: 5px 0; }
+.construct-prompt-guidance p { margin: 8px 0; max-width: 760px; }
+.section-task-path { min-height: 26px; padding-block: 0; }
+.section-task-node { font-size: 11px; min-height: 26px; padding-bottom: 3px; }
+.section-task-dot { width: 6px; height: 6px; flex-basis: 6px; }
+.focused-actions { padding-block: 3px; gap: 8px; }
+.focused-actions button { width: auto; font-size: 12px; min-height: 32px; padding: 4px 12px; }
+.focused-actions #nextBtn { min-width: 108px; max-width: 160px; justify-self: end; }
+@media (max-width: 820px) {
+  .journey-header { min-height: auto; }
+}
+@media (max-width: 560px) {
+  .journey-header { gap: 8px; }
+  .journey-brand h1 { font-size: 14px; }
+  .phase-step { font-size: 12px; }
+  .journey-utilities .icon-text-button { min-height: 44px; }
+  .section-task-node { min-height: 32px; font-size: 11px; }
+  .compact-a1-construct .stage-intro h2 { font-size: 22px; }
+  .focused-actions button { min-height: 44px; font-size: 13px; }
+  .focused-actions #nextBtn { min-width: 96px; }
+}
+.compact-a4-problem .stage-intro h2 { font-size: 24px; line-height: 1.25; }
+.compact-a4-problem .stage-support { font-size: 13px; margin-top: 6px; }
+.compact-a4-problem .a4-problem-task > summary { display: none; }
+.a4-problem-task .field-label { font-size: 14px; }
+.a4-prompt-guidance { font-size: 13px; line-height: 1.5; }
+.a4-prompt-guidance > summary { cursor: pointer; color: var(--accent-dark); width: fit-content; padding: 5px 0; }
+.a4-prompt-guidance p { margin: 8px 0; max-width: 760px; }
+.a4-problem-task .gap-refinement > summary { font-size: 13px; }
+@media (max-width: 600px) { .compact-a4-problem .stage-intro h2 { font-size: 22px; } }
 #adviserMatrixChoices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
 #adviserMatrixChoices fieldset { min-width: 0; padding: 12px; }
 #adviserMatrixChoices label { display: block; font-size: 14px; margin: 6px 0; overflow-wrap: anywhere; }
@@ -3471,7 +3522,7 @@ dialog::backdrop {
 .adviser-matrix { border-collapse: separate; border-spacing: 0; width: max-content; table-layout: fixed; font-size: var(--adviser-matrix-text-size); }
 .adviser-matrix caption { text-align: left; font-size: 13px; padding: 8px; }
 .adviser-matrix th, .adviser-matrix td { box-sizing: border-box; width: 310px; min-width: 310px; max-width: 310px; border-right: 1px solid #cbd7d8; border-bottom: 1px solid #cbd7d8; padding: 12px; vertical-align: top; overflow-wrap: anywhere; background: #fff; }
-.adviser-matrix thead th { position: sticky; top: 0; z-index: 2; background: #eaf3f1; font-size: 14px; }
+.adviser-matrix thead th { position: sticky; top: 0; z-index: 2; background: #eaf3f1; font-size: var(--adviser-matrix-text-size); }
 .adviser-matrix th:first-child { width: 150px; min-width: 150px; max-width: 150px; position: sticky; left: 0; z-index: 1; background: #eaf3f1; }
 .adviser-matrix thead th:first-child { z-index: 3; }
 .adviser-matrix th small { display: block; font-size: 12px; font-weight: normal; margin-top: 6px; }
@@ -3481,6 +3532,7 @@ dialog::backdrop {
 .adviser-source-tooltip { display: none; position: absolute; right: 0; top: 100%; z-index: 4; width: max-content; padding: 4px 8px; background: #173f38; color: white; font-size: 12px; }
 .adviser-source-icon:hover .adviser-source-tooltip, .adviser-source-icon:focus-visible .adviser-source-tooltip { display: block; }
 @media (max-width: 600px) {
+  :root { --adviser-matrix-text-size: 14px; }
   #adviserMatrixChoices { grid-template-columns: 1fr; }
   .adviser-matrix th:first-child { width: 110px; min-width: 110px; max-width: 110px; }
   .adviser-matrix th, .adviser-matrix td { width: 270px; min-width: 270px; max-width: 270px; }

@@ -7,7 +7,7 @@
     <title>Lit-Based Proposal Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles-upload.css?v=20261008-v491-matrix4" />
+    <link rel="stylesheet" href="styles-upload.css?v=20261008-v492-shared1" />
   </head>
   <body>
     <div class="app-shell">
@@ -55,7 +55,13 @@
         </header>
 
         <section class="stage-intro" aria-labelledby="stageTitle">
-          <p class="eyebrow" id="taskEyebrow">Before you begin</p>
+          <div class="task-meta-row">
+            <p class="eyebrow" id="taskEyebrow">Before you begin</p>
+            <details class="compact-draft-reminder">
+              <summary>Working draft <span aria-hidden="true">ⓘ</span></summary>
+              <p>This is a working draft. Research ideas become clearer through refinement. It is okay if this changes later.</p>
+            </details>
+          </div>
           <h2 id="stageTitle">Tell us about this research work.</h2>
           <p class="stage-support" id="taskSupport">These details identify your submission and help the app tailor its guidance.</p>
         </section>
@@ -72,7 +78,8 @@
           <form id="stageForm" class="stage-form"></form>
         </div>
 
-        <details class="app-feedback-panel">
+        <!-- Temporarily withheld from the student interface; saved feedback is retained. -->
+        <details class="app-feedback-panel" hidden>
           <summary>Share Feedback About This Step</summary>
           <p class="hint">Optional. Your comments are stored locally and are not included in your proposal.</p>
           <div id="stageFeedbackForm"></div>
@@ -392,8 +399,8 @@
     <input id="adviserImportFiles" type="file" accept=".json,application/json" multiple hidden />
     <script src="jszip.min.js"></script>
     <script src="example-guidance.js?v=20260915-v484-a4-scaffold1"></script>
-    <script src="study-design-examples.js?v=20261002-v487-study1"></script>
-    <script src="adviser-workspace.js?v=20261008-v491-matrix2"></script>
-    <script src="app-upload.js?v=20261008-v491-matrix4"></script>
+    <script src="study-design-examples.js?v=20261008-v491-sources1"></script>
+    <script src="adviser-workspace.js?v=20261008-v491-sources1"></script>
+    <script src="app-upload.js?v=20261008-v492-shared1"></script>
   </body>
 </html>

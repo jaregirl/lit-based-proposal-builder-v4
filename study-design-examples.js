@@ -62,7 +62,7 @@ globalThis.STUDY_DESIGN_EXAMPLES = {
     methodology: {
       "Evidence approach": ["questions", "Our question asks [question]. We need [kind of evidence], so [approach] fits because [reason]."],
       Design: ["design", "We selected [design] over [alternative] because [difference relevant to questions and claims]."],
-      "Participants and sources": ["participants", "Participants are [group]. Evidence comes from [people, records or artifacts], providing [specific information]."],
+      "Participants / Sources of Data": ["participants", "We will study [participant group or collection of documents, records, or artifacts]. These sources provide [specific information]. [State whether direct human participants are involved.]"],
       Sampling: ["sampling", "We will select [participants or sources] using [procedure]. The number and variation are justified by [scope, depth or precision, feasibility]."],
       "Environment and boundaries": ["boundaries", "The study covers [setting and period], includes [focus], and excludes [boundaries] because [reason]."],
       "Collection and analysis": ["analysis", "We will collect [evidence] through [sequence] and use [named analysis] because [reason]. It can support [kind of conclusion], subject to [limits]."]
