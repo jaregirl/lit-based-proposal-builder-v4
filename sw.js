@@ -1,4 +1,4 @@
-const CACHE_NAME = "lit-based-proposal-builder-v4.9.2-matrix4";
+const CACHE_NAME = "lit-based-proposal-builder-v4.9.3-layout7";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,12 @@ const APP_SHELL = [
   "./example-guidance.js?v=20260915-v484-a4-scaffold1",
   "./study-design-examples.js?v=20261008-v492-eligibility1",
   "./adviser-workspace.js?v=20261008-v492-eligibility1",
-  "./app-upload.js?v=20261008-v492-matrix2",
+  "./app-upload.js?v=20261022-v493-layout4",
+  "./task-layout.css?v=20261022-v493-layout7",
+  "./task-layout.js?v=20261022-v493-layout3",
+  "./layout-icons/help-circle.svg",
+  "./layout-icons/file-pencil.svg",
+  "./layout-icons/file-arrow-left.svg",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./jszip.min.js",

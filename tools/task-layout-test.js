@@ -1,0 +1,35 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const root = path.join(__dirname, '..');
+const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const app = read('app-upload.js'), html = read('index.html'), css = read('task-layout.css'), ui = read('task-layout.js'), sw = read('sw.js');
+assert.match(app, /const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion"/);
+assert.match(app, /const SCHEMA_VERSION = "4.7.0"/);
+assert.match(ui, /preferenceKey = 'proposalBuilder:layoutPreference:v1'/);
+assert.match(ui, /let mode = 'classic'/);
+assert.match(html, /<option value="classic">Classic layout<\/option>/);
+assert.match(app, /globalThis.PROPOSAL_LAYOUT\?\.refresh/);
+assert.match(css, /position: fixed; left: 0; right: 0; bottom: 0/);
+assert.match(css, /scroll-padding-bottom: calc\(var\(--task-dock-height/);
+assert.match(css, /\.layout-new \.journey-header \{ display: flex; position: sticky/);
+assert.match(css, /@media \(min-width: 761px\)/);
+assert.match(css, /top: calc\(var\(--task-header-height, 90px\) \+ 32px\)/);
+assert.match(css, /max-height: calc\(100dvh - var\(--task-header-height/);
+assert.match(css, /overscroll-behavior-y: contain/);
+assert.match(ui, /taskToggle.setAttribute\('aria-controls', 'stageTitle taskSupport'\)/);
+assert.match(ui, /taskToggle.setAttribute\('aria-expanded', String\(!collapsed\)\)/);
+assert.match(ui, /observer.observe\(intro\)/);
+assert.match(css, /\.stage-intro.is-task-collapsed > #stageTitle/);
+assert.match(css, /var\(--task-bar-height, 60px\)/);
+assert.match(ui, /divider.setPointerCapture/);
+assert.match(ui, /'ArrowLeft','ArrowRight','Home','End'/);
+assert(!ui.includes('proposalBuilderA4DraftUploadVersion'), 'Layout must never write proposal storage');
+assert(!ui.includes('innerHTML = entry.content'), 'Related work must be rendered as plain text');
+for (const match of html.matchAll(/(?:href|src)="((?:task-layout\.(?:css|js)|app-upload\.js)\?v=[^"]+)"/g)) assert(sw.includes(`./${match[1]}`));
+for (const icon of ['help-circle','file-pencil','file-arrow-left']) {
+  assert(fs.existsSync(path.join(root, 'layout-icons', `${icon}.svg`)));
+  assert(sw.includes(`./layout-icons/${icon}.svg`));
+}
+assert.equal(JSON.parse(read('version.json')).version, '4.9.3');
+console.log('Passed: isolated Classic/New preference, unchanged proposal keys/schema, stationary controls, resource wiring, resizing controls, offline asset/version consistency. Browser verification remains separate.');

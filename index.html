@@ -8,6 +8,7 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles-upload.css?v=20261008-v492-matrix4" />
+    <link rel="stylesheet" href="task-layout.css?v=20261022-v493-layout7" />
   </head>
   <body>
     <div class="app-shell">
@@ -15,8 +16,9 @@
         <div class="brand journey-brand">
           <img src="favicon.svg" alt="" width="34" height="34" />
           <div>
-            <h1>Lit-Based Proposal Builder</h1>
+            <h1 aria-label="Lit-Based Proposal Builder"><span class="brand-full-name">Lit-Based Proposal Builder</span><span class="brand-short-name" aria-hidden="true">Proposal Builder</span></h1>
             <p class="app-version" id="appVersion">Version loading...</p>
+            <span class="compact-app-version" id="compactAppVersion"></span>
             <p class="app-credit visually-hidden" id="appCredit">Developed by J. Arawiran with assistance from OpenAI Codex.</p>
           </div>
         </div>
@@ -208,6 +210,7 @@
         <button class="ghost" id="closeToolsBtn" type="button">Close</button>
       </div>
       <div class="tool-groups">
+        <section><h3>Layout</h3><label for="layoutChoice">Choose your interface</label><select id="layoutChoice"><option value="classic">Classic layout</option><option value="new">New layout</option></select><p class="hint">The same proposal and guidance are available in both layouts. Switching does not replace your responses. This preference stays in this browser.</p><p id="layoutChoiceStatus" class="hint" role="status"></p></section>
         <section><h3>Workspace role</h3><p class="hint">Choose the tools for your work. This role switch does not verify identity or retrieve students’ files.</p><div class="tool-grid" id="workspaceRoleChoices"></div></section>
         <section><h3>Draft</h3><div class="tool-grid">
           <button id="saveBtn" type="button">Save Draft Checkpoint</button>
@@ -405,6 +408,7 @@
     <script src="example-guidance.js?v=20260915-v484-a4-scaffold1"></script>
     <script src="study-design-examples.js?v=20261008-v492-eligibility1"></script>
     <script src="adviser-workspace.js?v=20261008-v492-eligibility1"></script>
-    <script src="app-upload.js?v=20261008-v492-matrix2"></script>
+    <script src="task-layout.js?v=20261022-v493-layout3"></script>
+    <script src="app-upload.js?v=20261022-v493-layout4"></script>
   </body>
 </html>

@@ -1,0 +1,194 @@
+/* v4.9.3. Opt-in presentation layer; Classic retains styles-upload.css unchanged. */
+.task-workspace { display: contents; }
+.task-resources, .workspace-draft-reminder, .authors-divider { display: none; }
+.mobile-task-toggle { display: none; }
+.brand-short-name, .compact-app-version, .phase-short-label { display: none; }
+.new-work-arrangement { display: none; }
+.layout-new .new-work-arrangement { display: block; width: 100%; }
+.layout-new .arrangement-picker .segmented-control { display: none; }
+.layout-new .stage-form .arrangement-picker legend { padding: 0 0 7px; font-size: 12px; font-weight: 400; line-height: 1.5; }
+#layoutChoice { display: block; width: min(100%, 320px); padding: 9px; border: 1px solid #bdc9cb; border-radius: 5px; font-size: 13px; background: #fff; color: #263034; }
+.task-resource-dialog { width: min(720px, calc(100vw - 32px)); max-height: 85dvh; }
+.task-resource-dialog .dialog-header { position: sticky; top: 0; background: #fff; z-index: 1; }
+.task-resource-body { padding: 18px 22px; font-size: 13px; line-height: 1.6; }
+.task-resource-body > button { display: block; margin: 8px 0; }
+.task-resource-body section { border-bottom: 1px solid #d5deda; padding: 8px 0 18px; }
+.task-resource-body h3 { font-size: 14px; }
+.task-resource-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+body.layout-new { background: #f5f6f3; --layout-page-inset: max(24px, calc((100vw - 1320px) / 2)); }
+html:has(body.layout-new) { scroll-padding-top: calc(var(--task-header-height, 90px) + 16px); scroll-padding-bottom: calc(var(--task-dock-height, 110px) + 16px); }
+.layout-new .journey-header { display: flex; position: sticky; top: 0; z-index: 45; min-height: 76px; padding: 12px var(--layout-page-inset); gap: 24px; background: #fff; }
+.layout-new .phase-journey { flex: 1; min-width: 0; }
+.layout-new .journey-brand { min-width: 230px; }
+.layout-new .journey-brand h1 { font-size: 16px; line-height: 1.3; }
+.layout-new .journey-brand .app-version { font-size: 10px; line-height: 1.4; }
+.layout-new .journey-brand img { width: 32px; height: 32px; }
+.layout-new .phase-step { font-size: 12px; font-weight: 400; padding: 8px; min-height: 44px; }
+.layout-new .phase-step .phase-number { font-size: 11px; }
+.layout-new .journey-utilities { font-size: 11px; }
+.layout-new .journey-utilities .icon-text-button { font-size: 12px; font-weight: 400; }
+.layout-new .status-summary { font-size: 10px; }
+.layout-new .workspace { width: 100%; max-width: 1400px; margin: 0 auto; padding: 24px 36px calc(var(--task-dock-height, 110px) + 30px); min-height: 0; }
+.layout-new .stage-context-bar, .layout-new .task-meta-row { display: none; }
+.layout-new .task-workspace { display: grid; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.45fr); align-items: start; gap: 36px; max-width: 1100px; margin: 8px auto 24px; }
+.layout-new .task-workspace.wide-task-workspace { grid-template-columns: 250px minmax(0, 1fr); max-width: none; gap: 28px; }
+.layout-new .task-workspace > .stage-intro { min-width: 0; max-width: none; margin: 0; }
+@media (min-width: 761px) {
+  .layout-new .task-workspace > .stage-intro {
+    position: sticky;
+    top: calc(var(--task-header-height, 90px) + 32px);
+    max-height: calc(100dvh - var(--task-header-height, 90px) - var(--task-dock-height, 110px) - 56px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    padding: 3px;
+    scroll-padding-block: 8px;
+  }
+}
+.layout-new .stage-intro h2 { max-width: 360px; margin: 0 0 14px; font-size: 25px; line-height: 1.2; letter-spacing: -.4px; font-weight: 600; }
+.layout-new .stage-support { font-size: 12px; line-height: 1.55; margin: 0; color: #647174; }
+.layout-new .task-resources { display: flex; gap: 8px; margin: 0 0 20px; }
+.layout-new .task-resource { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; width: 76px; height: 76px; min-height: 76px; border: 1px solid #d5deda; border-radius: 8px; padding: 9px 5px; background: #eef4f1; color: #214f48; font-weight: 400; }
+.layout-new .task-resource img { width: 26px; height: 26px; }
+.layout-new .task-resource span { font-size: 10px; line-height: 1.2; white-space: nowrap; }
+.layout-new .resource-example { background: #f3f7fa; color: #315d7a; }
+.layout-new .resource-related { background: #faf6ed; color: #815b20; }
+.layout-new .task-resource:hover { filter: brightness(.97); }
+.layout-new .layout-example-source { display: none; }
+.layout-new #studyExampleAction { display: none; }
+.layout-new .focus-layout { min-width: 0; display: block; border: 1px solid #d5deda; border-radius: 9px; background: #fff; padding: 18px 20px 0; }
+.layout-new .stage-form { display: block; margin: 0; min-width: 0; }
+.layout-new .stage-form > .field-grid { display: block; }
+.layout-new .stage-form .field, .layout-new .stage-form .output-box, .layout-new .stage-form .guided-step, .layout-new .stage-form .table-row, .layout-new .stage-form .personal-declaration, .layout-new .stage-form .consent-preparation { box-shadow: none; }
+.layout-new .stage-form .field { padding: 0; margin: 0 0 18px; border: 0; background: transparent; }
+.layout-new .stage-form .field-grid > .field { width: 100%; }
+.layout-new .stage-form .output-box, .layout-new .stage-form .personal-declaration { padding: 12px; margin-block: 10px; }
+.layout-new .stage-form label, .layout-new .stage-form .field-label { font-size: 12px; font-weight: 400; line-height: 1.5; }
+.layout-new .stage-form .field-label label { font-weight: 400; }
+.layout-new .stage-form input, .layout-new .stage-form select { font-size: 13px; min-height: 34px; padding: 7px 9px; }
+.layout-new .stage-form textarea { font-size: 13px; min-height: 90px; height: 120px; padding: 10px; line-height: 1.5; resize: vertical; }
+.layout-new .stage-form .hint, .layout-new .stage-form .help-tooltip { font-size: 11px; line-height: 1.5; }
+.layout-new .stage-form h3 { font-size: 14px; line-height: 1.4; }
+.layout-new .stage-form .help-icon { width: 22px; height: 22px; font-size: 11px; }
+.layout-new .stage-form .generated-text { font-size: 12px; line-height: 1.6; }
+.layout-new .stage-form .guided-step { border: 0; margin: 0; }
+.layout-new .stage-form .guided-step > summary { display: none; }
+.layout-new .stage-form .guided-step-content { padding: 0; }
+.layout-new .stage-form .instrumentation-row { margin: 0; padding: 0; border: 0; }
+.layout-new .workspace-draft-reminder { display: block; margin: 8px 0 0; border-top: 1px solid #edf0ed; padding: 5px 0; font-size: 11px; color: #647174; }
+.layout-new .workspace-draft-reminder summary { list-style: none; cursor: pointer; width: 32px; min-height: 32px; margin-left: auto; display: grid; place-items: center; font-size: 17px; font-weight: 600; color: #48778a; }
+.workspace-draft-reminder summary::-webkit-details-marker { display: none; }
+.workspace-draft-reminder summary:focus-visible, .task-resource:focus-visible, .authors-divider:focus-visible { outline: 2px solid #ac721b; outline-offset: 3px; }
+.layout-new .workspace-draft-reminder p { margin: 6px 0; font-size: 11px; line-height: 1.5; }
+.layout-new .focused-navigation { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0; padding: 0 var(--layout-page-inset) env(safe-area-inset-bottom); background: #f5f6f3; border-top: 1px solid #d5deda; backdrop-filter: none; }
+.layout-new .section-task-path { min-height: 44px; margin: 0; padding: 0; }
+.layout-new .section-task-node { font-size: 11px; font-weight: 400; min-height: 38px; padding: 6px 9px; }
+.layout-new .section-task-node.is-current { font-weight: 600; }
+.layout-new .section-task-dot { display: none; }
+.layout-new .section-task-node::after { display: none; }
+.layout-new .focused-actions { min-height: 60px; padding: 8px 0; gap: 8px; grid-template-columns: auto auto minmax(0,1fr) auto; }
+.layout-new .focused-actions button { font-size: 12px; font-weight: 400; min-height: 34px; padding: 8px 16px; }
+.layout-new .focused-actions #nextBtn { grid-column: 4; min-width: 110px; max-width: 160px; }
+.layout-new .stage-form .a2Patterns-row { grid-template-columns: 96px var(--pattern-observation-width,minmax(240px,1fr)) var(--authors-width,180px) 90px; gap: 12px; padding: 8px; min-width: calc(478px + var(--authors-width,180px)); max-width: none; width: max(100%, calc(238px + var(--pattern-observation-width,240px) + var(--authors-width,180px))); border: 1px solid #d5deda; border-radius: 4px; }
+.layout-new .a2Patterns-row .row-example-action { display: none; }
+.layout-new .a2Patterns-row > label { min-width: 0; position: relative; }
+.layout-new .stage-form .a2Patterns-row textarea { height: 180px; min-height: 110px; padding: 6px; font-size: 12px; }
+.layout-new .a2Patterns-row .protected-pattern-value { padding: 6px; min-height: 34px; font-size: 12px; font-weight: 400; }
+.layout-new .a2Patterns-row .protected-pattern-field small { font-size: 10px; }
+.layout-new .authors-divider { display: block; position: absolute; width: 12px; right: -12px; top: 0; bottom: 0; cursor: col-resize; touch-action: none; z-index: 2; border-right: 2px solid #8ca79c; }
+.layout-new .stage-form .a3Gaps-row { padding: 10px; gap: 14px; }
+.layout-new .stage-form .table-scroll { overflow-x: auto; }
+.layout-new .workspace.glance-open > .task-workspace { display: none; }
+@media (max-width: 1100px) {
+  .layout-new .journey-header { flex-wrap: wrap; gap: 8px 16px; }
+  .layout-new .journey-brand { min-width: 200px; }
+  .layout-new .phase-journey { order: 3; flex: 1 0 100%; }
+  .layout-new .journey-utilities { margin-left: auto; }
+}
+@media (max-width: 760px) {
+  html:has(body.layout-new) { scroll-padding-top: calc(var(--task-header-height, 90px) + var(--task-bar-height, 60px) + 12px); }
+  .layout-new .task-workspace > .stage-intro {
+    position: sticky;
+    top: var(--task-header-height, 90px);
+    z-index: 35;
+    display: grid;
+    grid-template-columns: 152px minmax(0, 1fr);
+    align-items: center;
+    align-self: start;
+    gap: 8px;
+    padding: 8px 0;
+    background: #f5f6f3;
+    border-bottom: 1px solid #d5deda;
+    max-height: max(80px, calc(100dvh - var(--task-header-height, 90px) - var(--task-dock-height, 110px) - 16px));
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+  .layout-new .stage-intro > .task-resources { gap: 4px; margin: 0; }
+  .layout-new .stage-intro .task-resource { width: 48px; height: 46px; min-height: 46px; padding: 3px 1px; gap: 3px; }
+  .layout-new .stage-intro .task-resource img { width: 20px; height: 20px; }
+  .layout-new .stage-intro .task-resource span { font-size: 8px; }
+  .layout-new .mobile-task-toggle { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; min-height: 46px; min-width: 0; padding: 5px 8px; border: 0; background: transparent; color: #214f48; text-align: left; }
+  .layout-new .mobile-task-toggle:hover { background: #eaf1ec; }
+  .layout-new .mobile-task-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 12px; font-weight: 500; line-height: 1.3; }
+  .layout-new .mobile-task-toggle small { font-size: 10px; font-weight: 400; text-decoration: underline; text-underline-offset: 2px; }
+  .layout-new .stage-intro > #stageTitle, .layout-new .stage-intro > .stage-support { grid-column: 1 / -1; max-width: none; margin: 4px 0 0; }
+  .layout-new .stage-intro > #stageTitle { font-size: 18px; }
+  .layout-new .stage-intro.is-task-collapsed > #stageTitle, .layout-new .stage-intro.is-task-collapsed > .stage-support { display: none; }
+  body.layout-new { --layout-page-inset: 16px; }
+  .layout-new .journey-header { padding: 10px 16px; }
+  .layout-new .journey-brand { min-width: 0; flex: 1; }
+  .layout-new .journey-brand h1 { font-size: 14px; }
+  .layout-new .journey-brand .app-version { font-size: 10px; }
+  .layout-new .journey-brand img { width: 28px; height: 28px; }
+  .layout-new .status-summary { max-width: 140px; font-size: 10px; }
+  .layout-new .active-time, .layout-new .status-separator { display: none; }
+  .layout-new .phase-step { min-height: 36px; font-size: 10px; padding: 4px; }
+  .layout-new .phase-number { display: none; }
+  .layout-new .journey-utilities .icon-text-button { min-height: 44px; font-size: 11px; }
+  .layout-new .workspace { width: 100%; padding: 16px 16px calc(var(--task-dock-height, 110px) + 24px); }
+  .layout-new .task-workspace, .layout-new .task-workspace.wide-task-workspace { grid-template-columns: 1fr; gap: 20px; margin: 0 0 16px; }
+  .layout-new .task-resources { margin-bottom: 16px; }
+  .layout-new .task-resource { width: 68px; height: 66px; min-height: 66px; gap: 5px; }
+  .layout-new .task-resource img { width: 24px; height: 24px; }
+  .layout-new .stage-intro h2 { font-size: 24px; }
+  .layout-new .focus-layout { padding: 15px 14px 0; }
+  .layout-new .stage-form input, .layout-new .stage-form select { min-height: 44px; }
+  .layout-new .stage-form textarea { font-size: 14px; }
+  .layout-new .section-task-node { min-height: 40px; font-size: 10px; }
+  .layout-new .focused-actions { min-height: 60px; grid-template-columns: auto auto minmax(0,1fr) auto; }
+  .layout-new .focused-actions button { min-height: 44px; padding: 8px 11px; }
+  .layout-new .focused-actions #nextBtn { min-width: 96px; }
+  .layout-new .stage-form .a3Gaps-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 380px) {
+  .layout-new .journey-brand .app-version { max-width: 155px; }
+  .layout-new .focused-actions { gap: 3px; }
+  .layout-new .focused-actions button { padding-inline: 7px; font-size: 11px; }
+}
+/* Compact top chrome on narrow screens; full labels remain in accessible names and menus. */
+@media (max-width: 760px) {
+  .layout-new .journey-header { padding: 6px 12px; gap: 4px 10px; min-height: 0; }
+  .layout-new .journey-brand { gap: 7px; }
+  .layout-new .journey-brand img { width: 24px; height: 24px; }
+  .layout-new .journey-brand h1 { font-size: 13px; line-height: 1.25; margin: 0; }
+  .layout-new .brand-full-name, .layout-new .journey-brand .app-version { display: none; }
+  .layout-new .brand-short-name { display: inline; }
+  .layout-new .compact-app-version { display: block; margin-top: 2px; font-size: 9px; font-weight: 400; line-height: 1.2; color: #647174; }
+  .layout-new .journey-utilities { gap: 0; }
+  .layout-new .status-summary { font-size: 9px; line-height: 12px; }
+  .layout-new .journey-utility-actions { gap: 4px; }
+  .layout-new .journey-utilities .icon-text-button { min-height: 32px; padding: 3px 6px; font-size: 11px; }
+  .layout-new .phase-journey { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); flex: 1 0 100%; overflow: visible; padding: 0; }
+  .layout-new .phase-step { display: flex; justify-content: center; width: auto; min-width: 0; min-height: 34px; gap: 0; padding: 5px 2px; font-size: 10px; line-height: 1.2; white-space: nowrap; text-align: center; }
+  .layout-new .phase-full-label { display: none; }
+  .layout-new .phase-short-label { display: inline; }
+  .layout-new .phase-step::after { left: 4px; right: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .layout-new .focus-task-item, .layout-new .focus-task-root { animation: none; } }
+@media print {
+  .task-resources, .workspace-draft-reminder { display: none !important; }
+  .layout-new .task-workspace { display: block; }
+  .layout-new .focused-navigation, .layout-new .journey-header { display: none !important; }
+  .layout-new .workspace { padding-bottom: 0; }
+}

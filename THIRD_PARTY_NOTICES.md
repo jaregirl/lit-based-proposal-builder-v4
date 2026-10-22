@@ -20,6 +20,10 @@ Methodological, ethical, and educational sources named in the app remain the wor
 
 The Team Contribution Record is informed conceptually by Brookhart's guidance on grading group work and by CATME's published research on self- and peer evaluation. The app does not reproduce CATME's copyrighted instrument, behavioral anchors, scoring method, or exceptional-condition classifications. See the CATME research and citations page in About & Sources for the cited website and journal articles.
 
+## Tabler Icons
+
+The Help, Example and Related work controls use unmodified Tabler Icons (help-circle, file-pencil and file-arrow-left), distributed under the MIT License. The license is included at `layout-icons/LICENSE`. Source: https://github.com/tabler/tabler-icons.
+
 ## Developer Attribution
 
 The app was developed by J. Arawiran with coding assistance from OpenAI Codex. A definitive software license will be selected after institutional ownership is clarified.

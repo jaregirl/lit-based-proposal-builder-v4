@@ -1,10 +1,14 @@
 {
-  "version": "4.9.2",
+  "version": "4.9.3",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-10-08",
-  "title": "v4.9.2 Compact Shared Interface",
+  "releaseDate": "2026-10-22",
+  "title": "v4.9.3 Task Workspace Layout",
   "url": "./",
   "notes": [
+    "Tools offers Classic and New layouts using the same saved proposal; the familiar Classic layout remains the initial default",
+    "The New layout places Help, Example and Related work above the task text beside a compact response workspace; header and bottom task navigation remain stationary",
+    "New-layout Supporting authors columns can be resized by dragging their right edge or using keyboard arrows",
+    "Layout preferences are stored separately from proposals; existing response keys, backup formats and research guidance remain unchanged",
     "Study Design separates participants/data sources, inclusion criteria and additional exclusions; click-to-open examples compare people and documents, and Instrumentation references saved eligibility without overwriting responses",
     "Task screens share a compact header and footer, smaller secondary text, and a clickable working-draft reminder beside the task code",
     "App feedback is temporarily hidden; existing feedback records and proposal responses remain unchanged",

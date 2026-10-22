@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.2";
-const APP_VERSION = `v${RELEASE_VERSION} - Compact Shared Interface`;
+const RELEASE_VERSION = "4.9.3";
+const APP_VERSION = `v${RELEASE_VERSION} - Task Workspace Layout`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
@@ -1465,9 +1465,10 @@ function renderPhaseJourney() {
   els.phaseJourney.innerHTML = journeyPhases.map((phase, index) => {
     const completed = phase.stages.every((stageId) => stageCompletion(stageId) > 0.55);
     const expanded = openPhaseMenuId === phase.id;
-    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-expanded="${expanded}" aria-controls="phaseMenu">
+    const shortLabel = ["Foundations", "Design", "Preparation", "Readiness"][index] || phase.label;
+    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-label="${escapeHtml(phase.label)}" title="${escapeHtml(phase.label)}" aria-expanded="${expanded}" aria-controls="phaseMenu">
       <span class="phase-number">${completed ? "&#10003;" : index + 1}</span>
-      <span>${escapeHtml(phase.label)}</span>
+      <span class="phase-full-label">${escapeHtml(phase.label)}</span><span class="phase-short-label" aria-hidden="true">${escapeHtml(shortLabel)}</span>
     </button>`;
   }).join("");
 }
@@ -1576,6 +1577,7 @@ function render() {
   const stage = stages[currentIndex()];
   document.title = `Lit-Based Proposal Builder v${RELEASE_VERSION}`;
   if (els.appVersion) els.appVersion.textContent = APP_VERSION;
+  document.getElementById("compactAppVersion").textContent = `v${RELEASE_VERSION}`;
   if (els.appCredit) els.appCredit.textContent = APP_CREDIT;
   if (els.appCitationVersion) els.appCitationVersion.textContent = RELEASE_VERSION;
   renderWorkspaceRole();
@@ -2028,6 +2030,11 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
   document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
   if (IS_ADVISER) document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Next task" : currentIndex() < stages.length - 1 ? "Next section" : "End of review";
+  globalThis.PROPOSAL_LAYOUT?.refresh({
+    stageId: stage.id, task, shortLabel: sectionPathLabel(stage.id, task, activeIndex), activeIndex, proposal: state,
+    openExample: (sourceStage, type, trigger) => openExampleDialog(sourceStage, type, trigger),
+    openSource: (sourceStage, selector) => focusContextTask(sourceStage, selector)
+  });
 }
 
 function renderFields(section, fields) {
@@ -2094,6 +2101,10 @@ function renderStudentDetailsForm(prefix = "") {
       ${renderDegreeLevelSelect(prefix)}
       <fieldset class="field full arrangement-picker">
         <legend>Work Arrangement</legend>
+        <select class="new-work-arrangement" data-work-arrangement aria-label="Work arrangement">
+          <option value="individual" ${group ? "" : "selected"}>Individual</option>
+          <option value="group" ${group ? "selected" : ""}>Group</option>
+        </select>
         <div class="segmented-control" role="radiogroup" aria-label="Work arrangement">
           <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="individual" ${group ? "" : "checked"}> Individual</label>
           <label><input type="radio" name="${prefix}workArrangement" data-work-arrangement value="group" ${group ? "checked" : ""}> Group</label>
