@@ -19,8 +19,8 @@ assert(html.includes('It is okay if this changes later.'));
 assert(html.includes('<details class="app-feedback-panel" hidden>'));
 assert(app.includes('const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";'));
 assert(app.includes('const SCHEMA_VERSION = "4.7.0";'));
-assert(app.includes('const RELEASE_VERSION = "4.9.3";'));
-assert.strictEqual(version.version, '4.9.3');
+assert(app.includes('const RELEASE_VERSION = "4.9.4";'));
+assert.strictEqual(version.version, '4.9.4');
 for (const source of [...html.matchAll(/(?:href|src)="((?:styles-upload\.css|app-upload\.js)\?v=[^"]+)"/g)]) {
   assert(sw.includes(`./${source[1]}`), `Offline shell must match ${source[1]}`);
 }

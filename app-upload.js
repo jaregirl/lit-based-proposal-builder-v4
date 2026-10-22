@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.3";
-const APP_VERSION = `v${RELEASE_VERSION} - Task Workspace Layout`;
+const RELEASE_VERSION = "4.9.4";
+const APP_VERSION = `v${RELEASE_VERSION} - Framework Diagram Builder`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
@@ -370,6 +370,7 @@ const defaultData = {
     analysis: ""
   },
   framework: {},
+  frameworkDiagram: { version: 1, nodes: [], links: [], explanation: "" },
   frameworkFinder: {
     pathway: "problem-led"
   },
@@ -748,7 +749,7 @@ function setAdviserMatrixGroup(group, checked, records = globalThis.ADVISER_STOR
 }
 
 function adviserNavigationButton(button) {
-  return button.matches('[data-example-stage], [data-context-stage], [data-context-return-home], [data-open-student-details], [data-progress-preview], [data-proposal-source-stage]');
+  return button.matches('[data-example-stage], [data-context-stage], [data-context-return-home], [data-open-student-details], [data-progress-preview], [data-proposal-source-stage], [data-open-framework-diagram]');
 }
 
 function applyAdviserReadOnly() {
@@ -862,6 +863,9 @@ function normalizeState(nextState) {
   normalized.a3.synthesisChecks = { ...clone(defaultData.a3.synthesisChecks), ...(nextState.a3?.synthesisChecks || {}) };
   normalized.a4 = { ...clone(defaultData.a4), ...(nextState.a4 || {}) };
   normalized.framework = { ...clone(defaultData.framework), ...(nextState.framework || {}) };
+  normalized.frameworkDiagram = globalThis.FRAMEWORK_DIAGRAM
+    ? globalThis.FRAMEWORK_DIAGRAM.normalize(nextState.frameworkDiagram)
+    : { ...clone(defaultData.frameworkDiagram), ...(nextState.frameworkDiagram || {}) };
   normalized.frameworkFinder = { ...clone(defaultData.frameworkFinder), ...(nextState.frameworkFinder || {}) };
   normalized.researchLevel = { ...clone(defaultData.researchLevel), ...(nextState.researchLevel || {}) };
   normalized.methodology = { ...clone(defaultData.methodology), ...(nextState.methodology || {}) };
@@ -1850,7 +1854,8 @@ function buildFocusedTasks(stageId) {
       { label: "Compare", title: "How do the candidates differ?", support: "Compare what each candidate explains, its source, and its limits.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"candidateFrameworks\"]", "[data-section=\"frameworkFinder\"][data-key=\"frameworkSource\"]"]) },
       { label: "Select", title: "Which framework or combination fits best?", support: "Select only what is needed and explain why the alternatives fit less well.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"selectionReason\"]", "[data-section=\"framework\"][data-key=\"theoryModel\"]"]) },
       { label: "Test", title: "Does the framework perform real work in the study?", support: "Test its connection to the problem, questions, design, evidence, analysis, and interpretation.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"withoutFramework\"]", "[data-section=\"frameworkFinder\"][data-key=\"methodFit\"]", "[data-section=\"framework\"][data-key=\"problemConnection\"]", "[data-section=\"framework\"][data-key=\"questionConnection\"]", "[data-section=\"framework\"][data-key=\"instrumentConnection\"]"]) },
-      { label: "Explain", title: "What distinct role does each framework perform?", support: "Explain the role, combination logic, and conceptual boundaries in language an adviser can review.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"frameworkRoles\"]", "[data-section=\"frameworkFinder\"][data-key=\"combinationReason\"]", "[data-section=\"framework\"][data-key=\"scopeBoundaries\"]"]) }
+      { label: "Explain", title: "What distinct role does each framework perform?", support: "Explain the role, combination logic, and conceptual boundaries in language an adviser can review.", items: taskNodes(["[data-section=\"frameworkFinder\"][data-key=\"frameworkRoles\"]", "[data-section=\"frameworkFinder\"][data-key=\"combinationReason\"]", "[data-section=\"framework\"][data-key=\"scopeBoundaries\"]"]) },
+      { label: "Diagram", title: "How do the concepts in your framework connect?", support: "Optional: arrange your concepts, label their connections, and explain their basis. This diagram supplements, not replaces, your written framework. Arrows do not establish causation.", roots: taskNodes(['[data-framework-diagram-task]']), items: taskNodes(['[data-framework-diagram-task]']) }
     ];
   }
   if (stageId === "methodology") {
@@ -2595,11 +2600,22 @@ function renderFramework() {
       <div class="generated-text">Show the distinct work performed by each framework. Keep conceptual scope here: included and excluded constructs, examined relationships, and theoretical boundaries. Operational delimitations belong in Methodology.</div>
     </section>
     ${renderFields("framework", fieldSets.framework)}
+    ${globalThis.FRAMEWORK_DIAGRAM?.taskHtml(state.frameworkDiagram, IS_ADVISER) || ""}
     <section class="checker-panel">
       <h3>Framework Alignment Readiness</h3>
       <div class="feedback">${checkFramework().map(feedbackHtml).join("")}</div>
     </section>
   `;
+  const diagramRoot = els.stageForm.querySelector('[data-framework-diagram-task]');
+  if (diagramRoot) globalThis.FRAMEWORK_DIAGRAM.mount(diagramRoot, state.frameworkDiagram, {
+    readOnly: IS_ADVISER,
+    onChange: diagram => {
+      if (IS_ADVISER) return;
+      state.frameworkDiagram = diagram;
+      markContentEdit();
+      saveState(false);
+    }
+  });
 }
 
 function renderResearchLevel() {
@@ -5091,6 +5107,7 @@ function buildSubmissionHtml() {
     <p><strong>Connection to the Questions:</strong> ${escapeHtml(value("framework.questionConnection"))}</p>
     <p><strong>Connection to Instruments or Analysis:</strong> ${escapeHtml(value("framework.instrumentConnection"))}</p>
     <p><strong>Conceptual Scope:</strong> ${escapeHtml(value("framework.scopeBoundaries"))}</p>
+    ${globalThis.FRAMEWORK_DIAGRAM?.exportHtml(state.frameworkDiagram) || ""}
     <h2 class="major-section">Research Level Justification</h2>
     ${state.submission.degreeLevel === "shs" ? `<p><strong>PQF Reference:</strong> ${escapeHtml(PQF_REFERENCE)}</p><p><strong>SHS / PQF Level 3 Note:</strong> Advanced ideas are welcome. The proposal should still be scoped to structured research tasks, emerging independence, available time, data, guidance, and ethical safeguards.</p>` : `<p><strong>PQF Reference:</strong> ${escapeHtml(PQF_REFERENCE)}</p><p><strong>Formative Note:</strong> ${escapeHtml(PQF_NOTE)}</p>`}
     ${fieldSets.researchLevel.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`researchLevel.${key}`))}</p>`).join("")}
@@ -5197,7 +5214,8 @@ function progressStageHtml(stageId) {
     return `<h2 class="major-section">Framework Finder and Alignment</h2>
       <p><strong>Research Pathway:</strong> ${escapeHtml(value("frameworkFinder.pathway") === "theory-led" ? "Theory-led" : "Problem-led")}</p>
       ${fieldSets.frameworkFinder.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`frameworkFinder.${key}`))}</p>`).join("")}
-      ${fieldSets.framework.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`framework.${key}`))}</p>`).join("")}`;
+      ${fieldSets.framework.map(([key, label]) => `<h3>${escapeHtml(label)}</h3><p>${escapeHtml(value(`framework.${key}`))}</p>`).join("")}
+      ${globalThis.FRAMEWORK_DIAGRAM?.exportHtml(state.frameworkDiagram) || ""}`;
   }
   if (stageId === "researchLevel") {
     const degree = degreeLevelInfo();

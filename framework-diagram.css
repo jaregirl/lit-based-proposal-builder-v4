@@ -1,0 +1,53 @@
+.framework-diagram-task small { font-size:11px;font-weight:400;color:#647174; }
+.framework-diagram-preview { margin:16px 0;max-width:100%;overflow:auto; }
+.framework-diagram-preview svg { display:block;width:100%;max-height:420px;border:1px solid #d5deda;border-radius:5px; }
+.framework-diagram-text { font-size:12px;line-height:1.6; }
+.framework-diagram-text p { overflow-wrap:anywhere; }
+.framework-diagram-editor { width:min(1240px,calc(100vw - 24px));max-width:none;height:min(850px,94dvh);max-height:94dvh;padding:0;border:1px solid #aebfb7;border-radius:8px; }
+.framework-diagram-editor[open] { display:flex;flex-direction:column; }
+.framework-diagram-editor::backdrop { background:#152c2866; }
+.diagram-editor-header { display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 18px;border-bottom:1px solid #d5deda;flex-shrink:0; }
+.diagram-editor-header h2 { font-size:18px;margin:0 0 4px; }
+.diagram-editor-header p { font-size:11px;color:#647174;margin:0; }
+.diagram-editor-header button { min-height:36px;font-size:12px; }
+.diagram-editor-notice { margin:0;padding:8px 18px;font-size:11px;line-height:1.5;background:#faf6ed;flex-shrink:0; }
+.diagram-editor-layout { display:grid;grid-template-columns:245px minmax(0,1fr);gap:0;min-height:0;flex:1; }
+.diagram-mobile-views { display:none; }
+.diagram-controls { overflow-y:auto;border-right:1px solid #d5deda;padding:14px; }
+.framework-diagram-editor label { display:block;font-size:12px;font-weight:400;line-height:1.5;margin-bottom:12px; }
+.framework-diagram-editor input,.framework-diagram-editor select,.framework-diagram-editor textarea { display:block;width:100%;min-width:0;margin-top:5px;padding:7px 8px;border:1px solid #bdc9cb;border-radius:4px;font-size:12px;background:#fff;color:#263034; }
+.framework-diagram-editor input,.framework-diagram-editor select { min-height:34px; }
+.framework-diagram-editor button { font-size:12px; }
+.diagram-controls button { min-height:34px;padding:5px 9px; }
+.diagram-action-row { display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px; }
+.diagram-link-ends { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.diagram-live-status { font-size:11px;line-height:1.5;color:#214f48; }
+.diagram-canvas-panel { min-width:0;overflow:auto;padding:14px 18px; }
+.diagram-move-help { margin:0 0 10px;font-size:11px;line-height:1.5;color:#647174; }
+.diagram-canvas-scroll { overflow:auto;border:1px solid #cbd7d0;max-height:56dvh; }
+.diagram-surface { min-width:640px;aspect-ratio:5/3;touch-action:pan-x pan-y;background:#fff; }
+.diagram-surface svg { width:100%;height:100%;display:block; }
+.diagram-surface [data-diagram-node] { cursor:grab;touch-action:none; }
+.diagram-surface [data-diagram-node]:focus { outline:none; }
+.diagram-surface [data-diagram-node]:focus rect { stroke:#ac721b;stroke-width:4; }
+.diagram-explanation-label { margin-top:16px; }
+.framework-diagram-editor textarea { min-height:100px;resize:vertical;line-height:1.6; }
+.diagram-readable { margin:12px 0;font-size:12px;line-height:1.6; }
+.diagram-readable p { white-space:pre-wrap;overflow-wrap:anywhere; }
+.framework-diagram-export svg { width:100%;height:auto; }
+@media(max-width:700px) {
+ .framework-diagram-editor { width:calc(100vw - 12px);height:96dvh;max-height:96dvh; }
+ .diagram-editor-layout { display:block;overflow:auto; }
+ .diagram-mobile-views { display:flex;gap:6px;padding:7px 12px;border-bottom:1px solid #d5deda;flex-shrink:0; }
+ .diagram-mobile-views button { min-height:40px;font-size:12px; }
+ .diagram-mobile-views button[aria-pressed="true"] { background:#e4f0ea;border-color:#214f48; }
+ .framework-diagram-editor:not(.diagram-show-controls) .diagram-controls { display:none; }
+ .framework-diagram-editor.diagram-show-controls .diagram-canvas-panel { display:none; }
+ .diagram-controls { overflow:visible;border-right:0;border-bottom:1px solid #d5deda; }
+ .diagram-canvas-panel { overflow:visible;padding:12px; }
+ .framework-diagram-editor input,.framework-diagram-editor select,.diagram-controls button,.diagram-editor-header button { min-height:44px; }
+ .diagram-editor-header { padding:10px 12px; }
+ .diagram-editor-notice { padding:7px 12px; }
+ .diagram-canvas-scroll { max-height:44dvh; }
+}
+@media print { .framework-diagram-editor { display:none!important; } .framework-diagram-export { break-inside:auto; } .framework-diagram-export figure { break-inside:avoid; } }

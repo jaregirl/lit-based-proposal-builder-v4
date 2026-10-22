@@ -1,10 +1,13 @@
 {
-  "version": "4.9.3",
+  "version": "4.9.4",
   "schemaVersion": "4.7.0",
   "releaseDate": "2026-10-22",
-  "title": "v4.9.3 Task Workspace Layout",
+  "title": "v4.9.4 Framework Diagram Builder",
   "url": "./",
   "notes": [
+    "Framework Finder includes an optional Diagram task: editable concept boxes, draggable positions, labelled arrows, relationship basis and written explanation",
+    "Diagrams are included in local saving, JSON backup/restore, framework progress and final PDF output, with a text description and standalone SVG download",
+    "Adviser review can display imported diagrams read-only; Classic and New layouts both support the builder",
     "Tools offers Classic and New layouts using the same saved proposal; the familiar Classic layout remains the initial default",
     "The New layout places Help, Example and Related work above the task text beside a compact response workspace; header and bottom task navigation remain stationary",
     "New-layout Supporting authors columns can be resized by dragging their right edge or using keyboard arrows",

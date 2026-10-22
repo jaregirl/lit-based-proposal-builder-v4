@@ -1,7 +1,7 @@
 // Independent review copies. No adviser operation writes to researcher draft keys.
 globalThis.ADVISER_STORE = (() => {
   const prefix = "proposalBuilderAdviser:v1:proposal:";
-  const sections = ["a1", "a2", "a3", "a4", "framework", "frameworkFinder", "methodology", "ethics", "instrumentation", "terms", "submission", "researchLevel", "mixedMethods", "outline", "engagement", "meta", "teamContributions", "readiness"];
+  const sections = ["a1", "a2", "a3", "a4", "framework", "frameworkDiagram", "frameworkFinder", "methodology", "ethics", "instrumentation", "terms", "submission", "researchLevel", "mixedMethods", "outline", "engagement", "meta", "teamContributions", "readiness"];
   const object = value => Boolean(value && typeof value === "object" && !Array.isArray(value));
   function proposalState(payload) {
     if (!object(payload)) throw new Error("The file must contain a proposal object.");
