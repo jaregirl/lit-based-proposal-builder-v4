@@ -60,8 +60,8 @@
   let context = null;
   let opener = null;
   let authorsWidth = 180;
-  let mode = 'classic';
-  try { mode = localStorage.getItem(preferenceKey) === 'new' ? 'new' : 'classic'; } catch { /* Layout works without preference storage. */ }
+  let mode = 'new';
+  try { mode = localStorage.getItem(preferenceKey) === 'classic' ? 'classic' : 'new'; } catch { /* New layout remains available without preference storage. */ }
   const visible = node => Boolean(node && !node.closest('[hidden]') && (node.classList.contains('layout-example-source') || getComputedStyle(node).display !== 'none') && !node.closest('.focus-secondary-context'));
   function measure() {
     document.documentElement.style.setProperty('--task-header-height', `${header.getBoundingClientRect().height}px`);

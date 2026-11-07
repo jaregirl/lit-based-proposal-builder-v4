@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.4";
-const APP_VERSION = `v${RELEASE_VERSION} - Framework Diagram Builder`;
+const RELEASE_VERSION = "4.9.5";
+const APP_VERSION = `v${RELEASE_VERSION} - Flexible Workspace`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
@@ -1470,9 +1470,11 @@ function renderPhaseJourney() {
     const completed = phase.stages.every((stageId) => stageCompletion(stageId) > 0.55);
     const expanded = openPhaseMenuId === phase.id;
     const shortLabel = ["Foundations", "Design", "Preparation", "Readiness"][index] || phase.label;
-    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-label="${escapeHtml(phase.label)}" title="${escapeHtml(phase.label)}" aria-expanded="${expanded}" aria-controls="phaseMenu">
+    const section = stages.find((item) => item.id === state.currentStage);
+    const sectionName = phase.id === active.id && section ? `${section.code} · ${section.title}` : '';
+    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-label="${escapeHtml(phase.label)}${sectionName ? `, ${escapeHtml(sectionName)}` : ''}" title="${escapeHtml(phase.label)}" aria-expanded="${expanded}" aria-controls="phaseMenu">
       <span class="phase-number">${completed ? "&#10003;" : index + 1}</span>
-      <span class="phase-full-label">${escapeHtml(phase.label)}</span><span class="phase-short-label" aria-hidden="true">${escapeHtml(shortLabel)}</span>
+      <span class="phase-full-label">${escapeHtml(phase.label)}</span><span class="phase-short-label" aria-hidden="true">${escapeHtml(shortLabel)}</span>${sectionName ? `<span class="phase-section-label">${escapeHtml(sectionName)}</span>` : ''}
     </button>`;
   }).join("");
 }
@@ -1765,6 +1767,18 @@ function renderStage() {
   else if (id === "outline") result = renderOutline();
   else if (id === "readiness") result = renderReadiness();
   else result = renderSubmission();
+  const referenceFields = {
+    a2: [['a1','coreConstruct','Core construct']],
+    a4: [['a1','coreConstruct','Core construct'],['a3','finalGap','Literature gap']],
+    framework: [['a3','finalGap','Literature gap'],['a4','literatureProblem','Research problem'],['a4','centralQuestion','Central research question']],
+    methodology: [['a4','literatureProblem','Research problem'],['a4','centralQuestion','Central research question']],
+    ethics: [['a4','literatureProblem','Research problem'],['methodology','participants','Participants or sources of data']],
+    terms: [['a4','literatureProblem','Research problem'],['a4','centralQuestion','Central research question']],
+  };
+  const references = referenceFields[id];
+  if (!IS_ADVISER && references && localStorage.getItem('proposalBuilder:workingMode:preview') === 'flexible') {
+    els.stageForm.insertAdjacentHTML('afterbegin', `<section class="output-box flexible-reference-context"><h3>Decisions developed elsewhere</h3><p class="hint">Optional: enter or revise decisions you already made. These fields are shared with their original sections and update the same draft.</p>${references.map(([section,key,label]) => `<div class="field"><label>${escapeHtml(label)}<textarea data-section="${section}" data-key="${key}">${escapeHtml(value(`${section}.${key}`) || '')}</textarea></label><small>Shared with ${escapeHtml(section.toUpperCase())}</small></div>`).join('')}</section>`);
+  }
   renderContextReturnNotice(id);
   if (isAcademicStage(id) && state.submission.workArrangement === "group") {
     els.stageForm.insertAdjacentHTML("beforeend", renderTeamContributionRecord(id));
@@ -1887,6 +1901,8 @@ function buildFocusedTasks(stageId) {
   }
   if (stageId === "instrumentation") {
     const tasks = [];
+    const directQuestions = els.stageForm.querySelector(".direct-instrument-questions");
+    if (directQuestions) tasks.push({ label: "Research questions", title: "Which questions will your instruments answer?", support: "Enter questions you already developed. These are shared with A4 and remain editable there.", roots: [directQuestions], items: [directQuestions] });
     Array.from(els.stageForm.querySelectorAll(".instrumentation-row")).forEach((row, rowIndex) => {
       const groups = [
         ["Claim", ["claimNeeded"]], ["Evidence", ["evidenceNeeded"]], ["Source", ["evidenceSource"]],
@@ -1907,7 +1923,7 @@ function buildFocusedTasks(stageId) {
     const tasks = [];
     Array.from(els.stageForm.querySelectorAll(".instrumentation-row")).forEach((row, rowIndex) => {
       tasks.push({
-        label: `Term ${rowIndex + 1}`,
+        label: state.terms.rows[rowIndex]?.term?.trim() || `Term ${rowIndex + 1}`,
         title: `Define ${state.terms.rows[rowIndex]?.term || `Term ${rowIndex + 1}`}`,
         support: "Could a reasonable reader understand this term differently in a way that changes how they understand your study?",
         roots: [row], items: Array.from(row.children)
@@ -1951,6 +1967,8 @@ function applyFocusedStageLayout(stageId) {
   uiState.tasks[stageId] = Math.min(Math.max(0, Number(uiState.tasks[stageId] || 0)), tasks.length - 1);
   const activeIndex = uiState.tasks[stageId];
   const activeTask = tasks[activeIndex];
+  const addGap = els.stageForm.querySelector('[data-add-row="a3Gaps"]');
+  if (addGap) addGap.hidden = !activeTask.items?.some((node) => node.classList.contains('a3Gaps-row')) && !activeTask.roots?.some((node) => node.classList.contains('a3Gaps-row'));
   const allItems = uniqueNodes(tasks.flatMap((task) => task.items || []));
   const allRoots = uniqueNodes(tasks.flatMap((task) => task.roots || []));
   allItems.forEach((node) => { node.hidden = true; node.classList.add("focus-task-item"); });
@@ -1994,6 +2012,8 @@ function renderSectionTaskPath(stageId, tasks, activeIndex) {
 function renderFocusedStageChrome(tasks, activeIndex) {
   const stage = stages[currentIndex()];
   const phase = activeJourneyPhase();
+  const currentSectionLabel = document.getElementById('currentSectionLabel');
+  if (currentSectionLabel) currentSectionLabel.textContent = `${stage.code} · ${stage.title}`;
   const copy = focusedStageCopy[stage.id] || {};
   const task = tasks[activeIndex];
   els.stageBreadcrumb.textContent = `${phase.label} · ${stage.title}`;
@@ -2035,6 +2055,13 @@ function renderFocusedStageChrome(tasks, activeIndex) {
   document.getElementById("backBtn").textContent = activeIndex > 0 ? "Back" : currentIndex() > 0 ? "Previous step" : "Back";
   document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Continue" : currentIndex() < stages.length - 1 ? "Next step" : "Finish";
   if (IS_ADVISER) document.getElementById("nextBtn").textContent = activeIndex < tasks.length - 1 ? "Next task" : currentIndex() < stages.length - 1 ? "Next section" : "End of review";
+  for (const [id, arrow] of [['backBtn', '←'], ['nextBtn', '→']]) {
+    const button = document.getElementById(id);
+    const description = button.textContent;
+    button.setAttribute('aria-label', description);
+    button.title = description;
+    button.textContent = arrow;
+  }
   globalThis.PROPOSAL_LAYOUT?.refresh({
     stageId: stage.id, task, shortLabel: sectionPathLabel(stage.id, task, activeIndex), activeIndex, proposal: state,
     openExample: (sourceStage, type, trigger) => openExampleDialog(sourceStage, type, trigger),
@@ -2304,6 +2331,7 @@ function renderA2() {
 }
 
 function renderA3() {
+  syncAdditionalPatternsToGaps();
   const a2PatternLink = contextTaskLink("a2", '[data-table="a2Patterns"][data-index="0"]', "A2: Pattern Mapping");
   els.stageForm.innerHTML = `
     <section class="table-wrap">
@@ -2349,6 +2377,26 @@ function renderA3() {
       <div class="generated-text">${escapeHtml(value("a3.finalGap") || "Your final literature gap will appear here.")}</div>
     </section>
   `;
+}
+
+// Extra A2 patterns retain an identity across renames. Removing the source never
+// deletes its A3 row; prior gap reasoning remains available for review.
+function syncAdditionalPatternsToGaps() {
+  if (IS_ADVISER) return;
+  let changed = false;
+  for (const pattern of state.a2.patterns) {
+    const type = String(pattern.type || '').trim();
+    if (!type || STANDARD_PATTERN_TYPES.some(item => item.toLowerCase() === type.toLowerCase())) continue;
+    if (!pattern.gapSourceId) { pattern.gapSourceId = createStableId('pattern'); changed = true; }
+    let gap = state.a3.gaps.find(item => item.sourcePatternId === pattern.gapSourceId);
+    if (!gap) {
+      gap = state.a3.gaps.find(item => !item.sourcePatternId && String(item.type || '').trim().toLowerCase() === type.toLowerCase());
+      if (!gap) { gap = { ...emptyRowFor('a3Gaps'), type }; state.a3.gaps.push(gap); }
+      gap.sourcePatternId = pattern.gapSourceId; changed = true;
+    }
+    if (gap.type !== type) { gap.type = type; changed = true; }
+  }
+  if (changed) saveState(false);
 }
 
 function renderA4() {
@@ -2663,9 +2711,9 @@ function termRow(index) {
   ];
   return `
     <div class="table-row instrumentation-row" style="--cols:4">
-      <section class="output-box">
-        <h3>Term ${index + 1}</h3>
-        <div class="generated-text" data-term-title="${index}">${escapeHtml(row.term || "Add one key term for this study.")}</div>
+      <section class="output-box term-live-card ${termDefinitionText(row).length > 180 ? 'is-long' : ''}" data-live-term-card="${index}">
+        <h3 data-term-heading="${index}">${escapeHtml(`Term ${index + 1}${row.term.trim() ? ` · ${row.term.trim()}` : ''}`)}</h3>
+        <div class="generated-text" data-term-title="${index}">${escapeHtml(termDefinitionText(row) || "Add the meaning in this study to preview the definition.")}</div>
       </section>
       <p class="hint">Review your title, research questions, framework, and methodology. Does “performance” mean test scores, observed teaching, or task completion? If the literature meaning is already explained in the background, focus here on its use in this study.</p>
       ${fields.map(([key, label]) => `
@@ -2685,10 +2733,6 @@ function termRow(index) {
           <textarea data-table="terms" data-index="${index}" data-key="conceptual" aria-describedby="terms-${index}-conceptual-help">${escapeHtml(row.conceptual)}</textarea>
         </label>
       </details>
-      <section class="output-box">
-        <h3>Definition list preview</h3>
-        <ul class="terms-definition-list"><li data-term-preview="${index}">${termEntryHtml(row)}</li></ul>
-      </section>
       <details class="example-details"><summary>Review this definition</summary><ul>
         <li>Does this entry resolve a possible misunderstanding?</li>
         <li>Does the meaning match your research questions and methodology?</li>
@@ -2776,7 +2820,8 @@ function updateTermPreview(index) {
   const preview = document.querySelector(`[data-term-preview="${index}"]`);
   const title = document.querySelector(`[data-term-title="${index}"]`);
   if (preview) preview.innerHTML = termEntryHtml(row);
-  if (title) title.textContent = row.term || "Add one key term for this study.";
+  if (title) title.textContent = termDefinitionText(row) || "Add the meaning in this study to preview the definition.";
+  document.querySelector(`[data-live-term-card="${index}"]`)?.classList.toggle('is-long', termDefinitionText(row).length > 180);
   const saved = document.querySelector(`[data-term-saved="${index}"]`);
   if (saved) saved.textContent = row.conceptual ? "(Contains saved text)" : "";
 }
@@ -3107,7 +3152,10 @@ function printErbPreparationSummary() {
 function renderInstrumentation() {
   syncInstrumentationRows();
   const rows = state.instrumentation.rows;
+  const direct = localStorage.getItem('proposalBuilder:workingMode:preview') === 'flexible' && !IS_ADVISER;
+  const directHtml = direct ? `<section class="output-box direct-instrument-questions"><h3>Existing specific research questions</h3><p class="hint">Enter questions already developed outside the app. These are the same questions shown in A4; changes in either place affect the linked instrument cards. Do not clear a question with a completed card.</p>${state.a4.questions.map((q,i) => `<label for="direct-question-${i}">Question ${i+1}</label><textarea id="direct-question-${i}" data-direct-question="${i}">${escapeHtml(q)}</textarea>`).join('')}<button type="button" data-save-direct-questions>Save questions and open instrument cards</button><button type="button" data-add-direct-question>Add question</button></section>` : '';
   if (!rows.length) {
+    if (direct) { els.stageForm.innerHTML = directHtml; return; }
     const a4QuestionsLink = contextTaskLink("a4", '[data-array="a4.questions"][data-index="0"]', "A4.7: Specific Research Questions", {
       returnSelector: ".empty-state",
       returnLabel: "Instrumentation Builder"
@@ -3120,6 +3168,7 @@ function renderInstrumentation() {
     return;
   }
   els.stageForm.innerHTML = `
+    ${directHtml}
     <section class="table-wrap">
       <h3>Question-to-Evidence Alignment</h3>
       <p class="hint">Complete the chain for every SRQ: claim needed &rarr; evidence needed &rarr; evidence source &rarr; instrument/procedure &rarr; analysis. Participants are not the only possible sources; documents, artifacts, records, observations, and outputs may also provide evidence.</p>
@@ -3350,7 +3399,7 @@ function tableRow(section, index, keys, labels) {
           <textarea data-table="${section}" data-index="${index}" data-key="${key}" aria-describedby="${section}-${index}-${key}-help" placeholder="${escapeHtml(section === "a2Patterns" && ["authors", "years"].includes(key) ? globalThis.PROPOSAL_EXAMPLES.sourcePrompt : "")}">${escapeHtml(row[key] || "")}</textarea>
         </label>
       `).join("")}
-      ${protectedRow ? "" : `<button class="row-remove" type="button" data-remove-row="${section}:${index}" aria-label="Remove this additional row">Remove extra row</button>`}
+      ${protectedRow || (section === 'a3Gaps' && row.sourcePatternId && state.a2.patterns.some(pattern => pattern.gapSourceId === row.sourcePatternId)) ? "" : `<button class="row-remove" type="button" data-remove-row="${section}:${index}" aria-label="Remove this additional row">Remove extra row</button>`}
     </div>
   `;
 }
@@ -5825,6 +5874,7 @@ function attachEvents() {
   document.addEventListener("input", (event) => {
     if (IS_ADVISER) return;
     const target = event.target;
+    if (target.dataset.directQuestion !== undefined) return; // Commit together after checking linked cards.
     markInteraction();
     if (target.dataset.contributionStage && target.dataset.contributionKey) {
       const record = contributionRecord(target.dataset.contributionStage);
@@ -5911,7 +5961,17 @@ function attachEvents() {
       markContentEdit();
       saveState();
       if (target.dataset.table === "terms") {
-        updateTermPreview(Number(target.dataset.index));
+        const termIndex = Number(target.dataset.index);
+        updateTermPreview(termIndex);
+        if (target.dataset.key === 'term') {
+          const name = target.value.trim() || `Term ${termIndex + 1}`;
+          const heading = els.stageForm.querySelector(`[data-term-heading="${termIndex}"]`);
+          if (heading) heading.textContent = `Term ${termIndex + 1}${target.value.trim() ? ` · ${target.value.trim()}` : ''}`;
+          const taskIndex = termIndex;
+          const pathButton = els.sectionTaskPath?.querySelector(`[data-section-task="${taskIndex}"]`);
+          if (pathButton) { const label = pathButton.querySelector('span'); if (label) label.textContent = name; pathButton.setAttribute('aria-label', `Task ${termIndex + 1}: Define ${name}`); }
+          if (activeTaskIndex('terms') === taskIndex) { const title = document.getElementById('stageTitle'); if (title) title.textContent = `Define ${name}`; }
+        }
       }
     }
   });
@@ -6057,6 +6117,22 @@ function attachEvents() {
     if (!document.getElementById("statusMenu")?.hidden && !event.target.closest?.("#statusMenu") && !event.target.closest?.("#statusBtn")) closeStatusMenu();
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.saveDirectQuestions !== undefined || target.dataset.addDirectQuestion !== undefined) {
+      const controls = [...els.stageForm.querySelectorAll('[data-direct-question]')];
+      for (const control of controls) {
+        const i = Number(control.dataset.directQuestion);
+        if (!control.value.trim() && state.a4.questions[i]?.trim() && instrumentationRowForQuestion(i) && instrumentRowHasAnswers(instrumentationRowForQuestion(i))) {
+          alert('This question has a linked instrument card. Keep the question or remove it from A4 with its confirmation.'); control.focus(); return;
+        }
+      }
+      controls.forEach(control => { state.a4.questions[Number(control.dataset.directQuestion)] = control.value; });
+      if (target.dataset.addDirectQuestion !== undefined && state.a4.questions.length < SRQ_LIMITS.maximum) {
+        state.a4.questions.push(''); state.a4.questionIds.push(createStableId('srq')); state.a4.questionPurposes.push(''); state.a4.questionFocuses.push(''); state.a4.questionClaims.push('');
+      }
+      syncInstrumentationRows(); markContentEdit(); saveState(false);
+      uiState.tasks.instrumentation = target.dataset.saveDirectQuestions !== undefined && state.instrumentation.rows.length ? 1 : 0;
+      renderStage(); return;
+    }
     if (target.dataset.studyExampleRoute) {
       const route = target.dataset.studyExampleRoute;
       const stage = target.dataset.studyExampleStage;
@@ -6153,7 +6229,14 @@ function attachEvents() {
       const rows = getTableRows(section);
       const rowIndex = Number(index);
       if (isProtectedStandardRow(section, rowIndex)) return;
-      if (rowHasSavedWork(rows[rowIndex]) && !confirm("This additional row contains saved work. Remove it?")) return;
+      const sourceId = section === 'a2Patterns' ? rows[rowIndex]?.gapSourceId : null;
+      const linkedGaps = sourceId ? state.a3.gaps.filter(row => row.sourcePatternId === sourceId) : [];
+      const linkedHasWriting = linkedGaps.some(row => ['show','emphasized','lessVisible','limits','gap'].some(key => String(row[key] || '').trim()));
+      if (linkedGaps.length) {
+        const warning = linkedHasWriting ? ' Its linked A3 gap task contains writing, which will also be deleted.' : ' Its linked A3 gap task will also be removed.';
+        if (!confirm(`Remove this A2 pattern?${warning} Download a backup first if you may need to recover it.`)) return;
+        state.a3.gaps = state.a3.gaps.filter(row => row.sourcePatternId !== sourceId);
+      } else if (rowHasSavedWork(rows[rowIndex]) && !confirm("This additional row contains saved work. Remove it?")) return;
       rows.splice(rowIndex, 1);
       const stageId = section === "a2Patterns" ? "a2" : section === "a3Gaps" ? "a3" : "terms";
       uiState.tasks[stageId] = addedRowTaskIndex(section, Math.max(0, rowIndex - 1));
@@ -6327,6 +6410,14 @@ function attachEvents() {
     document.getElementById("toolsDialog").showModal();
   });
   document.getElementById("closeToolsBtn").addEventListener("click", () => document.getElementById("toolsDialog").close());
+  const workingModeChoice = document.getElementById('workingModeChoice');
+  const directChooser = document.getElementById('directSectionChooser');
+  const directChoice = document.getElementById('directSectionChoice');
+  directChoice.innerHTML = stages.map(stage => `<option value="${escapeHtml(stage.id)}">${escapeHtml(stage.code)} · ${escapeHtml(stage.title)}</option>`).join('');
+  workingModeChoice.value = localStorage.getItem('proposalBuilder:workingMode:preview') === 'flexible' ? 'flexible' : 'guided';
+  directChooser.hidden = workingModeChoice.value !== 'flexible';
+  workingModeChoice.addEventListener('change', () => { localStorage.setItem('proposalBuilder:workingMode:preview', workingModeChoice.value); directChooser.hidden = workingModeChoice.value !== 'flexible'; uiState.tasks[state.currentStage] = 0; renderStage(); });
+  document.getElementById('openDirectSection').addEventListener('click', () => { const id = directChoice.value; document.getElementById('toolsDialog').close(); activateStage(id); });
 
   document.getElementById("saveBtn").addEventListener("click", () => {
     const label = prompt("Optional checkpoint label (for example: Before adviser consultation)", "");
