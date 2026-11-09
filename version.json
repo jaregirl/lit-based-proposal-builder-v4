@@ -1,10 +1,11 @@
 {
-  "version": "4.9.5",
+  "version": "4.9.6",
   "schemaVersion": "4.7.0",
-  "releaseDate": "2026-11-07",
-  "title": "v4.9.5 Flexible Workspace",
+  "releaseDate": "2026-11-09",
+  "title": "v4.9.6 First-use Guide",
   "url": "./",
   "notes": [
+    "A skippable first-use guide introduces the workspace, task navigation, Status, Tools, and local backups. Restart it from Tools.",
     "New layout is the default; Classic remains available. Flexible mode offers direct section selection and selected shared inputs.",
     "Framework Finder includes an optional Diagram task: editable concept boxes, draggable positions, labelled arrows, relationship basis and written explanation",
     "Diagrams are included in local saving, JSON backup/restore, framework progress and final PDF output, with a text description and standalone SVG download",

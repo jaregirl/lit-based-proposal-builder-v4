@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.5";
-const APP_VERSION = `v${RELEASE_VERSION} - Flexible Workspace`;
+const RELEASE_VERSION = "4.9.6";
+const APP_VERSION = `v${RELEASE_VERSION} - First-use Guide`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";

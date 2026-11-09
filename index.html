@@ -211,6 +211,7 @@
         <button class="ghost" id="closeToolsBtn" type="button">Close</button>
       </div>
       <div class="tool-groups">
+        <section><h3>App guide</h3><button type="button" id="startAppTour">Show me around the app</button></section>
         <section><h3>Working mode</h3><label for="workingModeChoice">Choose how to work</label><select id="workingModeChoice"><option value="guided">Guided pathway</option><option value="flexible">Choose a section</option></select><p class="hint">Guided follows the existing sequence. Choose a section opens a section directly; some sections may still need earlier decisions. Instrumentation lets you enter existing questions there. Switching does not remove answers.</p><div id="directSectionChooser" hidden><label for="directSectionChoice">Section to open</label><select id="directSectionChoice"></select><button type="button" id="openDirectSection">Open section</button><p class="hint">Opening a section does not mark earlier work or the proposal complete.</p></div></section>
         <section><h3>Layout</h3><label for="layoutChoice">Choose your interface</label><select id="layoutChoice"><option value="classic">Classic layout</option><option value="new">New layout</option></select><p class="hint">The same proposal and guidance are available in both layouts. Switching does not replace your responses. This preference stays in this browser.</p><p id="layoutChoiceStatus" class="hint" role="status"></p></section>
         <section><h3>Workspace role</h3><p class="hint">Choose the tools for your work. This role switch does not verify identity or retrieve students’ files.</p><div class="tool-grid" id="workspaceRoleChoices"></div></section>
@@ -412,6 +413,7 @@
     <script src="adviser-workspace.js?v=20261008-v492-eligibility1"></script>
     <script src="task-layout.js?v=495-workspace"></script>
     <script src="framework-diagram.js?v=20261022-v494-diagram4"></script>
-    <script src="app-upload.js?v=495-workspace"></script>
+    <script src="app-upload.js?v=496-tour"></script>
+    <script src="app-tour.js?v=496-tour"></script>
   </body>
 </html>
