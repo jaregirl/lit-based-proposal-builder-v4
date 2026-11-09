@@ -1,6 +1,6 @@
 const STORAGE_KEY = "proposalBuilderA4DraftUploadVersion";
-const RELEASE_VERSION = "4.9.6";
-const APP_VERSION = `v${RELEASE_VERSION} - First-use Guide`;
+const RELEASE_VERSION = "4.9.7";
+const APP_VERSION = `v${RELEASE_VERSION} - Tools and Phase Hints`;
 const adviserParams = new URLSearchParams(window.location.search);
 const IS_ADVISER = adviserParams.get("role") === "adviser";
 const ADVISER_PROPOSAL_ID = adviserParams.get("proposal") || "";
@@ -1472,9 +1472,10 @@ function renderPhaseJourney() {
     const shortLabel = ["Foundations", "Design", "Preparation", "Readiness"][index] || phase.label;
     const section = stages.find((item) => item.id === state.currentStage);
     const sectionName = phase.id === active.id && section ? `${section.code} · ${section.title}` : '';
-    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-label="${escapeHtml(phase.label)}${sectionName ? `, ${escapeHtml(sectionName)}` : ''}" title="${escapeHtml(phase.label)}" aria-expanded="${expanded}" aria-controls="phaseMenu">
+    const phaseHint = ['Develop your topic, review patterns, and form your research questions.','Plan your framework, methods, ethics, and instruments.','Clarify key terms and organize your proposal.','Review your decisions and prepare your submission.'][index];
+    return `<button type="button" class="phase-step ${phase.id === active.id ? "active" : ""} ${completed ? "complete" : ""}" data-phase="${phase.id}" aria-label="${escapeHtml(phase.label)}${sectionName ? `, ${escapeHtml(sectionName)}` : ''}" aria-describedby="phase-hint-${index}" aria-expanded="${expanded}" aria-controls="phaseMenu">
       <span class="phase-number">${completed ? "&#10003;" : index + 1}</span>
-      <span class="phase-full-label">${escapeHtml(phase.label)}</span><span class="phase-short-label" aria-hidden="true">${escapeHtml(shortLabel)}</span>${sectionName ? `<span class="phase-section-label">${escapeHtml(sectionName)}</span>` : ''}
+      <span class="phase-full-label">${escapeHtml(phase.label)}</span><span class="phase-short-label" aria-hidden="true">${escapeHtml(shortLabel)}</span>${sectionName ? `<span class="phase-section-label">${escapeHtml(sectionName)}</span>` : ''}<span class="phase-hint" role="tooltip" id="phase-hint-${index}">${escapeHtml(phaseHint)}</span>
     </button>`;
   }).join("");
 }

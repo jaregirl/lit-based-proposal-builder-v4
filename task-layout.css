@@ -1,5 +1,11 @@
 /* v4.9.3. Opt-in presentation layer; Classic retains styles-upload.css unchanged. */
 .task-workspace { display: contents; }
+.phase-hint { display: none; }
+@media (hover:hover) {
+  body:is(.phase-hints-on,.tour-phase-hints) .phase-step:not(.hint-dismissed):is(:hover,:focus-visible) .phase-hint { display: block; position: absolute; z-index: 70; top: calc(100% + 6px); left: 0; width: 220px; max-width: 70vw; padding: 9px 11px; border: 1px solid #ab7b34; border-radius: 6px; background: #fff5e4; color: #253731; font-size: 13px; font-weight: 400; line-height: 1.35; text-align: left; white-space: normal; box-shadow: 0 4px 12px #0002; }
+}
+body:is(.phase-hints-on,.tour-phase-hints) .phase-step:not(.hint-dismissed):focus-visible .phase-hint { display: block; position: absolute; z-index: 70; top: calc(100% + 6px); left: 0; width: 220px; max-width: 70vw; padding: 9px 11px; border: 1px solid #ab7b34; border-radius: 6px; background: #fff5e4; color: #253731; font-size: 13px; font-weight: 400; line-height: 1.35; text-align: left; white-space: normal; }
+.phase-step:last-child .phase-hint { left: auto !important; right: 0; }
 .task-resources, .workspace-draft-reminder, .authors-divider { display: none; }
 .mobile-task-toggle { display: none; }
 .brand-short-name, .compact-app-version, .phase-short-label { display: none; }

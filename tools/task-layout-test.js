@@ -31,5 +31,5 @@ for (const icon of ['help-circle','file-pencil','file-arrow-left']) {
   assert(fs.existsSync(path.join(root, 'layout-icons', `${icon}.svg`)));
   assert(sw.includes(`./layout-icons/${icon}.svg`));
 }
-assert.equal(JSON.parse(read('version.json')).version, '4.9.6');
+assert.equal(JSON.parse(read('version.json')).version, '4.9.7');
 console.log('Passed: isolated Classic/New preference, unchanged proposal keys/schema, stationary controls, resource wiring, resizing controls, offline asset/version consistency. Browser verification remains separate.');
